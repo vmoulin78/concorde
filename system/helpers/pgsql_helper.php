@@ -31,7 +31,7 @@
  * @copyright   Copyright (c) 2019, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
- * @since       Version 1.0.0
+ * @since       Version 0.0.0
  * @filesource
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
@@ -82,7 +82,7 @@ if ( ! function_exists('php_element_to_pgsql_element'))
                 $retour = pg_escape_literal($CI->db->conn_id, $php_element);
                 break;
             case 'bool':
-                $retour = $php_element ? 'TRUE' : 'FALSE';
+                $retour = $php_element ? PGSQL_BOOL_TRUE_TO_SERVER : PGSQL_BOOL_FALSE_TO_SERVER;
                 break;
             case 'date':
             case 'interval':
@@ -203,7 +203,13 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 $retour = $pgsql_element;
                 break;
             case 'bool':
-                $retour = ($pgsql_element === 't');
+                if ($pgsql_element === PGSQL_BOOL_TRUE_FROM_SERVER) {
+                    $retour = true;
+                } elseif ($pgsql_element === PGSQL_BOOL_FALSE_FROM_SERVER) {
+                    $retour = false;
+                } else {
+                    trigger_error("LightORM error: Unknown PostgreSQL boolean");
+                }
                 break;
             case 'date':
                 $retour = new Pgsql_date($pgsql_element);

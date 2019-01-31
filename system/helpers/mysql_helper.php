@@ -31,7 +31,7 @@
  * @copyright   Copyright (c) 2019, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
- * @since       Version 1.0.0
+ * @since       Version 0.0.0
  * @filesource
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
@@ -84,7 +84,7 @@ if ( ! function_exists('php_data_to_mysql_data'))
                 $retour = "'" . mysqli_real_escape_string($CI->db->conn_id, $php_data) . "'";
                 break;
             case 'bool':
-                $retour = $php_data ? '1' : '0';
+                $retour = $php_data ? MYSQL_BOOL_TRUE_TO_SERVER : MYSQL_BOOL_FALSE_TO_SERVER;
                 break;
             case 'set':
                 $retour = '(' . implode(',', $php_data) . ')';
@@ -150,10 +150,10 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 $retour = $mysql_data;
                 break;
             case 'bool':
-                if ($mysql_data === '0') {
-                    $retour = false;
-                } elseif ($mysql_data === '1') {
+                if ($mysql_data === MYSQL_BOOL_TRUE_FROM_SERVER) {
                     $retour = true;
+                } elseif ($mysql_data === MYSQL_BOOL_FALSE_FROM_SERVER) {
+                    $retour = false;
                 } else {
                     trigger_error("LightORM error: Unknown MySQL boolean");
                 }
