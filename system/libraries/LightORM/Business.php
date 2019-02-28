@@ -52,7 +52,7 @@ abstract class Business
     public function __construct() {}
 
     /**
-     * Get the business full name of the current class
+     * Get the business full name of the current class or instance
      *
      * @return  string
      */
@@ -61,7 +61,7 @@ abstract class Business
     }
 
     /**
-     * Get the business short name of the current class
+     * Get the business short name of the current class or instance
      *
      * @return  string
      */

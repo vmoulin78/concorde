@@ -105,11 +105,11 @@ if ( ! function_exists('php_element_to_pgsql_element'))
                             $retour = (string) $php_element->get_id();
                             break;
                         default:
-                            trigger_error("LightORM error: Unknown element type '" . $element_type . "'");
+                            trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                             break;
                     }
                 } else {
-                    trigger_error("LightORM error: Unknown element type '" . $element_type . "'");
+                    trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 }
                 break;
         }
@@ -208,7 +208,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 } elseif ($pgsql_element === PGSQL_BOOL_FALSE_FROM_SERVER) {
                     $retour = false;
                 } else {
-                    trigger_error("LightORM error: Unknown PostgreSQL boolean");
+                    trigger_error("LightORM error: Unknown PostgreSQL boolean", E_USER_ERROR);
                 }
                 break;
             case 'date':
@@ -243,11 +243,11 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                             $retour = $model_full_name::find($pgsql_element);
                             break;
                         default:
-                            trigger_error("LightORM error: Unknown element type '" . $element_type . "'");
+                            trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                             break;
                     }
                 } else {
-                    trigger_error("LightORM error: Unknown element type '" . $element_type . "'");
+                    trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 }
                 break;
         }

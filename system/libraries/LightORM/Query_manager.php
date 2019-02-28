@@ -246,7 +246,7 @@ class Query_manager
             $exploded_var = explode(':', $var);
 
             if (count($exploded_var) != 2) {
-                trigger_error('LightORM error: Invalid format for ' . $var);
+                trigger_error('LightORM error: Invalid format for ' . $var, E_USER_ERROR);
             }
 
             if ( ! is_null($row->{$var})) {
@@ -257,7 +257,7 @@ class Query_manager
                 if (isset($field_object)) {
                     $row->{$var} = $data_conv->convert_value_for_php($row->{$var}, $field_object);
                 } else {
-                    trigger_error('LightORM error: Undefined type for ' . $var);
+                    trigger_error('LightORM error: Undefined type for ' . $var, E_USER_ERROR);
                 }
             }
         }

@@ -52,20 +52,6 @@ trait Table_association_trait
     use Table_concrete_business_trait;
 
     /**
-     * Manage the SELECT part of the query for the current Table_association_trait
-     *
-     * @param   Query_manager  $query_manager
-     * @param   string         $table_alias
-     * @return  void
-     */
-    public static function business_selector(Query_manager $query_manager, $table_alias = null) {
-        $data_conv = Data_conv::factory();
-
-        $table_object = $data_conv->schema[business_to_table(self::get_business_full_name())];
-        $table_object->business_selector($query_manager, $table_alias);
-    }
-
-    /**
      * Get the primary key fields
      *
      * @return  array
@@ -106,6 +92,66 @@ trait Table_association_trait
     }
 
     /**
+     * Get the primary key scalar
+     *
+     * @return  string
+     */
+    public function get_primary_key_scalar() {
+        $primary_key = $this->get_primary_key();
+        return implode(':', $primary_key);
+    }
+
+    /**
+     * Manage the SELECT and JOIN parts of the query for the current Table_association_trait
+     *
+     * @param   Query_manager                               $query_manager
+     * @param   int                                         $table_alias_number
+     * @param   Business_associations_associatonents_group  $associatonents_group
+     * @return  int
+     */
+    public static function business_initialization(Query_manager $query_manager, $table_alias_number, Business_associations_associatonents_group $associatonents_group) {
+        $data_conv = Data_conv::factory();
+
+        $association_table_alias = 'alias_' . $table_alias_number;
+
+        $association_table_object = $data_conv->schema[business_to_table(self::get_business_full_name())];
+        $association_table_object->business_selection($query_manager, $association_table_alias);
+
+        // This is a "LEFT JOIN" because there could be no matching row
+        $query_manager->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+
+        $table_alias_number++;
+
+        return $table_alias_number;
+    }
+
+    /**
+     * Create the Business object
+     *
+     * @param   array   $qm_model_item
+     * @param   object  $row
+     * @param   array   $qm_aliases
+     * @return  object
+     */
+    public static function business_creation($qm_model_item, $row, $qm_aliases) {
+        $data_conv = Data_conv::factory();
+
+        $association_table_alias = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->joining_alias;
+
+        if (is_null($row->{$association_table_alias . ':' . $qm_model_item['relation_info']['associate']->joining_field})) {
+            return null;
+        }
+
+        $table_object  = $data_conv->schema[$qm_aliases[$association_table_alias]];
+        $args          = $table_object->business_creation_args($row, $association_table_alias);
+
+        $association_full_name = self::get_business_full_name();
+        $retour = new $association_full_name(...$args);
+
+        return $retour;
+    }
+
+    /**
      * Get the concrete update manager
      *
      * @return  array
@@ -114,30 +160,14 @@ trait Table_association_trait
         $lightORM = LightORM::get_singleton();
 
         $class_short_name = get_class_short_name($this);
-        if ( ! isset($lightORM->association_update_managers[$class_short_name])) {
-            $lightORM->association_update_managers[$class_short_name] = array();
+
+        $primary_key_scalar = $this->get_primary_key_scalar();
+
+        if ( ! isset($lightORM->association_update_managers[$class_short_name][$primary_key_scalar])) {
+            $lightORM->association_update_managers[$class_short_name][$primary_key_scalar] = new Query_manager();
         }
 
-        $primary_key = $this->get_primary_key();
-        $nb_primary_key_items = count($primary_key);
-
-        $explorer =& $lightORM->association_update_managers[$class_short_name];
-        $primary_key_counter = 1;
-        foreach ($primary_key as $primary_key_field => $primary_key_value) {
-            if ( ! isset($explorer[$primary_key_value])) {
-                if ($primary_key_counter == $nb_primary_key_items) {
-                    $explorer[$primary_key_value] = new Query_manager();
-                } else {
-                    $explorer[$primary_key_value] = array();
-                }
-            }
-
-            $explorer =& $explorer[$primary_key_value];
-
-            $primary_key_counter++;
-        }
-
-        return $explorer;
+        return $lightORM->association_update_managers[$class_short_name][$primary_key_scalar];
     }
 
     /**
@@ -167,13 +197,8 @@ trait Table_association_trait
 
         $retour = $update_manager->update();
 
-        $primary_key = $this->get_primary_key();
-        $explorer =& $lightORM->association_update_managers[$class_short_name];
-        while (count($primary_key) > 1) {
-            $primary_key_value = array_shift($primary_key);
-            $explorer =& $explorer[$primary_key_value];
-        }
-        unset($explorer[array_shift($primary_key)]);
+        $primary_key_scalar = $this->get_primary_key_scalar();
+        unset($lightORM->association_update_managers[$class_short_name][$primary_key_scalar]);
 
         return $retour;
     }

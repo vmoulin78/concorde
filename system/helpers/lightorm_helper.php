@@ -48,7 +48,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 // ------------------------------------------------------------------------
 
-use LightORM\Data_conv;
+use LightORM\Business;
 use LightORM\Databubble;
 
 // ------------------------------------------------------------------------
@@ -88,7 +88,7 @@ if ( ! function_exists('business_to_table'))
     /**
      * Return the name of the table related to the given business full name or business object
      *
-     * @param   string
+     * @param   string|object
      * @return  string
      */
     function business_to_table($business) {
@@ -99,7 +99,58 @@ if ( ! function_exists('business_to_table'))
     }
 }
 
-if ( ! function_exists('get_business_private_properties_names_rec'))
+if ( ! function_exists('is_table_model'))
+{
+    /**
+     * Check if the given business full name or business object is a Table_model
+     *
+     * @param   string|object
+     * @return  bool
+     */
+    function is_table_model($business) {
+        if (has_trait_name($business, 'LightORM\\Table_model_trait')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+if ( ! function_exists('is_table_enum_model'))
+{
+    /**
+     * Check if the given business full name or business object is a Table_enum_model
+     *
+     * @param   string|object
+     * @return  bool
+     */
+    function is_table_enum_model($business) {
+        if (has_trait_name($business, 'LightORM\\Table_enum_model_trait')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+if ( ! function_exists('is_table_association'))
+{
+    /**
+     * Check if the given business full name or business object is a Table_association
+     *
+     * @param   string|object
+     * @return  bool
+     */
+    function is_table_association($business) {
+        if (has_trait_name($business, 'LightORM\\Table_association_trait')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+if ( ! function_exists('get_business_private_properties_names'))
 {
     /**
      * Return an array of the private properties of the business class $class and of its business ancestors classes
@@ -107,7 +158,7 @@ if ( ! function_exists('get_business_private_properties_names_rec'))
      * @param   ReflectionClass
      * @return  array
      */
-    function get_business_private_properties_names_rec($class) {
+    function get_business_private_properties_names($class) {
         $business_class_full_name = 'LightORM\\Business';
         if (($class->getName() != $business_class_full_name)
             && ( ! $class->isSubclassOf($business_class_full_name))
@@ -123,7 +174,96 @@ if ( ! function_exists('get_business_private_properties_names_rec'))
 
         $parent_class = $class->getParentClass();
         if ($parent_class !== false) {
-            $retour = array_unique(array_merge($retour, get_business_private_properties_names_rec($parent_class)));
+            $retour = array_unique(array_merge($retour, get_business_private_properties_names($parent_class)));
+        }
+
+        return $retour;
+    }
+}
+
+if ( ! function_exists('sanitize_business_rec'))
+{
+    /**
+     * This function is the recursive part of the function sanitize_business()
+     *
+     * @internal
+     * @param   object  $business
+     * @param   array   $processed_instances
+     * @return  object
+     */
+    function sanitize_business_rec($business, &$processed_instances = array()) {
+        if (is_table_model($business)) {
+            $business_type       = 'Model';
+            $primary_key_scalar  = $business->get_id();
+        } elseif (is_table_association($business)) {
+            $business_type       = 'Association';
+            $primary_key_scalar  = $business->get_primary_key_scalar();
+        } elseif (is_object($business)) {
+            return (clone $business);
+        } else {
+            exit(1);
+        }
+
+        if (isset($processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar])) {
+            return $processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar];
+        }
+
+        $retour = clone $business;
+
+        if (is_table_model($business)) {
+            $reflection_retour = new ReflectionObject($retour);
+
+            $properties_names_to_unset = array();
+            foreach ($reflection_retour->getProperties() as $property) {
+                if ( ! $property->isPublic()) {
+                    continue;
+                }
+
+                if ($retour->{$property->getName()} instanceof Databubble) {
+                    $properties_names_to_unset[] = $property->getName();
+                }
+            }
+
+            foreach ($properties_names_to_unset as $property_name_to_unset) {
+                unset($retour->{$property_name_to_unset});
+            }
+        }
+
+        $processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar] = $retour;
+
+        $reflection_retour = new ReflectionObject($retour);
+
+        $parent_class = $reflection_retour->getParentClass();
+        if ($parent_class !== false) {
+            $properties_names = get_business_private_properties_names($reflection_retour->getParentClass());
+        } else {
+            $properties_names = array();
+        }
+        foreach ($reflection_retour->getProperties() as $property) {
+            $properties_names[] = $property->getName();
+        }
+        $properties_names = array_unique($properties_names);
+
+        foreach ($properties_names as $property_name) {
+            if ( ! $reflection_retour->hasMethod('get_' . $property_name)) {
+                continue;
+            }
+
+            $property_value = $retour->{'get_' . $property_name}();
+
+            if (is_object($property_value)) {
+                $retour->{'set_' . $property_name}(sanitize_business_rec($property_value, $processed_instances));
+            } elseif (is_array($property_value)) {
+                $property_value_copy = array();
+                foreach ($property_value as $key => $item) {
+                    $property_value_copy[$key] = $item;
+
+                    if (is_object($item)) {
+                        $property_value_copy[$key] = sanitize_business_rec($item, $processed_instances);
+                    }
+                }
+                $retour->{'set_' . $property_name}($property_value_copy);
+            }
         }
 
         return $retour;
@@ -135,61 +275,11 @@ if ( ! function_exists('sanitize_business'))
     /**
      * Return a sanitized copy of the given business (model or association)
      *
-     * @param   object
-     * @return  object
+     * @param   Business  $business
+     * @return  Business
      */
-    function sanitize_business($business) {
-        $clone = clone $business;
-        $reflection_clone = new ReflectionObject($clone);
-
-        $properties_names_to_unset = array();
-        foreach ($reflection_clone->getProperties() as $property) {
-            if ( ! $property->isPublic()) {
-                continue;
-            }
-
-            if ($clone->{$property->getName()} instanceof Databubble) {
-                $properties_names_to_unset[] = $property->getName();
-            }
-        }
-
-        foreach ($properties_names_to_unset as $property_name_to_unset) {
-            unset($clone->{$property_name_to_unset});
-        }
-
-        $reflection_clone = new ReflectionObject($clone);
-
-        $parent_class = $reflection_clone->getParentClass();
-        if ($parent_class !== false) {
-            $properties_names = get_business_private_properties_names_rec($reflection_clone->getParentClass());
-        } else {
-            $properties_names = array();
-        }
-        foreach ($reflection_clone->getProperties() as $property) {
-            $properties_names[] = $property->getName();
-        }
-        $properties_names = array_unique($properties_names);
-
-        foreach ($properties_names as $property_name) {
-            if ($reflection_clone->hasMethod('get_' . $property_name)) {
-                $property_value = $clone->{'get_' . $property_name}();
-            } else {
-                continue;
-            }
-
-            if (is_object($property_value)) {
-                $clone->{'set_' . $property_name}(sanitize_business($property_value));
-            } elseif (is_array($property_value)) {
-                foreach ($property_value as &$item) {
-                    if (is_object($item)) {
-                        $item = sanitize_business($item);
-                    }
-                }
-                $clone->{'set_' . $property_name}($property_value);
-            }
-        }
-
-        return $clone;
+    function sanitize_business(Business $business) {
+        return sanitize_business_rec($business);
     }
 }
 
@@ -208,6 +298,21 @@ if ( ! function_exists('print_model'))
     }
 }
 
+if ( ! function_exists('print_models'))
+{
+    /**
+     * Display the given array of models using the print_r function
+     *
+     * @param   array
+     * @return  void
+     */
+    function print_models($models) {
+        foreach ($models as $model) {
+            print_model($model);
+        }
+    }
+}
+
 if ( ! function_exists('var_dump_model'))
 {
     /**
@@ -220,6 +325,21 @@ if ( ! function_exists('var_dump_model'))
         echo '<pre>';
         var_dump(sanitize_business($model));
         echo '</pre>';
+    }
+}
+
+if ( ! function_exists('var_dump_models'))
+{
+    /**
+     * Display the given array of models using the var_dump function
+     *
+     * @param   array
+     * @return  void
+     */
+    function var_dump_models($models) {
+        foreach ($models as $model) {
+            var_dump_model($model);
+        }
     }
 }
 
@@ -238,6 +358,21 @@ if ( ! function_exists('print_association'))
     }
 }
 
+if ( ! function_exists('print_associations'))
+{
+    /**
+     * Display the given array of associations using the print_r function
+     *
+     * @param   array
+     * @return  void
+     */
+    function print_associations($associations) {
+        foreach ($associations as $association) {
+            print_association($association);
+        }
+    }
+}
+
 if ( ! function_exists('var_dump_association'))
 {
     /**
@@ -250,5 +385,20 @@ if ( ! function_exists('var_dump_association'))
         echo '<pre>';
         var_dump(sanitize_business($association));
         echo '</pre>';
+    }
+}
+
+if ( ! function_exists('var_dump_associations'))
+{
+    /**
+     * Display the given array of associations using the var_dump function
+     *
+     * @param   array
+     * @return  void
+     */
+    function var_dump_associations($associations) {
+        foreach ($associations as $association) {
+            var_dump_association($association);
+        }
     }
 }

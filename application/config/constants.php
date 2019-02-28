@@ -98,3 +98,12 @@ defined('MYSQL_BOOL_TRUE_FROM_SERVER')   OR define('MYSQL_BOOL_TRUE_FROM_SERVER'
 defined('MYSQL_BOOL_FALSE_FROM_SERVER')  OR define('MYSQL_BOOL_FALSE_FROM_SERVER', '0');
 defined('MYSQL_BOOL_TRUE_TO_SERVER')     OR define('MYSQL_BOOL_TRUE_TO_SERVER', '1');
 defined('MYSQL_BOOL_FALSE_TO_SERVER')    OR define('MYSQL_BOOL_FALSE_TO_SERVER', '0');
+
+/*
+|--------------------------------------------------------------------------
+| LightORM Constants
+|--------------------------------------------------------------------------
+|
+*/
+defined('LIGHTORM_START_TABLE_ALIAS_NUMBER')  OR define('LIGHTORM_START_TABLE_ALIAS_NUMBER', 1);
+defined('LIGHTORM_START_MODEL_NUMBER')        OR define('LIGHTORM_START_MODEL_NUMBER', 1);

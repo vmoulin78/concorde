@@ -9,9 +9,19 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | Example:
 |
 | $config['lightORM_business_compositions'] = array(
-|     'Article' => array(
-|         'title:Title',
-|         'paragraphs:Paragraph[]',
+|     array(
+|         'compound_model'       => 'Article',
+|         'compound_property'    => 'title',
+|         'component_model'      => 'Title',
+|         'component_dimension'  => 'one',
+|         'component_field'      => 'article_id',
+|     ),
+|     array(
+|         'compound_model'       => 'Article',
+|         'compound_property'    => 'paragraphs',
+|         'component_model'      => 'Paragraph',
+|         'component_dimension'  => 'many',
+|         'component_field'      => 'article_id',
 |     ),
 | );
 |
@@ -26,22 +36,69 @@ $config['lightORM_business_compositions'] = array();
 | Example:
 |
 | $config['lightORM_business_associations'] = array(
-|     'Article' => array(
-|         'author:Author',
-|         'comments:Comment[]',
-|         'tags:Tag[]',
+|     array(
+|         'associates' => array(
+|             array(
+|                 'model'      => 'Article',
+|                 'property'   => 'author',
+|                 'dimension'  => 'one',
+|                 'field'      => 'author_id',
+|             ),
+|             array(
+|                 'model'      => 'Author',
+|                 'property'   => 'articles',
+|                 'dimension'  => 'many',
+|             ),
+|         ),
 |     ),
-|     'Tag' => array(
-|         'articles:Article[]',
+|     array(
+|         'associates' => array(
+|             array(
+|                 'model'      => 'Article',
+|                 'property'   => 'comments',
+|                 'dimension'  => 'many',
+|             ),
+|             array(
+|                 'model'      => 'Comment',
+|                 'property'   => 'article',
+|                 'dimension'  => 'one',
+|                 'field'      => 'comment_id',
+|             ),
+|         ),
 |     ),
-|     'Author' => array(
-|         'articles:Article[]',
+|     array(
+|         'class'       => 'Article_Tag',
+|         'associates'  => array(
+|             array(
+|                 'model'             => 'Article',
+|                 'property'          => 'tags',
+|                 'dimension'         => 'many',
+|                 'joining_field'     => 'article_id',
+|                 'reverse_property'  => 'article',
+|             ),
+|             array(
+|                 'model'             => 'Tag',
+|                 'property'          => 'articles',
+|                 'dimension'         => 'many',
+|                 'joining_field'     => 'tag_id',
+|                 'reverse_property'  => 'tag',
+|             ),
+|         ),
 |     ),
-|     'Person' => array(
-|         'comments:Comment[]',
-|     ),
-|     'Comment' => array(
-|         'person:Person',
+|     array(
+|         'associates' => array(
+|             array(
+|                 'model'      => 'Person',
+|                 'property'   => 'comments',
+|                 'dimension'  => 'many',
+|             ),
+|             array(
+|                 'model'      => 'Comment',
+|                 'property'   => 'person',
+|                 'dimension'  => 'one',
+|                 'field'      => 'person_id',
+|             ),
+|         ),
 |     ),
 | );
 |

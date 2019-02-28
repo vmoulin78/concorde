@@ -54,16 +54,12 @@ class Business_compositions
     private static $singleton = null;
 
     private $CI;
-    public $compounds;
+    public $compociates;
     
     private function __construct() {
         $this->CI =& get_instance();
 
-        $this->compounds = array();
-
-        foreach ($this->CI->config->item('lightORM_business_compositions') as $key => $value) {
-            $this->compounds[$key] = new Business_compositions_compound($key, $value);
-        }
+        $this->compociates = array();
 
         foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
             $item_array = explode('.', $item);
@@ -80,11 +76,21 @@ class Business_compositions
 
             $item_main_full_name = model_full_name($item_main);
 
-            if (is_subclass_of($item_main_full_name, 'LightORM\\Model')
-                && ( ! isset($this->compounds[$item_main]))
-            ) {
-                $this->compounds[$item_main] = new Business_compositions_compound($item_main, array());
+            if (is_subclass_of($item_main_full_name, 'LightORM\\Model')) {
+                $this->compociates[$item_main] = new Business_compositions_compociate($item_main);
             }
+        }
+
+        foreach ($this->CI->config->item('lightORM_business_compositions') as $item) {
+            $compound   = $this->compociates[$item['compound_model']];
+            $component  = $this->compociates[$item['component_model']];
+
+            $compound->add_component(
+                $component,
+                $item['compound_property'],
+                $item['component_dimension'],
+                $item['component_field']
+            );
         }
     }
 

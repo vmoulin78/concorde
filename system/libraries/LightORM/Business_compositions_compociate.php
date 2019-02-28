@@ -39,9 +39,9 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Business_compositions_compound Class
+ * Business_compositions_compociate Class
  *
- * This class represents a compound in the Business compositions
+ * This class represents a compociate in the Business compositions
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -49,17 +49,32 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Business_compositions_compound
+class Business_compositions_compociate
 {
     public $model;
     public $components;
 
-    public function __construct($model, $components) {
+    public function __construct($model) {
         $this->model       = $model;
-        $this->components  = array();
 
-        foreach ($components as $item) {
-            $this->components[] = new Business_compositions_component($item);
-        }
+        $this->components  = array();
+    }
+
+    /**
+     * Add the component $component with the related data $compound_property, $component_dimension and $component_field
+     *
+     * @param   Business_compositions_compociate  $component
+     * @param   string                            $compound_property
+     * @param   string                            $component_dimension
+     * @param   string                            $component_field
+     * @return  void
+     */
+    public function add_component(Business_compositions_compociate $component, $compound_property, $component_dimension, $component_field) {
+        $this->components[] = array(
+            'component'            => $component,
+            'compound_property'    => $compound_property,
+            'component_dimension'  => $component_dimension,
+            'component_field'      => $component_field,
+        );
     }
 }

@@ -66,7 +66,7 @@ class Data_conv_table
      * @return  bool
      */
     public function field_exists($field) {
-        foreach ($this->fields as $key => $value) {
+        foreach ($this->fields as $key => $item) {
             if ($key == $field) {
                 return true;
             }
@@ -119,7 +119,7 @@ class Data_conv_table
      * @param   string         $prefix         The prefix
      * @return  void
      */
-    public function business_selector(Query_manager $query_manager, $prefix = null) {
+    public function business_selection(Query_manager $query_manager, $prefix = null) {
         if (is_null($prefix)) {
             $prefix = $this->name;
         }
@@ -137,7 +137,7 @@ class Data_conv_table
      * @param   string  $prefix  The prefix
      * @return  array
      */
-    public function business_creator_args($row, $prefix = null) {
+    public function business_creation_args($row, $prefix = null) {
         $retour = array();
 
         if (is_null($prefix)) {

@@ -109,11 +109,11 @@ if ( ! function_exists('php_data_to_mysql_data'))
                             $retour = (string) $php_element->get_id();
                             break;
                         default:
-                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'");
+                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                             break;
                     }
                 } else {
-                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'");
+                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 }
                 break;
         }
@@ -155,7 +155,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 } elseif ($mysql_data === MYSQL_BOOL_FALSE_FROM_SERVER) {
                     $retour = false;
                 } else {
-                    trigger_error("LightORM error: Unknown MySQL boolean");
+                    trigger_error("LightORM error: Unknown MySQL boolean", E_USER_ERROR);
                 }
                 break;
             case 'set':
@@ -190,11 +190,11 @@ if ( ! function_exists('mysql_data_to_php_data'))
                             $retour = $model_full_name::find($mysql_data);
                             break;
                         default:
-                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'");
+                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                             break;
                     }
                 } else {
-                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'");
+                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 }
                 break;
         }

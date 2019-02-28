@@ -51,12 +51,44 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 if ( ! function_exists('get_class_short_name'))
 {
     /**
-     * Return the class short name of the given parameter $arg1
+     * Get the class short name of the parameter $arg1
      *
-     * @param   mixed   $arg1  A string containing the name of the class or an object
+     * @param   mixed  $arg1  The full name of a class or an object
      * @return  string
      */
     function get_class_short_name($arg1) {
         return (new ReflectionClass($arg1))->getShortName();
+    }
+}
+
+if ( ! function_exists('get_trait_names'))
+{
+    /**
+     * Get the trait names of the parameter $arg1
+     *
+     * @param   mixed  $arg1  The full name of a class or an object
+     * @return  array
+     */
+    function get_trait_names($arg1) {
+        return (new ReflectionClass($arg1))->getTraitNames();
+    }
+}
+
+if ( ! function_exists('has_trait_name'))
+{
+    /**
+     * Check if the parameter $arg1 has the trait name $trait_name
+     *
+     * @param   mixed   $arg1        The full name of a class or an object
+     * @param   string  $trait_name  The full name of a trait
+     * @return  bool
+     */
+    function has_trait_name($arg1, $trait_name) {
+        $arg1_trait_names = get_trait_names($arg1);
+        if (in_array($trait_name, $arg1_trait_names)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

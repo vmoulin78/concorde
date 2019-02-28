@@ -88,13 +88,13 @@ class Enum_model_loader
         $model_table      = business_to_table($model_full_name);
 
         $qm = new Query_manager();
-        $model_full_name::business_initializor($qm);
+        $model_full_name::business_initialization($qm);
         $query = $qm->get();
 
         $enum_model_items = array();
         foreach ($query->result() as $row) {
             $qm->convert_row($row);
-            $enum_model_items[$row->{'alias_1:id'}] = $model_full_name::business_creator($qm->models['model_1'], $row, $qm->aliases);
+            $enum_model_items[$row->{'alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . ':id'}] = $model_full_name::business_creation($qm->models['model_' . LIGHTORM_START_MODEL_NUMBER], $row, $qm->aliases);
         }
 
         $this->enum_models[$model_short_name] = $enum_model_items;
