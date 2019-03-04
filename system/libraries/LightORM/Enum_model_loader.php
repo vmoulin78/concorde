@@ -80,12 +80,13 @@ class Enum_model_loader
      * @return  void
      */
     private function load_enum_model($model_short_name) {
+        $models_metadata = Models_metadata::get_singleton();
+
         if (isset($this->enum_models[$model_short_name])) {
             return;
         }
 
-        $model_full_name  = model_full_name($model_short_name);
-        $model_table      = business_to_table($model_full_name);
+        $model_full_name = $models_metadata->models[$model_short_name]['model_full_name'];
 
         $qm = new Query_manager();
         $model_full_name::business_initialization($qm);

@@ -99,16 +99,33 @@ if ( ! function_exists('business_to_table'))
     }
 }
 
-if ( ! function_exists('is_table_model'))
+if ( ! function_exists('is_table_abstract_model'))
 {
     /**
-     * Check if the given business full name or business object is a Table_model
+     * Check if the given business full name or business object is a table abstract model
      *
      * @param   string|object
      * @return  bool
      */
-    function is_table_model($business) {
-        if (has_trait_name($business, 'LightORM\\Table_model_trait')) {
+    function is_table_abstract_model($business) {
+        if (has_trait_name($business, 'LightORM\\Table_abstract_model_trait')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+if ( ! function_exists('is_table_concrete_model'))
+{
+    /**
+     * Check if the given business full name or business object is a table concrete model
+     *
+     * @param   string|object
+     * @return  bool
+     */
+    function is_table_concrete_model($business) {
+        if (has_trait_name($business, 'LightORM\\Table_concrete_model_trait')) {
             return true;
         } else {
             return false;
@@ -119,7 +136,7 @@ if ( ! function_exists('is_table_model'))
 if ( ! function_exists('is_table_enum_model'))
 {
     /**
-     * Check if the given business full name or business object is a Table_enum_model
+     * Check if the given business full name or business object is a table enum model
      *
      * @param   string|object
      * @return  bool
@@ -133,10 +150,30 @@ if ( ! function_exists('is_table_enum_model'))
     }
 }
 
+if ( ! function_exists('is_table_model'))
+{
+    /**
+     * Check if the given business full name or business object is a table model
+     *
+     * @param   string|object
+     * @return  bool
+     */
+    function is_table_model($business) {
+        if (is_table_abstract_model($business)
+            || is_table_concrete_model($business)
+            || is_table_enum_model($business)
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
 if ( ! function_exists('is_table_association'))
 {
     /**
-     * Check if the given business full name or business object is a Table_association
+     * Check if the given business full name or business object is a table association
      *
      * @param   string|object
      * @return  bool
@@ -192,7 +229,7 @@ if ( ! function_exists('sanitize_business_rec'))
      * @return  object
      */
     function sanitize_business_rec($business, &$processed_instances = array()) {
-        if (is_table_model($business)) {
+        if (is_table_concrete_model($business)) {
             $business_type       = 'Model';
             $primary_key_scalar  = $business->get_id();
         } elseif (is_table_association($business)) {
@@ -204,13 +241,15 @@ if ( ! function_exists('sanitize_business_rec'))
             exit(1);
         }
 
-        if (isset($processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar])) {
-            return $processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar];
+        $business_short_name = $business->get_business_short_name();
+
+        if (isset($processed_instances[$business_type][$business_short_name][$primary_key_scalar])) {
+            return $processed_instances[$business_type][$business_short_name][$primary_key_scalar];
         }
 
         $retour = clone $business;
 
-        if (is_table_model($business)) {
+        if (is_table_concrete_model($business)) {
             $reflection_retour = new ReflectionObject($retour);
 
             $properties_names_to_unset = array();
@@ -229,7 +268,7 @@ if ( ! function_exists('sanitize_business_rec'))
             }
         }
 
-        $processed_instances[$business_type][$business->get_business_short_name()][$primary_key_scalar] = $retour;
+        $processed_instances[$business_type][$business_short_name][$primary_key_scalar] = $retour;
 
         $reflection_retour = new ReflectionObject($retour);
 

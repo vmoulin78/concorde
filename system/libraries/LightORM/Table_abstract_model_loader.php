@@ -71,12 +71,14 @@ class Table_abstract_model_loader
     }
 
     /**
-     * Get the table models of the table abstract model $table_abstract_model
+     * Get the table concrete models of the table abstract model $table_abstract_model
      *
      * @param   string  $table_abstract_model
      * @return  array
      */
-    public function get_table_models($table_abstract_model) {
+    public function get_table_concrete_models($table_abstract_model) {
+        $models_metadata = Models_metadata::get_singleton();
+
         if (isset($this->table_abstract_models[$table_abstract_model])) {
             return $this->table_abstract_models[$table_abstract_model];
         }
@@ -96,14 +98,12 @@ class Table_abstract_model_loader
                 continue;
             }
 
-            $item_main_full_name = model_full_name($item_main);
+            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
 
-            if (is_subclass_of($item_main_full_name, model_full_name($table_abstract_model))) {
-                $item_main_reflection = new \ReflectionClass($item_main_full_name);
-                $item_main_trait_names = $item_main_reflection->getTraitNames();
-                if (in_array('LightORM\\Table_model_trait', $item_main_trait_names)) {
-                    $retour[] = $item_main;
-                }
+            if (is_subclass_of($item_main_full_name, $models_metadata->models[$table_abstract_model]['model_full_name'])
+                && is_table_concrete_model($item_main_full_name)
+            ) {
+                $retour[] = $item_main;
             }
         }
 

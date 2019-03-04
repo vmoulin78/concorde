@@ -39,9 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Business_compositions Class
- *
- * This class represents the Business compositions defined in the file config_lightORM.php -> $config['lightORM_business_compositions']
+ * Table_concrete_model_loader Class
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -49,50 +47,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Business_compositions
+class Table_concrete_model_loader
 {
     private static $singleton = null;
 
-    private $CI;
-    public $compociates;
+    private $table_concrete_models;
     
     private function __construct() {
-        $this->CI =& get_instance();
-        $models_metadata = Models_metadata::get_singleton();
-
-        $this->compociates = array();
-
-        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
-            $item_array = explode('.', $item);
-
-            if (count($item_array) != 2) {
-                continue;
-            }
-
-            list($item_main, $item_ext) = $item_array;
-
-            if ($item_ext != 'php') {
-                continue;
-            }
-
-            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
-
-            if (is_subclass_of($item_main_full_name, 'LightORM\\Model')) {
-                $this->compociates[$item_main] = new Business_compositions_compociate($item_main);
-            }
-        }
-
-        foreach ($this->CI->config->item('lightORM_business_compositions') as $item) {
-            $compound   = $this->compociates[$item['compound_model']];
-            $component  = $this->compociates[$item['component_model']];
-
-            $compound->add_component(
-                $component,
-                $item['compound_property'],
-                $item['component_dimension'],
-                $item['component_field']
-            );
-        }
+        $this->table_concrete_models = array();
     }
 
     /**
@@ -106,5 +68,43 @@ class Business_compositions
         }
 
         return self::$singleton;
+    }
+
+    /**
+     * Get the table abstract model of the table concrete model $table_concrete_model
+     *
+     * @param   string  $table_concrete_model
+     * @return  string
+     */
+    public function get_table_abstract_model($table_concrete_model) {
+        $CI =& get_instance();
+        $models_metadata = Models_metadata::get_singleton();
+
+        if (isset($this->table_concrete_models[$table_concrete_model])) {
+            return $this->table_concrete_models[$table_concrete_model];
+        }
+
+        $table_concrete_model_full_name = $models_metadata->models[$table_concrete_model]['model_full_name'];
+
+        $parent_class_full_name   = get_parent_class($table_concrete_model_full_name);
+        $parent_class_short_name  = $parent_class_full_name::get_business_short_name();
+
+        if ($parent_class_full_name === false) {
+            return ($this->table_concrete_models[$table_concrete_model] = null);
+        }
+
+        $parent_class_reflection = new \ReflectionClass($parent_class_full_name);
+        $parent_class_namespace_name = $parent_class_reflection->getNamespaceName();
+
+        if ($parent_class_namespace_name != ($CI->config->item('application_namespace') . '\\business\\models')) {
+            return ($this->table_concrete_models[$table_concrete_model] = null);
+        }
+
+        $parent_class_trait_names = $parent_class_reflection->getTraitNames();
+        if (in_array('LightORM\\Table_abstract_model_trait', $parent_class_trait_names)) {
+            return ($this->table_concrete_models[$table_concrete_model] = $parent_class_short_name);
+        }
+
+        return ($this->table_concrete_models[$table_concrete_model] = $this->get_table_abstract_model($parent_class_short_name));
     }
 }

@@ -39,9 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Business_compositions Class
- *
- * This class represents the Business compositions defined in the file config_lightORM.php -> $config['lightORM_business_compositions']
+ * Models_metadata Class
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -49,18 +47,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Business_compositions
+class Models_metadata
 {
     private static $singleton = null;
 
     private $CI;
-    public $compociates;
+    public $models;
     
     private function __construct() {
         $this->CI =& get_instance();
-        $models_metadata = Models_metadata::get_singleton();
 
-        $this->compociates = array();
+        $this->models = array();
 
         foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
             $item_array = explode('.', $item);
@@ -75,22 +72,20 @@ class Business_compositions
                 continue;
             }
 
-            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
+            $item_main_full_name = model_full_name($item_main);
 
-            if (is_subclass_of($item_main_full_name, 'LightORM\\Model')) {
-                $this->compociates[$item_main] = new Business_compositions_compociate($item_main);
+            if (is_table_model($item_main_full_name)) {
+                $item_main_is_table_model  = true;
+                $item_main_table           = business_to_table($item_main_full_name);
+            } else {
+                $item_main_is_table_model  = false;
+                $item_main_table           = null;
             }
-        }
 
-        foreach ($this->CI->config->item('lightORM_business_compositions') as $item) {
-            $compound   = $this->compociates[$item['compound_model']];
-            $component  = $this->compociates[$item['component_model']];
-
-            $compound->add_component(
-                $component,
-                $item['compound_property'],
-                $item['component_dimension'],
-                $item['component_field']
+            $this->models[$item_main] = array(
+                'model_full_name'  => $item_main_full_name,
+                'is_table_model'   => $item_main_is_table_model,
+                'table'            => $item_main_table,
             );
         }
     }

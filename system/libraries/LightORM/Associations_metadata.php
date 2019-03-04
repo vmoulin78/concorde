@@ -39,7 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Table_model_loader Class
+ * Associations_metadata Class
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -47,14 +47,47 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Table_model_loader
+class Associations_metadata
 {
     private static $singleton = null;
 
-    private $table_models;
+    private $CI;
+    public $associations;
     
     private function __construct() {
-        $this->table_models = array();
+        $this->CI =& get_instance();
+
+        $this->associations = array();
+
+        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'associations') as $item) {
+            $item_array = explode('.', $item);
+
+            if (count($item_array) != 2) {
+                continue;
+            }
+
+            list($item_main, $item_ext) = $item_array;
+
+            if ($item_ext != 'php') {
+                continue;
+            }
+
+            $item_main_full_name = association_full_name($item_main);
+
+            if (is_table_association($item_main_full_name)) {
+                $item_main_is_table_association  = true;
+                $item_main_table                 = business_to_table($item_main_full_name);
+            } else {
+                $item_main_is_table_association  = false;
+                $item_main_table                 = null;
+            }
+
+            $this->associations[$item_main] = array(
+                'association_full_name'  => $item_main_full_name,
+                'is_table_association'   => $item_main_is_table_association,
+                'table'                  => $item_main_table,
+            );
+        }
     }
 
     /**
@@ -68,42 +101,5 @@ class Table_model_loader
         }
 
         return self::$singleton;
-    }
-
-    /**
-     * Get the table abstract model of the table model $table_model
-     *
-     * @param   string  $table_model
-     * @return  string
-     */
-    public function get_table_abstract_model($table_model) {
-        if (isset($this->table_models[$table_model])) {
-            return $this->table_models[$table_model];
-        }
-
-        $CI =& get_instance();
-
-        $table_model_full_name = model_full_name($table_model);
-
-        $parent_class_full_name   = get_parent_class($table_model_full_name);
-        $parent_class_short_name  = $parent_class_full_name::get_business_short_name();
-
-        if ($parent_class_full_name === false) {
-            return ($this->table_models[$table_model] = null);
-        }
-
-        $parent_class_reflection = new \ReflectionClass($parent_class_full_name);
-        $parent_class_namespace_name = $parent_class_reflection->getNamespaceName();
-
-        if ($parent_class_namespace_name != ($CI->config->item('application_namespace') . '\\business\\models')) {
-            return ($this->table_models[$table_model] = null);
-        }
-
-        $parent_class_trait_names = $parent_class_reflection->getTraitNames();
-        if (in_array('LightORM\\Table_abstract_model_trait', $parent_class_trait_names)) {
-            return ($this->table_models[$table_model] = $parent_class_short_name);
-        }
-
-        return ($this->table_models[$table_model] = $this->get_table_abstract_model($parent_class_short_name));
     }
 }

@@ -81,7 +81,6 @@ class Query_manager
 
     private $CI;
     private $stack;
-    private $insert_id;
     public $table; //only for insert, update and delete operations
     public $aliases; //only for read operation
     public $models; //only for read operation
@@ -133,27 +132,23 @@ class Query_manager
     }
 
     /**
-     * Get the id of the insert query
-     *
-     * @return  int
-     */
-    public function get_insert_id() {
-        return $this->insert_id;
-    }
-
-    /**
      * Trigger the insert query
      *
-     * @return  bool
+     * @param   bool  $with_insert_id  If true, the method will return the insert id in case of success and false otherwise
+     * @return  bool|int
      */
     public function insert($with_insert_id = false) {
-        $retour = $this->__call('insert');
+        $insert_result = $this->__call('insert');
 
-        if ($with_insert_id) {
-            $this->insert_id = $this->__call('insert_id');
+        if ($insert_result === false) {
+            return false;
         }
 
-        return $retour;
+        if ($with_insert_id) {
+            return $this->__call('insert_id');
+        } else {
+            return true;
+        }
     }
 
     /**

@@ -49,7 +49,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 trait Table_enum_model_trait
 {
-    use Table_model_trait;
+    use Table_concrete_model_trait;
 
     /**
      * Find one or many Table_enum_model given the filter $filter

@@ -182,12 +182,6 @@ class Finder
                 $associatound_atom_path = implode(':', $associatound_atom_full_path_array);
 
                 $associatound_atom_path_first_segment = array_shift($associatound_atom_full_path_array);
-                if (count($associatound_atom_full_path_array) === 0) {
-                    $associatound_atom_path_last_segment = $associatound_atom_path_first_segment;
-                } else {
-                    $associatound_atom_path_last_segment = array_pop($associatound_atom_full_path_array);
-                }
-
                 if (in_string('>', $associatound_atom_path_first_segment)) {
                     $associatound_atom_path_first_segment_separator = '>';
                 } elseif (in_string('<', $associatound_atom_path_first_segment)) {
@@ -206,6 +200,11 @@ class Finder
                     continue;
                 }
 
+                if (count($associatound_atom_full_path_array) === 0) {
+                    $associatound_atom_path_last_segment = $associatound_atom_path_first_segment;
+                } else {
+                    $associatound_atom_path_last_segment = array_pop($associatound_atom_full_path_array);
+                }
                 if (in_string('>', $associatound_atom_path_last_segment)) {
                     $associatound_atom_path_last_segment_separator = '>';
                 } elseif (in_string('<', $associatound_atom_path_last_segment)) {
@@ -298,9 +297,10 @@ class Finder
      * @return  array
      */
     private function associations_business_initialization(Query_manager $query_manager, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER) {
-        $business_associations = Business_associations::get_singleton();
+        $models_metadata        = Models_metadata::get_singleton();
+        $business_associations  = Business_associations::get_singleton();
 
-        $associate_full_name = model_full_name($associate->model);
+        $associate_full_name = $models_metadata->models[$associate->model]['model_full_name'];
         if (is_null($associate->associatound_associatonents_group)) {
             $relation_info = array(
                 'type' => 'none',

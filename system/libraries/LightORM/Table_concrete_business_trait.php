@@ -68,7 +68,9 @@ trait Table_concrete_business_trait
      * @return  object
      */
     public function set($attribute, $value) {
-        $data_conv = Data_conv::factory();
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
 
         $this->{'set_' . $attribute}($value);
 
@@ -77,7 +79,13 @@ trait Table_concrete_business_trait
         $field_is_found = $this->seek_field_in_abstract_table($attribute, $value);
 
         if ( ! $field_is_found) {
-            $table_object = $data_conv->schema[business_to_table($this)];
+            if (is_table_concrete_model($this)) {
+                $table_object = $data_conv->schema[$models_metadata->models[$this::get_business_short_name()]['table']];
+            } elseif (is_table_association($this)) {
+                $table_object = $data_conv->schema[$associations_metadata->associations[$this::get_business_short_name()]['table']];
+            } else {
+                trigger_error('LightORM error: Business type error', E_USER_ERROR);
+            }
 
             if ($table_object->field_exists($attribute)) {
                 $field_name      = $attribute;

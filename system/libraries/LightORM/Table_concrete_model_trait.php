@@ -39,20 +39,20 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * If a class is using the trait Table_model_trait, it means that this class is related to a database table (except for abstract classes).
+ * If a class is using the trait Table_concrete_model_trait, it means that this class is related to a database table.
  */
-trait Table_model_trait
+trait Table_concrete_model_trait
 {
     use Table_concrete_business_trait;
 
     /**
-     * Get the name of the Table_abstract_model
+     * Get the name of the table abstract model
      *
      * @return  string
      */
     public static function get_table_abstract_model() {
-        $table_model_loader = Table_model_loader::get_singleton();
-        return $table_model_loader->get_table_abstract_model(self::get_business_short_name());
+        $table_concrete_model_loader = Table_concrete_model_loader::get_singleton();
+        return $table_concrete_model_loader->get_table_abstract_model(self::get_business_short_name());
     }
 
     /**
@@ -61,15 +61,17 @@ trait Table_model_trait
      * @return  string
      */
     public static function get_abstract_table() {
+        $models_metadata = Models_metadata::get_singleton();
+
         $table_abstract_model = self::get_table_abstract_model();
         if (is_null($table_abstract_model)) {
             return null;
         }
-        return business_to_table(model_full_name($table_abstract_model));
+        return $models_metadata->models[$table_abstract_model]['table'];
     }
 
     /**
-     * Manage the SELECT, FROM and JOIN parts of the query for the current Table_model_trait
+     * Manage the SELECT, FROM and JOIN parts of the query for the current table concrete model
      *
      * @param   Query_manager  $query_manager
      * @param   int            $table_alias_number
@@ -79,12 +81,12 @@ trait Table_model_trait
      * @return  array
      */
     public static function business_initialization(Query_manager $query_manager, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $relation_info = ['type' => 'none'], $main_associate = null, $atom_path = null, array $associatonents_properties = []) {
+        $models_metadata        = Models_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
         $business_compositions  = Business_compositions::get_singleton();
         $business_associations  = Business_associations::get_singleton();
 
-        $model_full_name   = self::get_business_full_name();
-        $model_short_name  = self::get_business_short_name();
+        $model_short_name = self::get_business_short_name();
 
         if (is_null($atom_path)) {
             $atom_path = $model_short_name;
@@ -94,7 +96,7 @@ trait Table_model_trait
 
         $table_alias          = 'alias_' . $table_alias_number;
         $model_numbered_name  = 'model_' . $model_number;
-        $table_object  = $data_conv->schema[business_to_table($model_full_name)];
+        $table_object         = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
         $table_object->business_selection($query_manager, $table_alias);
         switch ($relation_info['type']) {
             case 'none':
@@ -119,7 +121,7 @@ trait Table_model_trait
         foreach ($business_compositions->compociates[$model_short_name]->components as $component_array) {
             $component_atom_path = $atom_path . ':' . $component_array['component']->model;
 
-            $component_model_full_name = model_full_name($component_array['component']->model);
+            $component_model_full_name = $models_metadata->models[$component_array['component']->model]['model_full_name'];
             list($table_alias_number, $model_number) = $component_model_full_name::business_initialization($query_manager, $table_alias_number, $model_number, ['type' => 'composition', 'component_array' => $component_array, 'joining_alias' => $table_alias, 'compound_numbered_name' => $model_numbered_name], $main_associate, $component_atom_path, $associatonents_properties);
 
             $concrete_model_components_properties[] = $component_array['compound_property'];
@@ -134,7 +136,7 @@ trait Table_model_trait
 
             $abstract_model_components_properties = array();
 
-            $abstract_table        = business_to_table(model_full_name($table_abstract_model));
+            $abstract_table        = $models_metadata->models[$table_abstract_model]['table'];
             $abstract_table_alias  = 'alias_' . $table_alias_number;
 
             $abstract_table_object = $data_conv->schema[$abstract_table];
@@ -152,7 +154,7 @@ trait Table_model_trait
             foreach ($business_compositions->compociates[$model_short_name]->components as $component_array) {
                 $component_atom_path = $table_abstract_model_atom_path . ':' . $component_array['component']->model;
 
-                $component_model_full_name = model_full_name($component_array['component']->model);
+                $component_model_full_name = $models_metadata->models[$component_array['component']->model]['model_full_name'];
                 list($table_alias_number, $model_number) = $component_model_full_name::business_initialization($query_manager, $table_alias_number, $model_number, ['type' => 'composition', 'component_array' => $component_array, 'joining_alias' => $abstract_table_alias, 'compound_numbered_name' => $model_numbered_name], $main_associate, $component_atom_path, $associatonents_properties);
 
                 $abstract_model_components_properties[] = $component_array['compound_property'];
@@ -242,7 +244,7 @@ trait Table_model_trait
     }
 
     /**
-     * Find one or many Table_model given the filter $filter
+     * Find one or many table models given the filter $filter
      *
      * @param   mixed  $filter  An id or an array of ids
      * @return  mixed
@@ -260,9 +262,9 @@ trait Table_model_trait
     public function concrete_update_manager_exists() {
         $lightORM = LightORM::get_singleton();
 
-        $class_short_name = get_class_short_name($this);
+        $model_short_name = $this::get_business_short_name();
 
-        if (isset($lightORM->model_update_managers[$class_short_name][$this->get_id()]['concrete'])) {
+        if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['concrete'])) {
             return true;
         } else {
             return false;
@@ -277,9 +279,9 @@ trait Table_model_trait
     public function abstract_update_manager_exists() {
         $lightORM = LightORM::get_singleton();
 
-        $class_short_name = get_class_short_name($this);
+        $model_short_name = $this::get_business_short_name();
 
-        if (isset($lightORM->model_update_managers[$class_short_name][$this->get_id()]['abstract'])) {
+        if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['abstract'])) {
             return true;
         } else {
             return false;
@@ -294,16 +296,16 @@ trait Table_model_trait
     private function &get_update_managers() {
         $lightORM = LightORM::get_singleton();
 
-        $class_short_name = get_class_short_name($this);
+        $model_short_name = $this::get_business_short_name();
 
-        if ( ! isset($lightORM->model_update_managers[$class_short_name][$this->get_id()])) {
-            $lightORM->model_update_managers[$class_short_name][$this->get_id()] = array(
+        if ( ! isset($lightORM->model_update_managers[$model_short_name][$this->get_id()])) {
+            $lightORM->model_update_managers[$model_short_name][$this->get_id()] = array(
                 'abstract'  => null,
                 'concrete'  => null,
             );
         }
 
-        return $lightORM->model_update_managers[$class_short_name][$this->get_id()];
+        return $lightORM->model_update_managers[$model_short_name][$this->get_id()];
     }
 
     /**
@@ -376,15 +378,16 @@ trait Table_model_trait
      * @return  bool
      */
     public function update() {
-        $lightORM = LightORM::get_singleton();
+        $models_metadata  = Models_metadata::get_singleton();
+        $lightORM         = LightORM::get_singleton();
 
-        $class_short_name                = get_class_short_name($this);
+        $model_short_name                = $this::get_business_short_name();
         $concrete_update_manager_result  = true;
         $abstract_update_manager_result  = true;
 
         if ($this->concrete_update_manager_exists()) {
             $concrete_update_manager = $this->get_concrete_update_manager();
-            $concrete_update_manager->table(business_to_table($this))
+            $concrete_update_manager->table($models_metadata->models[$model_short_name]['table'])
                                     ->where('id', $this->get_id());
             $concrete_update_manager_result = $concrete_update_manager->update();
         }
@@ -396,20 +399,94 @@ trait Table_model_trait
             $abstract_update_manager_result = $abstract_update_manager->update();
         }
 
-        unset($lightORM->model_update_managers[$class_short_name][$this->get_id()]);
+        unset($lightORM->model_update_managers[$model_short_name][$this->get_id()]);
 
         return $concrete_update_manager_result && $abstract_update_manager_result;
     }
 
     /**
-     * Delete from the database the Table_model whose id is $id
+     * Insert in the database the table model whose data are $data
+     *
+     * @param   array  $data            An associative array whose keys are the fields and values are the values
+     * @param   bool   $with_insert_id  If true, the method will return the insert id
+     * @return  bool|int
+     */
+    public static function insert($data, $with_insert_id = false) {
+        $models_metadata  = Models_metadata::get_singleton();
+        $data_conv        = Data_conv::factory();
+
+        $concrete_table_object = $data_conv->schema[$models_metadata->models[self::get_business_short_name()]['table']];
+        $qm_concrete_table = new Query_manager();
+        $qm_concrete_table->table($concrete_table_object->name);
+
+        $abstract_table = get_abstract_table();
+        if (is_null($abstract_table)) {
+            $abstract_table_object = null;
+        } else {
+            $abstract_table_object = $data_conv->schema[$abstract_table];
+            $qm_abstract_table = new Query_manager();
+            $qm_abstract_table->table($abstract_table_object->name);
+        }
+
+        foreach ($data as $field => $value) {
+            if (isset($concrete_table_object->fields[$field])) {
+                $field_object        = $concrete_table_object->fields[$field];
+                $current_table_type  = 'concrete';
+            } elseif (( ! is_null($abstract_table_object))
+                && isset($abstract_table_object->fields[$field])
+            ) {
+                $field_object        = $abstract_table_object->fields[$field];
+                $current_table_type  = 'abstract';
+            } else {
+                trigger_error('LightORM error: Error while inserting data', E_USER_ERROR);
+            }
+
+            if ($field_object->is_foreign_key
+                || $field_object->is_enum_model_id
+            ) {
+                $db_value = (string) $value;
+            } else {
+                $db_value = $data_conv->convert_value_for_db($value, $field_object);
+            }
+
+            ${'qm_' . $current_table_type . '_table'}->where($field, $db_value);
+        }
+
+        if (is_null($abstract_table_object)) {
+            return $qm_concrete_table->insert($with_insert_id);
+        }
+
+        $insert_id = $qm_abstract_table->insert(true);
+        if ($insert_id === false) {
+            return false;
+        }
+
+        $db_value = (string) $insert_id;
+        $qm_concrete_table->where('id', $db_value);
+
+        $concrete_table_insert_result = $qm_concrete_table->insert();
+        if ($concrete_table_insert_result === false) {
+            return false;
+        }
+
+        if ($with_insert_id) {
+            return $insert_id;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Delete from the database the table model whose id is $id
      *
      * @param   int  $id
      * @return  bool
      */
     public static function delete($id) {
+        $models_metadata = Models_metadata::get_singleton();
+
         $qm = new Query_manager();
-        $qm->table(business_to_table(self::get_business_full_name()))
+        $qm->table($models_metadata->models[self::get_business_short_name()]['table'])
            ->where('id', $id);
         if ($qm->delete() === false) {
             return false;

@@ -53,6 +53,7 @@ use Concorde\utils\datetime\Mysql_datetime;
 use Concorde\utils\datetime\Mysql_time;
 use Concorde\utils\datetime\Mysql_timestamp;
 use Concorde\utils\datetime\Mysql_year;
+use LightORM\Business_tables_metadata;
 
 // ------------------------------------------------------------------------
 
@@ -72,10 +73,15 @@ if ( ! function_exists('php_data_to_mysql_data'))
             return 'NULL';
         }
 
-        switch ($data_type) {
+        $data_type_array = explode(':', $data_type, 2);
+
+        $data_type_part1 = array_shift($data_type_array);
+        switch ($data_type_part1) {
             case 'int':
             case 'float':
             case 'pk':
+            case 'fk':
+            case 'pk_fk':
                 $retour = (string) $php_data;
                 break;
             case 'string':
@@ -96,25 +102,11 @@ if ( ! function_exists('php_data_to_mysql_data'))
             case 'year':
                 $retour = $php_data->db_format();
                 break;
+            case 'enum_model_id':
+                $retour = (string) $php_element->get_id();
+                break;
             default:
-                $data_type_array = explode(':', $data_type, 2);
-                if (count($data_type_array) == 2) {
-                    list($data_type_part1) = $data_type_array;
-                    switch ($data_type_part1) {
-                        case 'fk':
-                        case 'pk_fk':
-                            $retour = (string) $php_data;
-                            break;
-                        case 'enum_model_id':
-                            $retour = (string) $php_element->get_id();
-                            break;
-                        default:
-                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
-                            break;
-                    }
-                } else {
-                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
-                }
+                trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
         }
 
@@ -132,13 +124,20 @@ if ( ! function_exists('mysql_data_to_php_data'))
      * @return  string
      */
     function mysql_data_to_php_data($mysql_data, $data_type) {
+        $business_tables_metadata = Business_tables_metadata::get_singleton();
+
         if (is_null($mysql_data)) {
             return null;
         }
 
-        switch ($data_type) {
+        $data_type_array = explode(':', $data_type, 2);
+
+        $data_type_part1 = array_shift($data_type_array);
+        switch ($data_type_part1) {
             case 'int':
             case 'pk':
+            case 'fk':
+            case 'pk_fk':
                 $retour = (int) $mysql_data;
                 break;
             case 'float':
@@ -176,26 +175,18 @@ if ( ! function_exists('mysql_data_to_php_data'))
             case 'year':
                 $retour = new Mysql_year($mysql_data);
                 break;
-            default:
-                $data_type_array = explode(':', $data_type, 2);
-                if (count($data_type_array) == 2) {
-                    list($data_type_part1, $data_type_part2) = $data_type_array;
-                    switch ($data_type_part1) {
-                        case 'fk':
-                        case 'pk_fk':
-                            $retour = (int) $mysql_data;
-                            break;
-                        case 'enum_model_id':
-                            $model_full_name = model_full_name($data_type_part2);
-                            $retour = $model_full_name::find($mysql_data);
-                            break;
-                        default:
-                            trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
-                            break;
-                    }
-                } else {
-                    trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
+            case 'enum_model_id':
+                if (count($data_type_array) == 0) {
+                    trigger_error("LightORM error: Error in data type '" . $data_type . "'", E_USER_ERROR);
                 }
+
+                $data_type_part2  = array_shift($data_type_array);
+                $table_metadata   = $business_tables_metadata->tables[$data_type_part2];
+                $model_full_name  = $table_metadata['business_full_name'];
+                $retour           = $model_full_name::find($mysql_data);
+                break;
+            default:
+                trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
         }
 

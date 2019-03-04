@@ -136,7 +136,7 @@ $config['lightORM_business_associations'] = array();
 |     ),
 |     'article' => array(
 |         'id'          => 'pk',
-|         'status_id'   => 'enum_model_id:Status',
+|         'status_id'   => 'enum_model_id:status',
 |         'author_id'   => 'fk:author',
 |         'created_at'  => 'timestamptz',
 |     ),

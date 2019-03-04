@@ -57,9 +57,10 @@ trait Table_association_trait
      * @return  array
      */
     public static function get_primary_key_fields() {
-        $data_conv = Data_conv::factory();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
 
-        $table_object = $data_conv->schema[business_to_table(self::get_business_full_name())];
+        $table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
         return $table_object->get_primary_key_fields();
     }
 
@@ -110,11 +111,12 @@ trait Table_association_trait
      * @return  int
      */
     public static function business_initialization(Query_manager $query_manager, $table_alias_number, Business_associations_associatonents_group $associatonents_group) {
-        $data_conv = Data_conv::factory();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
 
         $association_table_alias = 'alias_' . $table_alias_number;
 
-        $association_table_object = $data_conv->schema[business_to_table(self::get_business_full_name())];
+        $association_table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
         $association_table_object->business_selection($query_manager, $association_table_alias);
 
         // This is a "LEFT JOIN" because there could be no matching row
@@ -159,15 +161,15 @@ trait Table_association_trait
     public function get_concrete_update_manager() {
         $lightORM = LightORM::get_singleton();
 
-        $class_short_name = get_class_short_name($this);
+        $association_short_name = $this::get_business_short_name();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
 
-        if ( ! isset($lightORM->association_update_managers[$class_short_name][$primary_key_scalar])) {
-            $lightORM->association_update_managers[$class_short_name][$primary_key_scalar] = new Query_manager();
+        if ( ! isset($lightORM->association_update_managers[$association_short_name][$primary_key_scalar])) {
+            $lightORM->association_update_managers[$association_short_name][$primary_key_scalar] = new Query_manager();
         }
 
-        return $lightORM->association_update_managers[$class_short_name][$primary_key_scalar];
+        return $lightORM->association_update_managers[$association_short_name][$primary_key_scalar];
     }
 
     /**
@@ -183,10 +185,11 @@ trait Table_association_trait
      * @return  bool
      */
     public function update() {
-        $lightORM = LightORM::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $lightORM               = LightORM::get_singleton();
 
-        $class_short_name  = get_class_short_name($this);
-        $table             = business_to_table($this);
+        $association_short_name  = $this::get_business_short_name();
+        $table                   = $associations_metadata->associations[$association_short_name]['table'];
 
         $update_manager = $this->get_concrete_update_manager();
         $update_manager->table($table);
@@ -198,8 +201,63 @@ trait Table_association_trait
         $retour = $update_manager->update();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
-        unset($lightORM->association_update_managers[$class_short_name][$primary_key_scalar]);
+        unset($lightORM->association_update_managers[$association_short_name][$primary_key_scalar]);
 
         return $retour;
+    }
+
+    /**
+     * Insert in the database the Table_association whose data are $data
+     *
+     * @param   array  $data  An associative array whose keys are the fields and values are the values
+     * @return  bool
+     */
+    public static function insert($data) {
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
+        $table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
+
+        $qm = new Query_manager();
+        $qm->table($table_object->name);
+        foreach ($data as $field => $value) {
+            if ( ! isset($table_object->fields[$field])) {
+                trigger_error('LightORM error: Error while inserting data', E_USER_ERROR);
+            }
+
+            $field_object = $table_object->fields[$field];
+            if ($field_object->is_foreign_key
+                || $field_object->is_enum_model_id
+            ) {
+                $db_value = (string) $value;
+            } else {
+                $db_value = $data_conv->convert_value_for_db($value, $field_object);
+            }
+
+            $qm->where($field, $db_value);
+        }
+
+        return $qm->insert();
+    }
+
+    /**
+     * Delete from the database the Table_association whose ids of the primary key are $primary_key_ids
+     *
+     * @param   array  $primary_key_ids  An associative array whose keys are the fields of the primary key and values are the values of the primary key
+     * @return  bool
+     */
+    public static function delete($primary_key_ids) {
+        $associations_metadata = Associations_metadata::get_singleton();
+
+        $qm = new Query_manager();
+        $qm->table($associations_metadata->associations[self::get_business_short_name()]['table']);
+        foreach ($primary_key_ids as $field => $value) {
+            $qm->where($field, $value);
+        }
+        if ($qm->delete() === false) {
+            return false;
+        }
+
+        return true;
     }
 }

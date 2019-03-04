@@ -39,9 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Business_compositions Class
- *
- * This class represents the Business compositions defined in the file config_lightORM.php -> $config['lightORM_business_compositions']
+ * Business_tables_metadata Class
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -49,49 +47,62 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Business_compositions
+class Business_tables_metadata
 {
     private static $singleton = null;
 
     private $CI;
-    public $compociates;
+    public $tables;
     
     private function __construct() {
         $this->CI =& get_instance();
-        $models_metadata = Models_metadata::get_singleton();
 
-        $this->compociates = array();
+        $this->tables = array();
 
-        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
-            $item_array = explode('.', $item);
+        $scandir = array(
+            'models'        => scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models'),
+            'associations'  => scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'associations'),
+        );
 
-            if (count($item_array) != 2) {
-                continue;
+        foreach ($scandir as $scandir_key => $scandir_item) {
+            foreach ($scandir_item as $item) {
+                $item_array = explode('.', $item);
+
+                if (count($item_array) != 2) {
+                    continue;
+                }
+
+                list($item_main, $item_ext) = $item_array;
+
+                if ($item_ext != 'php') {
+                    continue;
+                }
+
+                switch ($scandir_key) {
+                    case 'models':
+                        $item_main_full_name = model_full_name($item_main);
+                        if ( ! is_table_model($item_main_full_name)) {
+                            continue 2;
+                        }
+                        break;
+                    case 'associations':
+                        $item_main_full_name = association_full_name($item_main);
+                        if ( ! is_table_association($item_main_full_name)) {
+                            continue 2;
+                        }
+                        break;
+                    default:
+                        exit(1);
+                        break;
+                }
+
+                $table = business_to_table($item_main_full_name);
+
+                $this->tables[$table] = array(
+                    'business_short_name'  => $item_main,
+                    'business_full_name'   => $item_main_full_name,
+                );
             }
-
-            list($item_main, $item_ext) = $item_array;
-
-            if ($item_ext != 'php') {
-                continue;
-            }
-
-            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
-
-            if (is_subclass_of($item_main_full_name, 'LightORM\\Model')) {
-                $this->compociates[$item_main] = new Business_compositions_compociate($item_main);
-            }
-        }
-
-        foreach ($this->CI->config->item('lightORM_business_compositions') as $item) {
-            $compound   = $this->compociates[$item['compound_model']];
-            $component  = $this->compociates[$item['component_model']];
-
-            $compound->add_component(
-                $component,
-                $item['compound_property'],
-                $item['component_dimension'],
-                $item['component_field']
-            );
         }
     }
 

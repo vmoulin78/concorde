@@ -58,6 +58,7 @@ class Business_associations
     
     private function __construct() {
         $this->CI =& get_instance();
+        $associations_metadata = Associations_metadata::get_singleton();
 
         $association_number = 1;
         foreach ($this->CI->config->item('lightORM_business_associations') as $config_association) {
@@ -95,8 +96,8 @@ class Business_associations
             } elseif ($there_is_many) {
                 $association_array['type']             = 'many_to_many';
                 $association_array['class']            = $config_association['class'];
-                $association_array['class_full_name']  = association_full_name($association_array['class']);
-                $association_array['table']            = business_to_table($association_array['class_full_name']);
+                $association_array['class_full_name']  = $associations_metadata->associations[$association_array['class']]['association_full_name'];
+                $association_array['table']            = $associations_metadata->associations[$association_array['class']]['table'];
             } else {
                 trigger_error('LightORM error: Configuration error', E_USER_ERROR);
             }

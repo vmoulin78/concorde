@@ -57,7 +57,7 @@ class Data_conv_table_field
     public $is_primary_key;
     public $is_foreign_key;
     public $is_enum_model_id;
-    public $enum_model_name;
+    public $enum_model_table_name;
     public $array_depth;
 
     public function __construct($name, $full_type) {
@@ -88,11 +88,11 @@ class Data_conv_table_field
         }
 
         if (substr($full_type, 0, 14) === 'enum_model_id:') {
-            $this->is_enum_model_id  = true;
-            $this->enum_model_name   = substr($element_type, 14);
+            $this->is_enum_model_id       = true;
+            $this->enum_model_table_name  = substr($element_type, 14);
         } else {
-            $this->is_enum_model_id  = false;
-            $this->enum_model_name   = null;
+            $this->is_enum_model_id       = false;
+            $this->enum_model_table_name  = null;
         }
     }
 }

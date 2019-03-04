@@ -116,7 +116,9 @@ class Databubble
      * @return  object
      */
     public function add_model_row($qm_model_item, $row, $qm_aliases) {
-        $model_full_name  = model_full_name($qm_model_item['name']);
+        $models_metadata = Models_metadata::get_singleton();
+
+        $model_full_name = $models_metadata->models[$qm_model_item['name']]['model_full_name'];
 
         switch ($qm_model_item['model_info']['type']) {
             case 'simple_model':
@@ -143,7 +145,7 @@ class Databubble
                 if ($qm_model_item['model_info']['type'] == 'concrete_model') {
                     $this->add_model_instance($model_full_name::get_table_abstract_model(), $model_instance);
                 } elseif ($qm_model_item['model_info']['type'] == 'abstract_model') {
-                    $model_instance_table = business_to_table($model_instance::get_business_full_name());
+                    $model_instance_table = $models_metadata->models[$qm_model_item['name']]['table'];
                     foreach ($qm_model_item['model_info']['concrete_aliases'] as $abstract_model_concrete_alias) {
                         $abstract_model_concrete_table = $qm_aliases[$abstract_model_concrete_alias];
                         if ($model_instance_table === $abstract_model_concrete_table) {
