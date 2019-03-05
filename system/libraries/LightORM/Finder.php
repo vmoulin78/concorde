@@ -73,7 +73,7 @@ class Finder
     public function __construct($model_short_name, $dimension = self::DIMENSION_AUTO) {
         $this->model_short_name  = $model_short_name;
         $this->dimension         = $dimension;
-        $this->associations      = null;
+        $this->associations      = new Business_associations_associate($model_short_name);
         $this->stack             = array();
     }
 
@@ -248,7 +248,6 @@ class Finder
      */
     public function with($associations) {
         $associations = $this->format_with($associations);
-        $this->associations = new Business_associations_associate($this->model_short_name);
         $this->with_rec($associations, [$this->associations]);
         return $this;
     }

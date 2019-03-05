@@ -419,7 +419,7 @@ trait Table_concrete_model_trait
         $qm_concrete_table = new Query_manager();
         $qm_concrete_table->table($concrete_table_object->name);
 
-        $abstract_table = get_abstract_table();
+        $abstract_table = self::get_abstract_table();
         if (is_null($abstract_table)) {
             $abstract_table_object = null;
         } else {
@@ -449,7 +449,7 @@ trait Table_concrete_model_trait
                 $db_value = $data_conv->convert_value_for_db($value, $field_object);
             }
 
-            ${'qm_' . $current_table_type . '_table'}->where($field, $db_value);
+            ${'qm_' . $current_table_type . '_table'}->simple_set($field, $db_value, false);
         }
 
         if (is_null($abstract_table_object)) {
@@ -461,8 +461,7 @@ trait Table_concrete_model_trait
             return false;
         }
 
-        $db_value = (string) $insert_id;
-        $qm_concrete_table->where('id', $db_value);
+        $qm_concrete_table->set('id', $insert_id);
 
         $concrete_table_insert_result = $qm_concrete_table->insert();
         if ($concrete_table_insert_result === false) {

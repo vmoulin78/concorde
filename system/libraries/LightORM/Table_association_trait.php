@@ -234,7 +234,7 @@ trait Table_association_trait
                 $db_value = $data_conv->convert_value_for_db($value, $field_object);
             }
 
-            $qm->where($field, $db_value);
+            $qm->simple_set($field, $db_value, false);
         }
 
         return $qm->insert();
