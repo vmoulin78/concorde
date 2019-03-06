@@ -342,6 +342,8 @@ trait Table_concrete_model_trait
      * {@inheritDoc}
      */
     protected function seek_field_in_abstract_table($attribute, $value) {
+        $data_conv = Data_conv::factory();
+
         $class_full_name  = get_class($this);
         $abstract_table   = $class_full_name::get_abstract_table();
         if (is_null($abstract_table)) {

@@ -62,7 +62,7 @@ $config['lightORM_business_compositions'] = array();
 |                 'model'      => 'Comment',
 |                 'property'   => 'article',
 |                 'dimension'  => 'one',
-|                 'field'      => 'comment_id',
+|                 'field'      => 'article_id',
 |             ),
 |         ),
 |     ),
@@ -165,6 +165,7 @@ $config['lightORM_business_associations'] = array();
 |     'article_tag' => array(
 |         'article_id'  => 'pk_fk:article',
 |         'tag_id'      => 'pk_fk:tag',
+|         'created_at'  => 'timestamptz',
 |     ),
 | );
 |
