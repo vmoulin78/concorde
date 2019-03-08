@@ -100,27 +100,46 @@ class Finder
     /**
      * This function is the recursive part of the function format_with()
      *
-     * @param   array  $associations
-     * @return  array
+     * @param   mixed  $associations
+     * @return  array|null
      */
-    private function format_with_rec(array $associations) {
+    private function format_with_rec($associations) {
+        if (empty($associations)) {
+            return null;
+        }
+
+        if ( ! is_array($associations)) {
+            $associations = (string) $associations;
+            return array($associations => null);
+        }
+
         $retour = array();
 
-        foreach ($associations as $key => $item) {
-            if (is_null($item)) {
-                $retour[$key] = null;
-            } elseif (is_array($item)) {
-                if (empty($item)) {
-                    $retour[$key] = null;
-                } elseif (is_string($key)) {
-                    $retour[$key] = $this->format_with_rec($item);
-                } else {
-                    foreach ($item as $item) {
-                        $retour[$item] = null;
-                    }
-                }
+        foreach ($associations as $key_1 => $item_1) {
+            if (is_string($key_1)) {
+                $retour[$key_1] = $this->format_with_rec($item_1);
             } else {
-                $retour[$item] = null;
+                if (is_string($item_1)) {
+                    $retour[$item_1] = null;
+                } elseif (is_array($item_1)) {
+                    foreach ($item_1 as $item_2) {
+                        if (is_string($item_2)) {
+                            $retour[$item_2] = null;
+                        } elseif (is_array($item_2)) {
+                            foreach ($item_2 as $key_3 => $item_3) {
+                                if ( ! is_string($key_3)) {
+                                    trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                                }
+
+                                $retour[$key_3] = $this->format_with_rec($item_3);
+                            }
+                        } else {
+                            trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                        }
+                    }
+                } else {
+                    trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                }
             }
         }
 
@@ -138,9 +157,6 @@ class Finder
             return array();
         }
 
-        if ( ! is_array($associations)) {
-            $associations = array($associations);
-        }
         return $this->format_with_rec($associations);
     }
 
