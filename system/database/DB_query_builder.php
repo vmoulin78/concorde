@@ -962,23 +962,51 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 			if ($escape === TRUE)
 			{
 				$v = $this->escape_like_str($v);
-			}
 
-			switch ($side)
+				switch ($side)
+				{
+					case 'none':
+						$v = "'{$v}'";
+						break;
+					case 'before':
+						$v = "'%{$v}'";
+						break;
+					case 'after':
+						$v = "'{$v}%'";
+						break;
+					case 'both':
+					default:
+						$v = "'%{$v}%'";
+						break;
+				}
+			}
+			else
 			{
-				case 'none':
-					$v = "'{$v}'";
-					break;
-				case 'before':
-					$v = "'%{$v}'";
-					break;
-				case 'after':
-					$v = "'{$v}%'";
-					break;
-				case 'both':
-				default:
-					$v = "'%{$v}%'";
-					break;
+				$first_char  = substr($v, 0, 1);
+				$last_char   = substr($v, -1);
+				if (($first_char !== "'")
+					|| ($last_char !== "'")
+				) {
+					trigger_error('CodeIgniter error: The value must be bounded by single quotes.', E_USER_ERROR);
+				}
+
+				$v_middle = substr($v, 1, -1);
+
+				switch ($side)
+				{
+					case 'none':
+						break;
+					case 'before':
+						$v = "'%{$v_middle}'";
+						break;
+					case 'after':
+						$v = "'{$v_middle}%'";
+						break;
+					case 'both':
+					default:
+						$v = "'%{$v_middle}%'";
+						break;
+				}
 			}
 
 			// some platforms require an escape sequence definition for LIKE wildcards

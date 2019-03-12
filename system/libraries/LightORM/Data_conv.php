@@ -149,38 +149,6 @@ abstract class Data_conv
     abstract public function convert_value_for_db($value, $field_object);
 
     /**
-     * Execute the function $func of the CodeIgniter database extension given the table $table, the field $ext_field and the value $value
-     *
-     * @param   string  $func       The name of the function
-     * @param   string  $table      The name of the table
-     * @param   string  $ext_field  The extended name of the field
-     * @param   mixed   $value      The value
-     * @return  mixed
-     */
-    public function data_conv_func($func, $table, $ext_field, $value) {
-        $trimmed_ext_field  = trim($ext_field);
-        list($field)        = explode(' ', $trimmed_ext_field, 2);
-        $field_array        = explode('.', $field, 2);
-        if (count($field_array) == 1) {
-            $simple_field = $field_array[0];
-        } else {
-            $simple_field = $field_array[1];
-        }
-        $field_object = $this->get_table_field_object($table, $simple_field);
-
-        if (in_array($func, ['where_in', 'where_not_in', 'or_where_in', 'or_where_not_in'])) {
-            $converted_value_for_db = array();
-            foreach ($value as $item) {
-                $converted_value_for_db[] = $this->convert_value_for_db($item, $field_object);
-            }
-        } else {
-            $converted_value_for_db = $this->convert_value_for_db($value, $field_object);
-        }
-
-        $this->CI->db->{$func}($ext_field, $converted_value_for_db, false);
-    }
-
-    /**
      * Convert the value $value related to the database field $field_object for PHP
      *
      * @param   mixed                  $value         A value

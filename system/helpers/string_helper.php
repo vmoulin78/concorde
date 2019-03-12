@@ -329,3 +329,25 @@ if ( ! function_exists('in_string'))
         }
     }
 }
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('strstr_after_needle'))
+{
+    /**
+	 * Return part of haystack string starting after the first occurrence of needle to the end of haystack
+	 *
+	 * @param	string
+	 * @param	string
+	 * @return	string
+	 */
+    function strstr_after_needle($haystack, $needle) {
+        $strstr_result = strstr($haystack, $needle);
+
+        if ($strstr_result === false) {
+        	return false;
+        }
+
+        return substr($strstr_result, strlen($needle));
+    }
+}

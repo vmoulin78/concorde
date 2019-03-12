@@ -56,8 +56,8 @@ class Business_associations_associate
     public $associatonent_field;
     public $joining_field;
     public $associatonents_groups;
-    public $atoms_numbered_names; //used only for the main associate (the one whose property $associatound_associatonents_group is null)
-    public $atoms_aliases; //used only for the main associate (the one whose property $associatound_associatonents_group is null)
+    public $atoms_numbered_names;
+    public $atoms_aliases;
 
     public function __construct($model) {
         $this->model                              = $model;

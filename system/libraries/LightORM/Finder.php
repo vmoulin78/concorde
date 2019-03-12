@@ -59,6 +59,7 @@ class Finder
     private $model_short_name;
     private $dimension;
     private $associations;
+    private $user_aliases;
     private $stack;
 
     //------------------------------------------------------//
@@ -67,14 +68,28 @@ class Finder
      * The constructor
      *
      * @access public
-     * @param $model_short_name  The model short name
-     * @param $dimension         The dimension
+     * @param $model      The model
+     * @param $dimension  The dimension
      */
-    public function __construct($model_short_name, $dimension = self::DIMENSION_AUTO) {
+    public function __construct($model, $dimension = self::DIMENSION_AUTO) {
+        $model_array = explode(' AS ', $model, 2);
+        $model_short_name = array_shift($model_array);
+        $associate = new Business_associations_associate($model_short_name);
+
         $this->model_short_name  = $model_short_name;
         $this->dimension         = $dimension;
-        $this->associations      = new Business_associations_associate($model_short_name);
+        $this->associations      = $associate;
+        $this->user_aliases      = array();
         $this->stack             = array();
+
+        if (count($model_array) === 1) {
+            $model_alias = array_shift($model_array);
+
+            $this->user_aliases[$model_alias] = array(
+                'type'    => 'model',
+                'object'  => $associate,
+            );
+        }
     }
 
     //------------------------------------------------------//
@@ -115,23 +130,23 @@ class Finder
 
         $retour = array();
 
-        foreach ($associations as $key_1 => $item_1) {
-            if (is_string($key_1)) {
-                $retour[$key_1] = $this->format_with_rec($item_1);
+        foreach ($associations as $key1 => $item1) {
+            if (is_string($key1)) {
+                $retour[$key1] = $this->format_with_rec($item1);
             } else {
-                if (is_string($item_1)) {
-                    $retour[$item_1] = null;
-                } elseif (is_array($item_1)) {
-                    foreach ($item_1 as $item_2) {
-                        if (is_string($item_2)) {
-                            $retour[$item_2] = null;
-                        } elseif (is_array($item_2)) {
-                            foreach ($item_2 as $key_3 => $item_3) {
-                                if ( ! is_string($key_3)) {
+                if (is_string($item1)) {
+                    $retour[$item1] = null;
+                } elseif (is_array($item1)) {
+                    foreach ($item1 as $item2) {
+                        if (is_string($item2)) {
+                            $retour[$item2] = null;
+                        } elseif (is_array($item2)) {
+                            foreach ($item2 as $key3 => $item3) {
+                                if ( ! is_string($key3)) {
                                     trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
                                 }
 
-                                $retour[$key_3] = $this->format_with_rec($item_3);
+                                $retour[$key3] = $this->format_with_rec($item3);
                             }
                         } else {
                             trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
@@ -161,6 +176,78 @@ class Finder
     }
 
     /**
+     * This function is the recursive part of the function convert_user_aliases_array()
+     *
+     * @param   string  $user_aliases_string
+     * @return  array
+     */
+    private function convert_user_aliases_array_rec($user_aliases_string) {
+        if (empty($user_aliases_string)) {
+            return array();
+        }
+
+        $retour = array();
+
+        $first_label = strstr($user_aliases_string, ':', true);
+        $after_first_label = strstr_after_needle($user_aliases_string, ':');
+        switch ($first_label) {
+            case 'model':
+                if (in_string(',', $after_first_label)) {
+                    $retour = $this->convert_user_aliases_array_rec(strstr_after_needle($after_first_label, ','));
+                    $retour['unique_model'] = strstr($after_first_label, ',', true);
+                } else {
+                    $retour['unique_model'] = $after_first_label;
+                }
+                break;
+            case 'association':
+                if (in_string(',', $after_first_label)) {
+                    $retour = $this->convert_user_aliases_array_rec(strstr_after_needle($after_first_label, ','));
+                    $retour['association'] = strstr($after_first_label, ',', true);
+                } else {
+                    $retour['association'] = $after_first_label;
+                }
+                break;
+            case 'models':
+                if ((substr($after_first_label, 0, 1) !== '[')
+                    || ( ! in_string(']', $after_first_label))
+                ) {
+                    trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                }
+                $models_aliases = substr(strstr($after_first_label, ']', true), 1);
+                $after_first_segment = strstr_after_needle($after_first_label, ']');
+                if (substr($after_first_segment, 0, 1) === ',') {
+                    $retour = $this->convert_user_aliases_array_rec(substr($after_first_segment, 1));
+                }
+
+                $models_aliases_array = explode(',', $models_aliases);
+                foreach ($models_aliases_array as $item) {
+                    $item_array = explode(':', $item, 2);
+                    if (count($item_array) !== 2) {
+                        trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                    }
+                    list($item_array_model, $item_array_alias) = $item_array;
+                    $retour['models'][$item_array_model] = $item_array_alias;
+                }
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        return $retour;
+    }
+
+    /**
+     * Convert the string of user aliases in array
+     *
+     * @param   string  $user_aliases_string
+     * @return  array
+     */
+    private function convert_user_aliases_array($user_aliases_string) {
+        return $this->convert_user_aliases_array_rec(substr($user_aliases_string, 1, -1));
+    }
+
+    /**
      * This function is the recursive part of the function with()
      *
      * @param   array  $associations
@@ -178,7 +265,22 @@ class Finder
 
         foreach ($associatounds as $associatound) {
             foreach ($associations as $key => $item) {
-                $associatound_atom_full_path = trim($key);
+                $key_array = explode(' AS ', $key, 2);
+
+                $associatound_atom_full_path = str_replace(' ', '', array_shift($key_array));
+
+                $user_aliases = array();
+                if (count($key_array) === 1) {
+                    $user_aliases_string = str_replace(' ', '', array_shift($key_array));
+                    if ((substr($user_aliases_string, 0, 1) === '[')
+                        && (substr($user_aliases_string, -1) === ']')
+                    ) {
+                        $user_aliases = $this->convert_user_aliases_array($user_aliases_string);
+                    } else {
+                        $user_aliases['unique_model'] = $user_aliases_string;
+                    }
+                }
+
                 if ( ! in_string(':', $associatound_atom_full_path)) {
                     $associatound_atom_full_path = '.:' . $associatound_atom_full_path;
                 }
@@ -245,8 +347,39 @@ class Finder
                 $association_array = $business_associations->associations[$association_numbered_name];
                 foreach ($association_array['associates'] as $associate_model => $associate_array) {
                     if ($associate_model != $associatound_atom_path_last_model) {
-                        $business_associations_associatonents_group->add_associatonent(new Business_associations_associate($associate_model));
+                        $associatonent = new Business_associations_associate($associate_model);
+                        $business_associations_associatonents_group->add_associatonent($associatonent);
+
+                        if (isset($user_aliases['models'][$associate_model])) {
+                            $user_alias_candidate = $user_aliases['models'][$associate_model];
+                        } elseif (isset($user_aliases['unique_model'])) {
+                            $user_alias_candidate = $user_aliases['unique_model'];
+                        } else {
+                            $user_alias_candidate = null;
+                        }
+                        if ( ! is_null($user_alias_candidate)) {
+                            if (isset($this->user_aliases[$user_alias_candidate])) {
+                                trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                            }
+                            $this->user_aliases[$user_alias_candidate] = array(
+                                'type'    => 'model',
+                                'object'  => $associatonent,
+                            );
+                        }
                     }
+                }
+
+                if (isset($user_aliases['association'])) {
+                    if (isset($this->user_aliases[$user_aliases['association']])
+                        || ($association_array['type'] !== 'many_to_many')
+                    ) {
+                        trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                    }
+
+                    $this->user_aliases[$user_aliases['association']] = array(
+                        'type'    => 'association',
+                        'object'  => $business_associations_associatonents_group,
+                    );
                 }
 
                 if ( ! is_null($item)) {
@@ -276,7 +409,58 @@ class Finder
      */
     private function complete_query(Query_manager $query_manager) {
         foreach ($this->stack as $item) {
-            call_user_func_array(array($query_manager, $item['method']), $item['args']);
+            $formatted_args = $item['args'];
+            if ( ! empty($formatted_args)) {
+                $arg1 = array_shift($formatted_args);
+                $arg1_array = explode(' ', $arg1, 2);
+                $arg1_ext_field = array_shift($arg1_array);
+                $arg1_ext_field_array = explode(':', $arg1_ext_field);
+
+                $formatted_arg1_ext_field = array_pop($arg1_ext_field_array);
+                if (count($arg1_ext_field_array) > 0) {
+                    $arg1_ext_field_first_segment = array_shift($arg1_ext_field_array);
+                    if (in_string('>', $arg1_ext_field_first_segment)) {
+                        $arg1_ext_field_first_segment_separator = '>';
+                    } elseif (in_string('<', $arg1_ext_field_first_segment)) {
+                        $arg1_ext_field_first_segment_separator = '<';
+                    } else {
+                        $arg1_ext_field_first_segment_separator = null;
+                    }
+                    if (is_null($arg1_ext_field_first_segment_separator)) {
+                        $arg1_ext_field_user_alias = $arg1_ext_field_first_segment;
+                        $arg1_ext_field_first_segment_end = '';
+                    } else {
+                        $arg1_ext_field_user_alias = strstr($arg1_ext_field_first_segment, $arg1_ext_field_first_segment_separator, true);
+                        $arg1_ext_field_first_segment_end = strstr($arg1_ext_field_first_segment, $arg1_ext_field_first_segment_separator);
+                    }
+
+                    if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
+                        trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
+                    }
+                    $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
+                    switch ($user_alias['type']) {
+                        case 'model':
+                            $atom_path_array = $arg1_ext_field_array;
+                            array_unshift($atom_path_array, $user_alias['object']->model . $arg1_ext_field_first_segment_end);
+                            $atom_path =  implode(':', $atom_path_array);
+                            $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$atom_path] . '.' . $formatted_arg1_ext_field;
+                            break;
+                        case 'association':
+                            $formatted_arg1_ext_field = $user_alias['object']->joining_alias . '.' . $formatted_arg1_ext_field;
+                            break;
+                        default:
+                            exit(1);
+                            break;
+                    }
+                }
+
+                array_unshift($arg1_array, $formatted_arg1_ext_field);
+                $formatted_arg1 = implode(' ', $arg1_array);
+
+                array_unshift($formatted_args, $formatted_arg1);
+            }
+
+            call_user_func_array(array($query_manager, $item['method']), $formatted_args);
         }
     }
 
