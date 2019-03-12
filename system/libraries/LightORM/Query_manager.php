@@ -286,7 +286,7 @@ class Query_manager
         foreach ($vars as $var) {
             $exploded_var = explode(':', $var);
 
-            if (count($exploded_var) != 2) {
+            if (count($exploded_var) !== 2) {
                 trigger_error('LightORM error: Invalid format for ' . $var, E_USER_ERROR);
             }
 
