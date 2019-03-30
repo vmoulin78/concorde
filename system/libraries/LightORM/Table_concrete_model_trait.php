@@ -432,8 +432,8 @@ trait Table_concrete_model_trait
                 trigger_error('LightORM error: Error while inserting data', E_USER_ERROR);
             }
 
-            if ($field_object->is_foreign_key
-                || $field_object->is_enum_model_id
+            if ($field_object->is_enum_model_id
+                && ( ! is_null($value))
             ) {
                 $db_value = (string) $value;
             } else {
