@@ -74,18 +74,11 @@ class Business_associations
                     $there_is_many = true;
                 }
 
-                $formatted_associate = array();
-                foreach ($associate as $key => $item) {
-                    if ($key !== 'model') {
-                        $formatted_associate[$key] = $item;
-                    }
+                if ( ! isset($associate['field'])) {
+                    $associate['field'] = 'id';
                 }
 
-                if ( ! isset($formatted_associate['field'])) {
-                    $formatted_associate['field'] = 'id';
-                }
-
-                $association_array['associates'][$associate['model']] = $formatted_associate;
+                $association_array['associates'][] = $associate;
             }
             if ($there_is_one
                 && $there_is_many
@@ -129,11 +122,32 @@ class Business_associations
      */
     public function get_association_numbered_name($model, $property) {
         foreach ($this->associations as $association_numbered_name => $association_array) {
-            foreach ($association_array['associates'] as $associate_model => $associate_array) {
-                if (($associate_model == $model)
+            foreach ($association_array['associates'] as $associate_array) {
+                if (($associate_array['model'] == $model)
                     && ($associate_array['property'] == $property)
                 ) {
                     return $association_numbered_name;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the associate array corresponding to the model $model and the property $property
+     *
+     * @param   string  $model
+     * @param   string  $property
+     * @return  string|false
+     */
+    public function get_associate_array($model, $property) {
+        foreach ($this->associations as $association_numbered_name => $association_array) {
+            foreach ($association_array['associates'] as $associate_array) {
+                if (($associate_array['model'] == $model)
+                    && ($associate_array['property'] == $property)
+                ) {
+                    return $associate_array;
                 }
             }
         }

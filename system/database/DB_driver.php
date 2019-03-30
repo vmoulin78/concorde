@@ -1982,4 +1982,91 @@ abstract class CI_DB_driver {
 	{
 	}
 
+	// --------------------------------------------------------------------
+
+	/**
+	 * This function is the recursive part of the function get_table_depth()
+	 *
+	 * @param	array   $rows_pool
+	 * @param	string  $field
+	 * @param	array   $ref_ids
+	 * @param	string  $primary_key
+	 * @param	bool    $for_full_table
+	 * @param	int     $current_depth
+	 * @return	int
+	 */
+	private function get_table_depth_rec($rows_pool, $field, $ref_ids, $primary_key, $for_full_table, $current_depth = 0)
+	{
+		if (empty($ref_ids)) {
+			if ($for_full_table
+				&& (count($rows_pool) > 0)
+			) {
+				return false;
+			} else {
+				return $current_depth;
+			}
+		}
+
+		$next_rows_pool  = array();
+		$next_ref_ids    = array();
+
+		foreach ($rows_pool as $row) {
+			if (in_array($row[$field], $ref_ids)) {
+				$next_ref_ids[] = $row[$primary_key];
+			} else {
+				$next_rows_pool[] = $row;
+			}
+		}
+
+		return $this->get_table_depth_rec($next_rows_pool, $field, $next_ref_ids, $primary_key, $for_full_table, ($current_depth + 1));
+	}
+
+	/**
+	 * Get the depth of the table $table given the field $field, the filter $filter and the primary key $primary_key
+	 *
+	 * @param	string  the table
+	 * @param	string  the field
+	 * @param	mixed   an id or an array of ids
+	 * @param	string  the name of the primary key
+	 * @return	int     the depth of the table
+	 */
+	public function get_table_depth($table, $field, $filter = null, $primary_key = 'id')
+	{
+		$query = $this->query('SELECT ' . $primary_key . ',' . $field . ' FROM ' . $table);
+		$result_array = $query->result_array();
+
+		$rows_pool  = array();
+		$ref_ids    = array();
+		if (is_null($filter)) {
+			foreach ($result_array as $row) {
+				if (is_null($row[$field])) {
+					$ref_ids[] = $row[$primary_key];
+				} else {
+					$rows_pool[] = $row;
+				}
+			}
+
+			$for_full_table = true;
+		} else {
+			if ( ! is_array($filter)) {
+				$filter = array($filter);
+			}
+
+			foreach ($result_array as $row) {
+				foreach ($filter as $id) {
+					if ($id == $row[$primary_key]) {
+						$ref_ids[] = $row[$primary_key];
+						continue 2;
+					}
+				}
+
+				$rows_pool[] = $row;
+			}
+
+			$for_full_table = false;
+		}
+
+		return $this->get_table_depth_rec($rows_pool, $field, $ref_ids, $primary_key, $for_full_table);
+	}
+
 }

@@ -50,6 +50,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 trait Table_abstract_model_trait
 {
     use Table_abstract_business_trait;
+    use Table_model_trait;
 
     /**
      * Get the table concrete models
@@ -75,7 +76,6 @@ trait Table_abstract_model_trait
         $models_metadata        = Models_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
         $business_compositions  = Business_compositions::get_singleton();
-        $business_associations  = Business_associations::get_singleton();
 
         $model_short_name = self::get_business_short_name();
 
@@ -226,17 +226,6 @@ trait Table_abstract_model_trait
         $retour = new $concrete_model_full_name(...$args);
 
         return $retour;
-    }
-
-    /**
-     * Find one or many table models given the filter $filter
-     *
-     * @param   mixed  $filter  An id or an array of ids
-     * @return  mixed
-     */
-    public static function find($filter = null) {
-        $finder = new Finder(self::get_business_short_name());
-        return $finder->get($filter);
     }
 
     /**

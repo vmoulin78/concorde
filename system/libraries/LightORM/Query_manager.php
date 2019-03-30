@@ -109,53 +109,56 @@ class Query_manager
                 trigger_error('LightORM error: The call of the method "' . $method . '" requires at least two parameters.', E_USER_ERROR);
             }
 
-            $ext_field  = array_shift($args);
-            $value      = array_shift($args);
+            list($ext_field, $value) = $args;
 
-            $trimmed_ext_field  = trim($ext_field);
-            list($field)        = explode(' ', $trimmed_ext_field, 2);
-            $field_array        = explode('.', $field, 2);
-            $simple_field       = array_pop($field_array);
-            if (count($field_array) === 1) {
-                $alias = array_shift($field_array);
-                if ( ! isset($this->aliases[$alias])) {
-                    trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
-                }
-                $table = $this->aliases[$alias];
+            if (is_null($value)) {
+                call_user_func_array(array($this->CI->db, $method), $args);
             } else {
-                $table = $this->table;
-            }
-
-            $field_object = $data_conv->get_table_field_object($table, $simple_field);
-
-            if (in_array($method, ['where_in', 'where_not_in', 'or_where_in', 'or_where_not_in'])) {
-                $converted_value_for_db = array();
-                foreach ($value as $item) {
-                    $converted_value_for_db[] = $data_conv->convert_value_for_db($item, $field_object);
-                }
-            } else {
-                $converted_value_for_db = $data_conv->convert_value_for_db($value, $field_object);
-            }
-
-            $formatted_args = array($ext_field);
-
-            if (in_array($method, ['like', 'or_like', 'not_like', 'or_not_like'])) {
-                $converted_value_for_db = str_replace(['_', '%'], ['\\_', '\\%'], $converted_value_for_db);
-                $formatted_args[] = $converted_value_for_db;
-
-                if (count($args) >= 1) {
-                    $side = array_shift($args);
+                $trimmed_ext_field  = trim($ext_field);
+                list($field)        = explode(' ', $trimmed_ext_field, 2);
+                $field_array        = explode('.', $field, 2);
+                $simple_field       = array_pop($field_array);
+                if (count($field_array) === 1) {
+                    $alias = array_shift($field_array);
+                    if ( ! isset($this->aliases[$alias])) {
+                        trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
+                    }
+                    $table = $this->aliases[$alias];
                 } else {
-                    $side = 'both';
+                    $table = $this->table;
                 }
-                $formatted_args[] = $side;
-            } else {
-                $formatted_args[] = $converted_value_for_db;
+
+                $field_object = $data_conv->get_table_field_object($table, $simple_field);
+
+                if (in_array($method, ['where_in', 'where_not_in', 'or_where_in', 'or_where_not_in'])) {
+                    $converted_value_for_db = array();
+                    foreach ($value as $item) {
+                        $converted_value_for_db[] = $data_conv->convert_value_for_db($item, $field_object);
+                    }
+                } else {
+                    $converted_value_for_db = $data_conv->convert_value_for_db($value, $field_object);
+                }
+
+                $formatted_args = array($ext_field);
+
+                if (in_array($method, ['like', 'or_like', 'not_like', 'or_not_like'])) {
+                    $converted_value_for_db = str_replace(['_', '%'], ['\\_', '\\%'], $converted_value_for_db);
+                    $formatted_args[] = $converted_value_for_db;
+
+                    if (count($args) >= 3) {
+                        list(, , $side) = $args;
+                    } else {
+                        $side = 'both';
+                    }
+                    $formatted_args[] = $side;
+                } else {
+                    $formatted_args[] = $converted_value_for_db;
+                }
+
+                $formatted_args[] = false;
+
+                call_user_func_array(array($this->CI->db, $method), $formatted_args);
             }
-
-            $formatted_args[] = false;
-
-            call_user_func_array(array($this->CI->db, $method), $formatted_args);
         } elseif ((substr($method, 0, 7) == 'simple_')
             && (in_array(substr($method, 7), self::CONV_METHODS))
         ) {

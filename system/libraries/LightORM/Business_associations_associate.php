@@ -52,6 +52,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Business_associations_associate
 {
     public $model;
+    public $property;
     public $associatound_associatonents_group;
     public $associatonent_field;
     public $joining_field;
@@ -59,8 +60,9 @@ class Business_associations_associate
     public $atoms_numbered_names;
     public $atoms_aliases;
 
-    public function __construct($model) {
+    public function __construct($model, $property = null) {
         $this->model                              = $model;
+        $this->property                           = $property;
 
         $this->associatound_associatonents_group  = null;
         $this->associatonent_field                = null;
@@ -93,8 +95,10 @@ class Business_associations_associate
 
         $association_array = $business_associations->associations[$associatonents_group->association_numbered_name];
         if ($association_array['type'] === 'many_to_many') {
-            $associatonents_group->associatound_atom_field          = $association_array['associates'][$associatound_atom_model]['field'];
-            $associatonents_group->associatound_atom_joining_field  = $association_array['associates'][$associatound_atom_model]['joining_field'];
+            $associate_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+
+            $associatonents_group->associatound_atom_field          = $associate_array['field'];
+            $associatonents_group->associatound_atom_joining_field  = $associate_array['joining_field'];
         }
     }
 }
