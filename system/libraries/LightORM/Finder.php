@@ -822,14 +822,15 @@ class Finder
                                 break;
                         }
 
-                        if ($qm_model_item['name'] === $associatound_atom_model) {
-                            $qm_associatound_atom = $qm->models[$associatound_atom_numbered_name];
-                            if (($qm_associatound_atom['relation_info']['type'] === 'association')
-                                && ($qm_associatound_atom['relation_info']['associate']->property === $qm_model_item['relation_info']['associate']->property)
+                        // To avoid having duplicate models in the reflexive associations
+                        $qm_models = $qm->models;
+                        foreach ($qm_models as $key => $item) {
+                            if (($key !== $qm_model_key)
+                                && ($item['name'] === $qm_model_item['name'])
+                                && ($item['relation_info']['type'] === 'association')
+                                && ($item['relation_info']['associate']->property === $qm_model_item['relation_info']['associate']->property)
                             ) {
-                                if ( ! in_array($current_model->get_id(), $created_instances_ids[$associatound_atom_numbered_name])) {
-                                    $created_instances_ids[$associatound_atom_numbered_name][] = $current_model->get_id();
-                                }
+                                $created_instances_ids[$key][] = $current_model->get_id();
                             }
                         }
                         break;
