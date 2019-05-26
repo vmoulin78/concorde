@@ -88,12 +88,12 @@ $config['lightORM_data_conv'] = array();
 |                 'model'      => 'Article',
 |                 'property'   => 'title',
 |                 'dimension'  => 'one',
-|                 'field'      => 'article_id',
 |             ),
 |             array(
 |                 'model'      => 'Title',
 |                 'property'   => 'article',
 |                 'dimension'  => 'one',
+|                 'field'      => 'article_id',
 |             ),
 |         ),
 |     ),
