@@ -138,9 +138,9 @@ trait Table_association_trait
     public static function business_creation($qm_model_item, $row, $qm_aliases) {
         $data_conv = Data_conv::factory();
 
-        $association_table_alias = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->joining_alias;
+        $association_table_alias = $qm_model_item['associate']->associatound_associatonents_group->joining_alias;
 
-        if (is_null($row->{$association_table_alias . ':' . $qm_model_item['relation_info']['associate']->joining_field})) {
+        if (is_null($row->{$association_table_alias . ':' . $qm_model_item['associate']->joining_field})) {
             return null;
         }
 

@@ -65,64 +65,41 @@ trait Table_abstract_model_trait
     /**
      * Manage the SELECT, FROM and JOIN parts of the query for the current Table_abstract_model_trait
      *
-     * @param   Query_manager  $query_manager
-     * @param   int            $table_alias_number
-     * @param   int            $model_number
-     * @param   array          $relation_info
-     * @param   array          $associatonents_properties
+     * @param   Query_manager                    $query_manager
+     * @param   Business_associations_associate  $associate
+     * @param   int                              $table_alias_number
+     * @param   int                              $model_number
+     * @param   array                            $associatonents_properties
      * @return  array
      */
-    public static function business_initialization(Query_manager $query_manager, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $relation_info = ['type' => 'none'], $main_associate = null, $atom_path = null, array $associatonents_properties = []) {
-        $models_metadata        = Models_metadata::get_singleton();
-        $data_conv              = Data_conv::factory();
-        $business_compositions  = Business_compositions::get_singleton();
+    public static function business_initialization(Query_manager $query_manager, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $associatonents_properties = []) {
+        $models_metadata  = Models_metadata::get_singleton();
+        $data_conv        = Data_conv::factory();
 
-        $model_short_name = self::get_business_short_name();
+        $model_short_name  = self::get_business_short_name();
+        $atom_path         = $model_short_name;
 
-        if (is_null($atom_path)) {
-            $atom_path = $model_short_name;
-        }
-
-        /******************************************************************************/
+        //----------------------------------------------------------------------------//
 
         $table_alias          = 'alias_' . $table_alias_number;
         $model_numbered_name  = 'model_' . $model_number;
         $table_object         = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
         $table_object->business_selection($query_manager, $table_alias);
-        switch ($relation_info['type']) {
-            case 'none':
-                $query_manager->from($table_object->name . ' AS ' . $table_alias);
-                break;
-            case 'composition':
-                // This is a "LEFT JOIN" because there could be no matching row
-                $query_manager->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $relation_info['component_array']['component_field'] . ' = ' . $relation_info['joining_alias'] . '.id', 'left');
-                break;
-            case 'association':
-                // This is a "LEFT JOIN" because there could be no matching row
-                $query_manager->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $relation_info['associate']->associatonent_field . ' = ' . $relation_info['associate']->associatound_associatonents_group->joining_alias . '.' . $relation_info['associate']->joining_field, 'left');
-                break;
-            default:
-                exit(1);
-                break;
+
+        if (is_null($associate->associatound_associatonents_group)) {
+            $query_manager->from($table_object->name . ' AS ' . $table_alias);
+        } else {
+            // This is a "LEFT JOIN" because there could be no matching row
+            $query_manager->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
         }
+
         $table_alias_number++;
         $model_number++;
 
-        $abstract_model_components_properties = array();
-        foreach ($business_compositions->compociates[$model_short_name]->components as $component_array) {
-            $component_atom_path = $atom_path . ':' . $component_array['component']->model;
-
-            $component_model_full_name = $models_metadata->models[$component_array['component']->model]['model_full_name'];
-            list($table_alias_number, $model_number) = $component_model_full_name::business_initialization($query_manager, $table_alias_number, $model_number, ['type' => 'composition', 'component_array' => $component_array, 'joining_alias' => $table_alias, 'compound_numbered_name' => $model_numbered_name], $main_associate, $component_atom_path, $associatonents_properties);
-
-            $abstract_model_components_properties[] = $component_array['compound_property'];
-        }
-
-        /******************************************************************************/
+        //----------------------------------------------------------------------------//
 
         $table_concrete_models                      = self::get_table_concrete_models();
         $abstract_model_concrete_aliases            = array();
-        $concrete_models_components_properties      = array();
         $concrete_models_associatonents_properties  = array();
         foreach ($table_concrete_models as $table_concrete_model) {
             $table_concrete_model_atom_path = $atom_path . '>' . $table_concrete_model;
@@ -135,52 +112,34 @@ trait Table_abstract_model_trait
             $abstract_model_concrete_aliases[] = $table_concrete_model_alias;
             $table_alias_number++;
 
-            if ( ! is_null($main_associate)) {
-                $main_associate->atoms_numbered_names[$table_concrete_model_atom_path]  = $model_numbered_name;
-                $main_associate->atoms_aliases[$table_concrete_model_atom_path]         = $table_concrete_model_alias;
-            }
-
-            $concrete_models_components_properties[$table_concrete_model] = array();
-            foreach ($business_compositions->compociates[$table_concrete_model]->components as $component_array) {
-                $component_atom_path = $table_concrete_model_atom_path . ':' . $component_array['component']->model;
-
-                $component_model_full_name = $models_metadata->models[$component_array['component']->model]['model_full_name'];
-                list($table_alias_number, $model_number) = $component_model_full_name::business_initialization($query_manager, $table_alias_number, $model_number, ['type' => 'composition', 'component_array' => $component_array, 'joining_alias' => $table_concrete_model_alias, 'compound_numbered_name' => $model_numbered_name], $main_associate, $component_atom_path, $associatonents_properties);
-
-                $concrete_models_components_properties[$table_concrete_model][] = $component_array['compound_property'];
-            }
+            $associate->atoms_numbered_names[$table_concrete_model_atom_path]  = $model_numbered_name;
+            $associate->atoms_aliases[$table_concrete_model_atom_path]         = $table_concrete_model_alias;
 
             $concrete_models_associatonents_properties[$table_concrete_model] = isset($associatonents_properties[$table_concrete_model_atom_path]) ? $associatonents_properties[$table_concrete_model_atom_path] : array();
         }
 
-        /******************************************************************************/
+        //----------------------------------------------------------------------------//
 
         $abstract_model_associatonents_properties = isset($associatonents_properties[$atom_path]) ? $associatonents_properties[$atom_path] : array();
 
         $query_manager->models[$model_numbered_name] = array(
-            'name'           => $model_short_name,
-            'model_info'     => array(
-                'type'                      => 'abstract_model',
-                'abstract_alias'            => $table_alias,
-                'concrete_aliases'          => $abstract_model_concrete_aliases,
-                'components_properties'     => array(
-                    'abstract_model'   => $abstract_model_components_properties,
-                    'concrete_models'  => $concrete_models_components_properties,
-                ),
-                'associatonents_properties'     => array(
+            'name'        => $model_short_name,
+            'associate'   => $associate,
+            'model_info'  => array(
+                'type'                       => 'abstract_model',
+                'abstract_alias'             => $table_alias,
+                'concrete_aliases'           => $abstract_model_concrete_aliases,
+                'associatonents_properties'  => array(
                     'abstract_model'   => $abstract_model_associatonents_properties,
                     'concrete_models'  => $concrete_models_associatonents_properties,
                 ),
             ),
-            'relation_info'  => $relation_info,
         );
 
-        if ( ! is_null($main_associate)) {
-            $main_associate->atoms_numbered_names[$atom_path]  = $model_numbered_name;
-            $main_associate->atoms_aliases[$atom_path]         = $table_alias;
-        }
+        $associate->atoms_numbered_names[$atom_path]  = $model_numbered_name;
+        $associate->atoms_aliases[$atom_path]         = $table_alias;
 
-        /******************************************************************************/
+        //----------------------------------------------------------------------------//
 
         return [$table_alias_number, $model_number];
     }

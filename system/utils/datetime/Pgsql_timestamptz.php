@@ -49,10 +49,58 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_timestamptz extends Dbms_datetime_pgsql
 {
+    public static function create_from_format($format, $time, $timezone = null) {
+        if (is_null($timezone)) {
+            $datetime = \DateTime::createFromFormat($format, $time);
+        } else {
+            $datetime = \DateTime::createFromFormat($format, $time, $timezone);
+        }
+
+        return (new self($datetime->format(PGSQL_TIMESTAMPTZ_FORMAT)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function convert() {
+        return new \DateTime($this->value);
+    }
+
     /**
      * {@inheritDoc}
      */
     public function db_format() {
         return "TIMESTAMP WITH TIME ZONE '" . $this->value . "'";
+    }
+
+    public function diff($timestamptz, $absolute = false) {
+        return $this->convert()->diff($timestamptz->convert(), $absolute);
+    }
+
+    public function add($interval) {
+        $this->value = $this->convert()->add($interval)->format(PGSQL_TIMESTAMPTZ_FORMAT);
+        return $this;
+    }
+
+    public function sub($interval) {
+        $this->value = $this->convert()->sub($interval)->format(PGSQL_TIMESTAMPTZ_FORMAT);
+        return $this;
+    }
+
+    public function modify($modify) {
+        $this->value = $this->convert()->modify($modify)->format(PGSQL_TIMESTAMPTZ_FORMAT);
+        return $this;
+    }
+
+    public function get_offset() {
+        return $this->convert()->getOffset();
+    }
+
+    public function get_timestamp() {
+        return $this->convert()->getTimestamp();
+    }
+
+    public function get_timezone() {
+        return $this->convert()->getTimezone();
     }
 }

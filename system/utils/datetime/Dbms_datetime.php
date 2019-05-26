@@ -65,12 +65,26 @@ abstract class Dbms_datetime
     }
 
     /**
+     * Convert the value $this->value into DateTime object
+     *
+     * @return  DateTime
+     */
+    abstract public function convert();
+
+    /**
      * Get the value formatted for the database
      *
      * @return  string
      */
     abstract public function db_format();
 
-    //TODO
-    //abstract public function format($format);
+    /**
+     * Format $this given the format $format
+     *
+     * @param   string  $format
+     * @return  string
+     */
+    public function format($format) {
+        return $this->convert()->format($format);
+    }
 }

@@ -88,8 +88,10 @@ class Enum_model_loader
 
         $model_full_name = $models_metadata->models[$model_short_name]['model_full_name'];
 
-        $qm = new Query_manager();
-        $model_full_name::business_initialization($qm);
+        $qm         = new Query_manager();
+        $associate  = new Business_associations_associate($model_short_name);
+        $model_full_name::business_initialization($qm, $associate);
+
         $query = $qm->get();
 
         $enum_model_items = array();

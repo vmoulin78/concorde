@@ -336,47 +336,28 @@ class Finder
                 }
 
                 $associatound_atom_full_path_array = explode(':', $associatound_atom_full_path);
-
-                $associatound_atom_property = array_pop($associatound_atom_full_path_array);
-
-                $associatound_atom_path = implode(':', $associatound_atom_full_path_array);
-
-                $associatound_atom_path_first_segment = array_shift($associatound_atom_full_path_array);
-                if (in_string('>', $associatound_atom_path_first_segment)) {
-                    $associatound_atom_path_first_segment_separator = '>';
-                } elseif (in_string('<', $associatound_atom_path_first_segment)) {
-                    $associatound_atom_path_first_segment_separator = '<';
-                } else {
-                    $associatound_atom_path_first_segment_separator = null;
+                if (count($associatound_atom_full_path_array) !== 2) {
+                    trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
                 }
-                if (is_null($associatound_atom_path_first_segment_separator)) {
-                    $associatound_atom_path_first_model = $associatound_atom_path_first_segment;
+                list($associatound_atom_path, $associatound_atom_property) = $associatound_atom_full_path_array;
+
+                if (in_string('>', $associatound_atom_path)) {
+                    $associatound_atom_path_separator = '>';
+                } elseif (in_string('<', $associatound_atom_path)) {
+                    $associatound_atom_path_separator = '<';
                 } else {
-                    $associatound_atom_path_first_segment_array = explode($associatound_atom_path_first_segment_separator, $associatound_atom_path_first_segment, 2);
-                    $associatound_atom_path_first_model = array_shift($associatound_atom_path_first_segment_array);
+                    $associatound_atom_path_separator = null;
+                }
+                if (is_null($associatound_atom_path_separator)) {
+                    $associatound_atom_path_first_model  = $associatound_atom_path;
+                    $associatound_atom_path_last_model   = $associatound_atom_path;
+                } else {
+                    $associatound_atom_path_array = explode($associatound_atom_path_separator, $associatound_atom_path, 2);
+                    list($associatound_atom_path_first_model, $associatound_atom_path_last_model) = $associatound_atom_path_array;
                 }
 
                 if ($associatound_atom_path_first_model != $associatound->model) {
                     continue;
-                }
-
-                if (count($associatound_atom_full_path_array) === 0) {
-                    $associatound_atom_path_last_segment = $associatound_atom_path_first_segment;
-                } else {
-                    $associatound_atom_path_last_segment = array_pop($associatound_atom_full_path_array);
-                }
-                if (in_string('>', $associatound_atom_path_last_segment)) {
-                    $associatound_atom_path_last_segment_separator = '>';
-                } elseif (in_string('<', $associatound_atom_path_last_segment)) {
-                    $associatound_atom_path_last_segment_separator = '<';
-                } else {
-                    $associatound_atom_path_last_segment_separator = null;
-                }
-                if (is_null($associatound_atom_path_last_segment_separator)) {
-                    $associatound_atom_path_last_model = $associatound_atom_path_last_segment;
-                } else {
-                    $associatound_atom_path_last_segment_array = explode($associatound_atom_path_last_segment_separator, $associatound_atom_path_last_segment, 2);
-                    $associatound_atom_path_last_model = array_pop($associatound_atom_path_last_segment_array);
                 }
 
                 $association_numbered_name = $business_associations->get_association_numbered_name($associatound_atom_path_last_model, $associatound_atom_property);
@@ -461,6 +442,10 @@ class Finder
                 $arg1_ext_field = array_shift($arg1_array);
                 $arg1_ext_field_array = explode(':', $arg1_ext_field);
 
+                if (count($arg1_ext_field_array) > 2) {
+                    trigger_error('LightORM error: Syntax error', E_USER_ERROR);
+                }
+
                 $formatted_arg1_ext_field = array_pop($arg1_ext_field_array);
                 if (count($arg1_ext_field_array) > 0) {
                     $arg1_ext_field_first_segment = array_shift($arg1_ext_field_array);
@@ -475,8 +460,9 @@ class Finder
                         $arg1_ext_field_user_alias = $arg1_ext_field_first_segment;
                         $arg1_ext_field_first_segment_end = '';
                     } else {
-                        $arg1_ext_field_user_alias = strstr($arg1_ext_field_first_segment, $arg1_ext_field_first_segment_separator, true);
-                        $arg1_ext_field_first_segment_end = strstr($arg1_ext_field_first_segment, $arg1_ext_field_first_segment_separator);
+                        $arg1_ext_field_first_segment_array = explode($arg1_ext_field_first_segment_separator, $arg1_ext_field_first_segment, 2);
+                        list($arg1_ext_field_user_alias, $arg1_ext_field_first_segment_end) = $arg1_ext_field_first_segment_array;
+                        $arg1_ext_field_first_segment_end = $arg1_ext_field_first_segment_separator . $arg1_ext_field_first_segment_end;
                     }
 
                     if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
@@ -485,12 +471,12 @@ class Finder
                     $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
                     switch ($user_alias['type']) {
                         case 'model':
-                            $atom_path_array = $arg1_ext_field_array;
-                            array_unshift($atom_path_array, $user_alias['object']->model . $arg1_ext_field_first_segment_end);
-                            $atom_path =  implode(':', $atom_path_array);
-                            $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$atom_path] . '.' . $formatted_arg1_ext_field;
+                            $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$user_alias['object']->model . $arg1_ext_field_first_segment_end] . '.' . $formatted_arg1_ext_field;
                             break;
                         case 'association':
+                            if ( ! is_null($arg1_ext_field_first_segment_separator)) {
+                                trigger_error('LightORM error: Syntax error', E_USER_ERROR);
+                            }
                             $formatted_arg1_ext_field = $user_alias['object']->joining_alias . '.' . $formatted_arg1_ext_field;
                             break;
                         default:
@@ -545,16 +531,6 @@ class Finder
         $business_associations  = Business_associations::get_singleton();
 
         $associate_full_name = $models_metadata->models[$associate->model]['model_full_name'];
-        if (is_null($associate->associatound_associatonents_group)) {
-            $relation_info = array(
-                'type' => 'none',
-            );
-        } else {
-            $relation_info = array(
-                'type'       => 'association',
-                'associate'  => $associate,
-            );
-        }
 
         $associatonents_properties = array();
         foreach ($associate->associatonents_groups as $associatonents_group) {
@@ -562,7 +538,7 @@ class Finder
         }
 
         $associate_table_alias = 'alias_' . $table_alias_number;
-        list($table_alias_number, $model_number) = $associate_full_name::business_initialization($query_manager, $table_alias_number, $model_number, $relation_info, $associate, $associate->model, $associatonents_properties);
+        list($table_alias_number, $model_number) = $associate_full_name::business_initialization($query_manager, $associate, $table_alias_number, $model_number, $associatonents_properties);
 
         foreach ($associate->associatonents_groups as $associatonents_group) {
             $associatonents_group->associatound_atom_numbered_name  = $associate->atoms_numbered_names[$associatonents_group->associatound_atom_path];
@@ -608,7 +584,6 @@ class Finder
      * @return  mixed
      */
     public function get($filter = null) {
-        $business_compositions  = Business_compositions::get_singleton();
         $business_associations  = Business_associations::get_singleton();
 
         $databubble = new Databubble();
@@ -647,56 +622,6 @@ class Finder
                     $concrete_model_full_name  = $model_instance->get_business_full_name();
                     $concrete_model            = $model_instance->get_business_short_name();
                     $abstract_model            = $concrete_model_full_name::get_table_abstract_model();
-
-                    /******************************************************************************/
-
-                    // We set to null or array() the components properties that should not be undefined anymore
-                    $components_properties = array();
-                    switch ($qm_model_item['model_info']['type']) {
-                        case 'simple_model':
-                            $concrete_model_compociate                = $business_compositions->compociates[$qm_model_item['name']];
-                            $components_properties['concrete_model']  = $qm_model_item['model_info']['components_properties'];
-                            break;
-                        case 'concrete_model':
-                            $concrete_model_compociate                = $business_compositions->compociates[$qm_model_item['name']];
-                            $abstract_model_compociate                = $business_compositions->compociates[$abstract_model];
-                            $components_properties['concrete_model']  = $qm_model_item['model_info']['components_properties']['concrete_model'];
-                            $components_properties['abstract_model']  = $qm_model_item['model_info']['components_properties']['abstract_model'];
-                            break;
-                        case 'abstract_model':
-                            $abstract_model_compociate                = $business_compositions->compociates[$qm_model_item['name']];
-                            $concrete_model_compociate                = $business_compositions->compociates[$concrete_model];
-                            $components_properties['abstract_model']  = $qm_model_item['model_info']['components_properties']['abstract_model'];
-                            $components_properties['concrete_model']  = $qm_model_item['model_info']['components_properties']['concrete_models'][$concrete_model];
-                            break;
-                        default:
-                            exit(1);
-                            break;
-                    }
-
-                    foreach ($components_properties as $model_type => $model_type_components_properties) {
-                        foreach ($model_type_components_properties as $component_property) {
-                            foreach (${$model_type . '_compociate'}->components as $component_array) {
-                                if ($component_array['compound_property'] === $component_property) {
-                                    if (is_undefined($model_instance->{'get_' . $component_property}())) {
-                                        switch ($component_array['component_dimension']) {
-                                            case 'one':
-                                                $model_instance->{'set_' . $component_property}(null);
-                                                break;
-                                            case 'many':
-                                                $model_instance->{'set_' . $component_property}(array());
-                                                break;
-                                            default:
-                                                exit(1);
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    /******************************************************************************/
 
                     // We set to null or array() the associatonents properties that should not be undefined anymore
                     $associatonents_properties = array();
@@ -750,93 +675,68 @@ class Finder
                     continue;
                 }
 
-                switch ($qm_model_item['relation_info']['type']) {
-                    case 'none':
-                        $retour[] = $current_model;
-                        break;
-                    case 'composition':
-                        $compound_numbered_name  = $qm_model_item['relation_info']['compound_numbered_name'];
-                        $compound_property       = $qm_model_item['relation_info']['component_array']['compound_property'];
-                        $component_dimension     = $qm_model_item['relation_info']['component_array']['component_dimension'];
+                if (is_null($qm_model_item['associate']->associatound_associatonents_group)) {
+                    $retour[] = $current_model;
+                } else {
+                    $association_numbered_name        = $qm_model_item['associate']->associatound_associatonents_group->association_numbered_name;
+                    $associatound_atom_numbered_name  = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_numbered_name;
+                    $associatound_atom_model          = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_model;
+                    $associatound_atom_property       = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_property;
 
-                        switch ($component_dimension) {
-                            case 'one':
-                                $models_pool[$compound_numbered_name]->{'set_' . $compound_property}($current_model);
-                                break;
-                            case 'many':
-                                $compound_component = $models_pool[$compound_numbered_name]->{'get_' . $compound_property}();
-                                $compound_component[] = $current_model;
-                                $models_pool[$compound_numbered_name]->{'set_' . $compound_property}($compound_component);
-                                break;
-                            default:
-                                exit(1);
-                                break;
-                        }
-                        break;
-                    case 'association':
-                        $association_numbered_name        = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->association_numbered_name;
-                        $associatound_atom_numbered_name  = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->associatound_atom_numbered_name;
-                        $associatound_atom_model          = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->associatound_atom_model;
-                        $associatound_atom_property       = $qm_model_item['relation_info']['associate']->associatound_associatonents_group->associatound_atom_property;
+                    $association_array = $business_associations->associations[$association_numbered_name];
 
-                        $association_array = $business_associations->associations[$association_numbered_name];
-
-                        switch ($association_array['type']) {
-                            case 'one_to_one':
-                                $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
-                                break;
-                            case 'one_to_many':
-                                $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
-                                switch ($associatound_atom_array['dimension']) {
-                                    case 'one':
-                                        $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
-                                        break;
-                                    case 'many':
-                                        $associatound_associatonents = $models_pool[$associatound_atom_numbered_name]->{'get_' . $associatound_atom_property}();
-                                        $associatound_associatonents[] = $current_model;
-                                        $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($associatound_associatonents);
-                                        break;
-                                    default:
-                                        exit(1);
-                                        break;
-                                }
-                                break;
-                            case 'many_to_many':
-                                if ( ! isset($associations_pool[$associatound_atom_numbered_name][$associatound_atom_property])) {
-                                    $association_full_name = $association_array['class_full_name'];
-                                    $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $association_full_name::business_creation($qm_model_item, $row, $qm->aliases);
-
+                    switch ($association_array['type']) {
+                        case 'one_to_one':
+                            $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
+                            break;
+                        case 'one_to_many':
+                            $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                            switch ($associatound_atom_array['dimension']) {
+                                case 'one':
+                                    $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
+                                    break;
+                                case 'many':
                                     $associatound_associatonents = $models_pool[$associatound_atom_numbered_name]->{'get_' . $associatound_atom_property}();
-                                    $associatound_associatonents[] = $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property];
+                                    $associatound_associatonents[] = $current_model;
                                     $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($associatound_associatonents);
-
-                                    $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
-                                    $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associatound_atom_array['reverse_property']}($models_pool[$associatound_atom_numbered_name]);
-                                }
-
-                                $associate_array = $business_associations->get_associate_array($qm_model_item['name'], $qm_model_item['relation_info']['associate']->property);
-                                $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associate_array['reverse_property']}($current_model);
-                                break;
-                            default:
-                                exit(1);
-                                break;
-                        }
-
-                        // To avoid having duplicate models in the reflexive associations
-                        $qm_models = $qm->models;
-                        foreach ($qm_models as $key => $item) {
-                            if (($key !== $qm_model_key)
-                                && ($item['name'] === $qm_model_item['name'])
-                                && ($item['relation_info']['type'] === 'association')
-                                && ($item['relation_info']['associate']->property === $qm_model_item['relation_info']['associate']->property)
-                            ) {
-                                $created_instances_ids[$key][] = $current_model->get_id();
+                                    break;
+                                default:
+                                    exit(1);
+                                    break;
                             }
+                            break;
+                        case 'many_to_many':
+                            if ( ! isset($associations_pool[$associatound_atom_numbered_name][$associatound_atom_property])) {
+                                $association_full_name = $association_array['class_full_name'];
+                                $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $association_full_name::business_creation($qm_model_item, $row, $qm->aliases);
+
+                                $associatound_associatonents = $models_pool[$associatound_atom_numbered_name]->{'get_' . $associatound_atom_property}();
+                                $associatound_associatonents[] = $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property];
+                                $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($associatound_associatonents);
+
+                                $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                                $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associatound_atom_array['reverse_property']}($models_pool[$associatound_atom_numbered_name]);
+                            }
+
+                            $associate_array = $business_associations->get_associate_array($qm_model_item['name'], $qm_model_item['associate']->property);
+                            $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associate_array['reverse_property']}($current_model);
+                            break;
+                        default:
+                            exit(1);
+                            break;
+                    }
+
+                    // To avoid having duplicate models in the reflexive associations
+                    $qm_models = $qm->models;
+                    foreach ($qm_models as $key => $item) {
+                        if (($key !== $qm_model_key)
+                            && ($item['name'] === $qm_model_item['name'])
+                            && ( ! is_null($item['associate']->associatound_associatonents_group))
+                            && ($item['associate']->property === $qm_model_item['associate']->property)
+                        ) {
+                            $created_instances_ids[$key][] = $current_model->get_id();
                         }
-                        break;
-                    default:
-                        exit(1);
-                        break;
+                    }
                 }
 
                 $created_instances_ids[$qm_model_key][] = $current_model->get_id();
