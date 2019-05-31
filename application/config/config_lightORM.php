@@ -64,10 +64,22 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |         'id'       => 'pk',
 |         'content'  => 'string',
 |     ),
+|     'discount' => array(
+|         'id'          => 'pk',
+|         'code_name'   => 'string',
+|         'start_date'  => 'date',
+|         'end_date'    => 'date',
+|     ),
 |     'article_tag' => array(
 |         'article_id'  => 'pk_fk:article',
 |         'tag_id'      => 'pk_fk:tag',
 |         'created_at'  => 'timestamptz',
+|     ),
+|     'discount_folder_person' => array(
+|         'discount_id'  => 'pk_fk:discount',
+|         'folder_id'    => 'pk_fk:folder',
+|         'person_id'    => 'pk_fk:person',
+|         'created_at'   => 'timestamptz',
 |     ),
 | );
 |
@@ -203,6 +215,32 @@ $config['lightORM_data_conv'] = array();
 |                 'property'   => 'folder',
 |                 'dimension'  => 'one',
 |                 'field'      => 'folder_id',
+|             ),
+|         ),
+|     ),
+|     array(
+|         'class'       => 'Discount_Folder_Person',
+|         'associates'  => array(
+|             array(
+|                 'model'             => 'Discount',
+|                 'property'          => 'orders',
+|                 'dimension'         => 'many',
+|                 'joining_field'     => 'discount_id',
+|                 'reverse_property'  => 'discount',
+|             ),
+|             array(
+|                 'model'             => 'Folder',
+|                 'property'          => 'orders',
+|                 'dimension'         => 'many',
+|                 'joining_field'     => 'folder_id',
+|                 'reverse_property'  => 'folder',
+|             ),
+|             array(
+|                 'model'             => 'Person',
+|                 'property'          => 'orders',
+|                 'dimension'         => 'many',
+|                 'joining_field'     => 'person_id',
+|                 'reverse_property'  => 'person',
 |             ),
 |         ),
 |     ),

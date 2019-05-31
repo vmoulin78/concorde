@@ -49,6 +49,19 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_time extends Dbms_datetime_pgsql
 {
+    public static function create_from_format($format, $time) {
+        $datetime = \DateTime::createFromFormat($format, $time);
+
+        return (new self($datetime->format(PGSQL_TIME_FORMAT)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function convert() {
+        return new \DateTime('1970-01-01 ' . $this->value);
+    }
+
     /**
      * {@inheritDoc}
      */

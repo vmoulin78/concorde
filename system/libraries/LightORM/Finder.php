@@ -57,6 +57,7 @@ class Finder
     const DIMENSION_AUTO  = 2;
 
     private $model_short_name;
+    private $constructor_reflexive_part;
     private $dimension;
     private $associations;
     private $user_aliases;
@@ -72,8 +73,26 @@ class Finder
      * @param $dimension  The dimension
      */
     public function __construct($model, $dimension = self::DIMENSION_AUTO) {
-        $model_array = explode(' AS ', $model, 2);
-        $model_short_name = array_shift($model_array);
+        $model = trim($model);
+
+        //------------------------------------------------------//
+
+        $model_array = explode(' REC[', $model, 2);
+        $model_first_part = rtrim(array_shift($model_array));
+        if (count($model_array) === 1) {
+            $model_reflexive_part = array_shift($model_array);
+            if (substr($model_reflexive_part, -1) !== ']') {
+                trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+            }
+            $this->constructor_reflexive_part = trim(substr($model_reflexive_part, 0, -1));
+        } else {
+            $this->constructor_reflexive_part = null;
+        }
+
+        //------------------------------------------------------//
+
+        $model_first_part_array = explode(' AS[', $model_first_part, 2);
+        $model_short_name = rtrim(array_shift($model_first_part_array));
         $associate = new Business_associations_associate($model_short_name);
 
         $this->model_short_name  = $model_short_name;
@@ -82,8 +101,15 @@ class Finder
         $this->user_aliases      = array();
         $this->stack             = array();
 
-        if (count($model_array) === 1) {
-            $model_alias = array_shift($model_array);
+        //------------------------------------------------------//
+
+        if (count($model_first_part_array) === 1) {
+            $model_alias_part = array_shift($model_first_part_array);
+            if (substr($model_alias_part, -1) !== ']') {
+                trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+            }
+
+            $model_alias = trim(substr($model_alias_part, 0, -1));
 
             $this->user_aliases[$model_alias] = array(
                 'type'    => 'model',
@@ -125,6 +151,7 @@ class Finder
 
         if ( ! is_array($associations)) {
             $associations = (string) $associations;
+            $associations = trim($associations);
             return array($associations => null);
         }
 
@@ -132,21 +159,25 @@ class Finder
 
         foreach ($associations as $key1 => $item1) {
             if (is_string($key1)) {
-                $retour[$key1] = $this->format_with_rec($item1);
+                $trimmed_key1 = trim($key1);
+                $retour[$trimmed_key1] = $this->format_with_rec($item1);
             } else {
                 if (is_string($item1)) {
-                    $retour[$item1] = null;
+                    $trimmed_item1 = trim($item1);
+                    $retour[$trimmed_item1] = null;
                 } elseif (is_array($item1)) {
                     foreach ($item1 as $item2) {
                         if (is_string($item2)) {
-                            $retour[$item2] = null;
+                            $trimmed_item2 = trim($item2);
+                            $retour[$trimmed_item2] = null;
                         } elseif (is_array($item2)) {
                             foreach ($item2 as $key3 => $item3) {
                                 if ( ! is_string($key3)) {
                                     trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
                                 }
 
-                                $retour[$key3] = $this->format_with_rec($item3);
+                                $trimmed_key3 = trim($key3);
+                                $retour[$trimmed_key3] = $this->format_with_rec($item3);
                             }
                         } else {
                             trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
@@ -176,6 +207,47 @@ class Finder
     }
 
     /**
+     * Format the REC part of the reflexive associations in the associations $associations
+     *
+     * @param   array  $associations
+     * @return  array
+     */
+    private function format_reflexive_associations_rec_part($associations) {
+        if (is_null($associations)) {
+            return null;
+        }
+
+        $retour = array();
+
+        foreach ($associations as $key => $item) {
+            $formatted_item = $this->format_reflexive_associations_rec_part($item);
+
+            $key_array = explode(' REC[', $key, 2);
+            $key_first_part = rtrim(array_shift($key_array));
+
+            if (count($key_array) === 1) {
+                $key_reflexive_part = array_shift($key_array);
+                if (substr($key_reflexive_part, -1) !== ']') {
+                    trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                }
+                $key_reflexive_part = trim(substr($key_reflexive_part, 0, -1));
+
+                if (is_null($formatted_item)) {
+                    $formatted_item = array(
+                        $key_reflexive_part => null,
+                    );
+                } else {
+                    $formatted_item[$key_reflexive_part] = $formatted_item;
+                }
+            }
+
+            $retour[$key_first_part] = $formatted_item;
+        }
+
+        return $retour;
+    }
+
+    /**
      * Format the reflexive associations in the associations $associations
      *
      * @param   array  $associations
@@ -199,7 +271,11 @@ class Finder
             list($key_array_part1, $key_array_part2) = $key_array;
             $key_array_part2 = (int) $key_array_part2;
 
-            if ($key_array_part2 <= 1) {
+            if ($key_array_part2 < 1) {
+                trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+            }
+
+            if ($key_array_part2 === 1) {
                 $retour[$key_array_part1] = $this->format_reflexive_associations($item);
                 continue;
             }
@@ -218,12 +294,12 @@ class Finder
     }
 
     /**
-     * This function is the recursive part of the function convert_user_aliases_array()
+     * Convert the string of user aliases in array
      *
      * @param   string  $user_aliases_string
      * @return  array
      */
-    private function convert_user_aliases_array_rec($user_aliases_string) {
+    private function convert_user_aliases($user_aliases_string) {
         if (empty($user_aliases_string)) {
             return array();
         }
@@ -235,7 +311,7 @@ class Finder
         switch ($first_label) {
             case 'model':
                 if (in_string(',', $after_first_label)) {
-                    $retour = $this->convert_user_aliases_array_rec(strstr_after_needle($after_first_label, ','));
+                    $retour = $this->convert_user_aliases(strstr_after_needle($after_first_label, ','));
                     $retour['unique_model'] = strstr($after_first_label, ',', true);
                 } else {
                     $retour['unique_model'] = $after_first_label;
@@ -243,7 +319,7 @@ class Finder
                 break;
             case 'association':
                 if (in_string(',', $after_first_label)) {
-                    $retour = $this->convert_user_aliases_array_rec(strstr_after_needle($after_first_label, ','));
+                    $retour = $this->convert_user_aliases(strstr_after_needle($after_first_label, ','));
                     $retour['association'] = strstr($after_first_label, ',', true);
                 } else {
                     $retour['association'] = $after_first_label;
@@ -258,7 +334,7 @@ class Finder
                 $models_aliases = substr(strstr($after_first_label, ']', true), 1);
                 $after_first_segment = strstr_after_needle($after_first_label, ']');
                 if (substr($after_first_segment, 0, 1) === ',') {
-                    $retour = $this->convert_user_aliases_array_rec(substr($after_first_segment, 1));
+                    $retour = $this->convert_user_aliases(substr($after_first_segment, 1));
                 }
 
                 $models_aliases_array = explode(',', $models_aliases);
@@ -280,16 +356,6 @@ class Finder
     }
 
     /**
-     * Convert the string of user aliases in array
-     *
-     * @param   string  $user_aliases_string
-     * @return  array
-     */
-    private function convert_user_aliases_array($user_aliases_string) {
-        return $this->convert_user_aliases_array_rec(substr($user_aliases_string, 1, -1));
-    }
-
-    /**
      * This function is the recursive part of the function with()
      *
      * @param   array  $associations
@@ -307,17 +373,21 @@ class Finder
 
         foreach ($associatounds as $associatound) {
             foreach ($associations as $key => $item) {
-                $key_array = explode(' AS ', $key, 2);
+                $key_array = explode(' AS[', $key, 2);
 
                 $associatound_atom_full_path = str_replace(' ', '', array_shift($key_array));
 
                 $user_aliases = array();
                 if (count($key_array) === 1) {
-                    $user_aliases_string = str_replace(' ', '', array_shift($key_array));
-                    if ((substr($user_aliases_string, 0, 1) === '[')
-                        && (substr($user_aliases_string, -1) === ']')
-                    ) {
-                        $user_aliases = $this->convert_user_aliases_array($user_aliases_string);
+                    $user_aliases_string = array_shift($key_array);
+                    if (substr($user_aliases_string, -1) !== ']') {
+                        trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                    }
+                    $user_aliases_string = substr($user_aliases_string, 0, -1);
+                    $user_aliases_string = str_replace(' ', '', $user_aliases_string);
+
+                    if (in_string(':', $user_aliases_string)) {
+                        $user_aliases = $this->convert_user_aliases($user_aliases_string);
                     } else {
                         $user_aliases['unique_model'] = $user_aliases_string;
                     }
@@ -422,8 +492,18 @@ class Finder
      */
     public function with($associations) {
         $associations = $this->format_with($associations);
+
+        if ( ! is_null($this->constructor_reflexive_part)) {
+            $associations[$this->constructor_reflexive_part]  = $associations;
+            $this->constructor_reflexive_part                 = null;
+        }
+
+        $associations = $this->format_reflexive_associations_rec_part($associations);
+
         $associations = $this->format_reflexive_associations($associations);
+
         $this->with_rec($associations, [$this->associations]);
+
         return $this;
     }
 
@@ -586,6 +666,10 @@ class Finder
     public function get($filter = null) {
         $business_associations  = Business_associations::get_singleton();
 
+        if ( ! is_null($this->constructor_reflexive_part)) {
+            $this->with(array());
+        }
+
         $databubble = new Databubble();
 
         $qm = new Query_manager();
@@ -603,11 +687,9 @@ class Finder
 
         $query = $qm->get();
 
-        $retour                 = array();
-        $created_instances_ids  = array();
-        foreach ($qm->models as $qm_model_key => $qm_model_item) {
-            $created_instances_ids[$qm_model_key] = array();
-        }
+        $retour                        = array();
+        $already_managed_retour_ids    = array();
+        $already_managed_associations  = array();
 
         foreach ($query->result() as $row) {
             $qm->convert_row($row);
@@ -665,23 +747,33 @@ class Finder
                 $models_pool[$qm_model_key] = $model_instance;
             }
 
-            // We manage the relations between the models
             foreach ($qm->models as $qm_model_key => $qm_model_item) {
                 $current_model = $models_pool[$qm_model_key];
 
-                if (is_null($current_model)
-                    || in_array($current_model->get_id(), $created_instances_ids[$qm_model_key])
-                ) {
+                if (is_null($current_model)) {
                     continue;
                 }
 
                 if (is_null($qm_model_item['associate']->associatound_associatonents_group)) {
-                    $retour[] = $current_model;
+                    if (in_array($current_model->get_id(), $already_managed_retour_ids)) {
+                        // To avoid having duplicate models in the variable $retour
+                        continue;
+                    }
+
+                    $retour[]                      = $current_model;
+                    $already_managed_retour_ids[]  = $current_model->get_id();
                 } else {
                     $association_numbered_name        = $qm_model_item['associate']->associatound_associatonents_group->association_numbered_name;
                     $associatound_atom_numbered_name  = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_numbered_name;
                     $associatound_atom_model          = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_model;
                     $associatound_atom_property       = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_property;
+
+                    if (isset($already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
+                        && in_array($associatound_atom_property, $already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
+                    ) {
+                        // To avoid having duplicate models in the associations
+                        continue;
+                    }
 
                     $association_array = $business_associations->associations[$association_numbered_name];
 
@@ -726,20 +818,8 @@ class Finder
                             break;
                     }
 
-                    // To avoid having duplicate models in the reflexive associations
-                    $qm_models = $qm->models;
-                    foreach ($qm_models as $key => $item) {
-                        if (($key !== $qm_model_key)
-                            && ($item['name'] === $qm_model_item['name'])
-                            && ( ! is_null($item['associate']->associatound_associatonents_group))
-                            && ($item['associate']->property === $qm_model_item['associate']->property)
-                        ) {
-                            $created_instances_ids[$key][] = $current_model->get_id();
-                        }
-                    }
+                    $already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()][] = $associatound_atom_property;
                 }
-
-                $created_instances_ids[$qm_model_key][] = $current_model->get_id();
             }
         }
 

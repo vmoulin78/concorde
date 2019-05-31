@@ -95,6 +95,10 @@ defined('PGSQL_BOOL_FALSE_FROM_SERVER')  OR define('PGSQL_BOOL_FALSE_FROM_SERVER
 defined('PGSQL_BOOL_TRUE_TO_SERVER')     OR define('PGSQL_BOOL_TRUE_TO_SERVER', 'TRUE');
 defined('PGSQL_BOOL_FALSE_TO_SERVER')    OR define('PGSQL_BOOL_FALSE_TO_SERVER', 'FALSE');
 defined('PGSQL_TIMESTAMPTZ_FORMAT')      OR define('PGSQL_TIMESTAMPTZ_FORMAT', 'Y-m-d H:i:s.uP');
+defined('PGSQL_TIMESTAMP_FORMAT')        OR define('PGSQL_TIMESTAMP_FORMAT', 'Y-m-d H:i:s.u');
+defined('PGSQL_TIMETZ_FORMAT')           OR define('PGSQL_TIMETZ_FORMAT', 'H:i:s.uP');
+defined('PGSQL_TIME_FORMAT')             OR define('PGSQL_TIME_FORMAT', 'H:i:s.u');
+defined('PGSQL_DATE_FORMAT')             OR define('PGSQL_DATE_FORMAT', 'Y-m-d');
 
 defined('MYSQL_BOOL_TRUE_FROM_SERVER')   OR define('MYSQL_BOOL_TRUE_FROM_SERVER', '1');
 defined('MYSQL_BOOL_FALSE_FROM_SERVER')  OR define('MYSQL_BOOL_FALSE_FROM_SERVER', '0');

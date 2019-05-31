@@ -49,6 +49,23 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_timetz extends Dbms_datetime_pgsql
 {
+    public static function create_from_format($format, $time, $timezone = null) {
+        if (is_null($timezone)) {
+            $datetime = \DateTime::createFromFormat($format, $time);
+        } else {
+            $datetime = \DateTime::createFromFormat($format, $time, $timezone);
+        }
+
+        return (new self($datetime->format(PGSQL_TIMETZ_FORMAT)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function convert() {
+        return new \DateTime('1970-01-01 ' . $this->value);
+    }
+
     /**
      * {@inheritDoc}
      */
