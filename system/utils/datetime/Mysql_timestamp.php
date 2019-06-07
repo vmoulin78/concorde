@@ -41,6 +41,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Mysql_timestamp Class
  *
+ * This class represents a timestamp.
+ * The corresponding MySQL type is TIMESTAMP.
+ *
  * @package     Concorde
  * @subpackage  Utils
  * @category    Utils
@@ -48,4 +51,54 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @link        
  */
 class Mysql_timestamp extends Dbms_datetime_mysql
-{}
+{
+    public function __construct($value = 'now') {
+        if ($value === 'now') {
+            $datetime     = new \DateTime($value);
+            $this->value  = $datetime->format(MYSQL_TIMESTAMP_FORMAT);
+        } else {
+            $this->value = $value;
+        }
+    }
+
+    /**
+     * Create a Mysql_timestamp object
+     *
+     * @param   string  $format
+     * @param   string  $time
+     * @return  object
+     */
+    public static function create_from_format($format, $time) {
+        $datetime = \DateTime::createFromFormat($format, $time);
+
+        return (new self($datetime->format(MYSQL_TIMESTAMP_FORMAT)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function convert() {
+        return new \DateTime($this->value);
+    }
+
+    //------------------------------------------------------//
+
+    public function diff(Mysql_timestamp $mysql_timestamp, $absolute = false) {
+        return Mysql_interval::create($this->convert(), $mysql_timestamp->convert(), $absolute);
+    }
+
+    public function add(Mysql_interval $mysql_interval) {
+        $this->value = $this->convert()->add($mysql_interval->convert())->format(MYSQL_TIMESTAMP_FORMAT);
+        return $this;
+    }
+
+    public function sub(Mysql_interval $mysql_interval) {
+        $this->value = $this->convert()->sub($mysql_interval->convert())->format(MYSQL_TIMESTAMP_FORMAT);
+        return $this;
+    }
+
+    public function modify(string $modify) {
+        $this->value = $this->convert()->modify($modify)->format(MYSQL_TIMESTAMP_FORMAT);
+        return $this;
+    }
+}

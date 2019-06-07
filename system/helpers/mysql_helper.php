@@ -50,6 +50,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 use Concorde\utils\datetime\Mysql_date;
 use Concorde\utils\datetime\Mysql_datetime;
+use Concorde\utils\datetime\Mysql_interval;
 use Concorde\utils\datetime\Mysql_time;
 use Concorde\utils\datetime\Mysql_timestamp;
 use Concorde\utils\datetime\Mysql_year;
@@ -97,6 +98,7 @@ if ( ! function_exists('php_data_to_mysql_data'))
                 break;
             case 'date':
             case 'datetime':
+            case 'interval':
             case 'time':
             case 'timestamp':
             case 'year':
@@ -165,6 +167,9 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 break;
             case 'datetime':
                 $retour = new Mysql_datetime($mysql_data);
+                break;
+            case 'interval':
+                $retour = new Mysql_interval($mysql_data);
                 break;
             case 'time':
                 $retour = new Mysql_time($mysql_data);

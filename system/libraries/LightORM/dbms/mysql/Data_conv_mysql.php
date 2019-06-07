@@ -39,11 +39,6 @@ namespace LightORM\dbms\mysql;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 use LightORM\Data_conv;
-use Concorde\utils\datetime\Mysql_datetime;
-use Concorde\utils\datetime\Mysql_date;
-use Concorde\utils\datetime\Mysql_time;
-use Concorde\utils\datetime\Mysql_year;
-use Concorde\utils\datetime\Mysql_timestamp;
 
 /**
  * Data_conv_mysql Class

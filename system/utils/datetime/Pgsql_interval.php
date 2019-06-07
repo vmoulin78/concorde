@@ -41,6 +41,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Pgsql_interval Class
  *
+ * This class represents a time interval.
+ * The corresponding PostgreSQL type is INTERVAL.
+ *
  * @package     Concorde
  * @subpackage  Utils
  * @category    Utils
@@ -49,6 +52,29 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_interval extends Dbms_datetime_pgsql
 {
+    public function __construct($value) {
+        $this->value = $value;
+    }
+
+    /**
+     * Create a Pgsql_interval object
+     *
+     * @param   string  $time
+     * @return  object
+     */
+    public static function create_from_date_string($time) {
+        $dateinterval = \DateInterval::createFromDateString($time);
+
+        return (new self($dateinterval->format(PGSQL_INTERVAL_FORMAT)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function convert() {
+        return \DateInterval::createFromDateString($this->value);
+    }
+
     /**
      * {@inheritDoc}
      */

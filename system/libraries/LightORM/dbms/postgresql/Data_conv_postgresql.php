@@ -39,12 +39,6 @@ namespace LightORM\dbms\postgresql;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 use LightORM\Data_conv;
-use Concorde\utils\datetime\Pgsql_timestamp;
-use Concorde\utils\datetime\Pgsql_timestamptz;
-use Concorde\utils\datetime\Pgsql_date;
-use Concorde\utils\datetime\Pgsql_time;
-use Concorde\utils\datetime\Pgsql_timetz;
-use Concorde\utils\datetime\Pgsql_interval;
 
 /**
  * Data_conv_postgresql Class

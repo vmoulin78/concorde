@@ -41,6 +41,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Pgsql_timestamp Class
  *
+ * This class represents a datetime.
+ * The corresponding PostgreSQL type is TIMESTAMP.
+ *
  * @package     Concorde
  * @subpackage  Utils
  * @category    Utils
@@ -49,6 +52,22 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_timestamp extends Dbms_datetime_pgsql
 {
+    public function __construct($value = 'now') {
+        if ($value === 'now') {
+            $datetime     = new \DateTime($value);
+            $this->value  = $datetime->format(PGSQL_TIMESTAMP_FORMAT);
+        } else {
+            $this->value = $value;
+        }
+    }
+
+    /**
+     * Create a Pgsql_timestamp object
+     *
+     * @param   string  $format
+     * @param   string  $time
+     * @return  object
+     */
     public static function create_from_format($format, $time) {
         $datetime = \DateTime::createFromFormat($format, $time);
 
@@ -67,5 +86,26 @@ class Pgsql_timestamp extends Dbms_datetime_pgsql
      */
     public function db_format() {
         return "TIMESTAMP '" . $this->value . "'";
+    }
+
+    //------------------------------------------------------//
+
+    public function diff(Pgsql_timestamp $pgsql_timestamp, $absolute = false) {
+        return (new Pgsql_interval($this->convert()->diff($pgsql_timestamp->convert(), $absolute)->format(PGSQL_INTERVAL_FORMAT)));
+    }
+
+    public function add(Pgsql_interval $pgsql_interval) {
+        $this->value = $this->convert()->add($pgsql_interval->convert())->format(PGSQL_TIMESTAMP_FORMAT);
+        return $this;
+    }
+
+    public function sub(Pgsql_interval $pgsql_interval) {
+        $this->value = $this->convert()->sub($pgsql_interval->convert())->format(PGSQL_TIMESTAMP_FORMAT);
+        return $this;
+    }
+
+    public function modify(string $modify) {
+        $this->value = $this->convert()->modify($modify)->format(PGSQL_TIMESTAMP_FORMAT);
+        return $this;
     }
 }

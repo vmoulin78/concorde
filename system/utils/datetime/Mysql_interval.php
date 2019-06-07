@@ -39,10 +39,10 @@ namespace Concorde\utils\datetime;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Pgsql_date Class
+ * Mysql_interval Class
  *
- * This class represents a date.
- * The corresponding PostgreSQL type is DATE.
+ * This class represents a time interval.
+ * The corresponding MySQL type is TIME.
  *
  * @package     Concorde
  * @subpackage  Utils
@@ -50,62 +50,65 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Pgsql_date extends Dbms_datetime_pgsql
+class Mysql_interval extends Dbms_datetime_mysql
 {
-    public function __construct($value = 'now') {
-        if ($value === 'now') {
-            $datetime     = new \DateTime($value);
-            $this->value  = $datetime->format(PGSQL_DATE_FORMAT);
-        } else {
-            $this->value = $value;
-        }
+    public function __construct($value) {
+        $this->value = $value;
     }
 
     /**
-     * Create a Pgsql_date object
+     * Create a Mysql_interval object
      *
-     * @param   string  $format
+     * @param   DateTime  $datetime_1
+     * @param   DateTime  $datetime_2
+     * @param   bool      $absolute
+     * @return  object
+     */
+    public static function create(\DateTime $datetime_1, \DateTime $datetime_2, $absolute = false) {
+        $diff_in_seconds = $datetime_1->getTimestamp() - $datetime_2->getTimestamp();
+        if ($absolute) {
+            $diff_in_seconds = abs($diff_in_seconds);
+        }
+
+        if ($diff_in_seconds < 0) {
+            $diff_is_negative  = true;
+            $diff_in_seconds   = abs($diff_in_seconds);
+        } else {
+            $diff_is_negative = false;
+        }
+
+        $seconds = $diff_in_seconds % 60;
+        $diff_in_minutes = intdiv($diff_in_seconds, 60);
+
+        $minutes = $diff_in_minutes % 60;
+        $diff_in_hours = intdiv($diff_in_minutes, 60);
+
+        $diff_string = $diff_in_hours . ':' . $minutes . ':' . $seconds;
+        if ($diff_is_negative) {
+            $diff_string = '-' . $diff_string;
+        }
+
+        return (new self($diff_string));
+    }
+
+    /**
+     * Create a Mysql_interval object
+     *
      * @param   string  $time
      * @return  object
      */
-    public static function create_from_format($format, $time) {
-        $datetime = \DateTime::createFromFormat($format, $time);
+    public static function create_from_date_string($time) {
+        $dateinterval = \DateInterval::createFromDateString($time);
 
-        return (new self($datetime->format(PGSQL_DATE_FORMAT)));
+        return (new self($dateinterval->format(MYSQL_INTERVAL_FORMAT)));
     }
 
     /**
      * {@inheritDoc}
      */
     public function convert() {
-        return new \DateTime($this->value . ' 00:00:00');
-    }
+        list($hours, $minutes, $seconds) = explode(':', $this->value, 3);
 
-    /**
-     * {@inheritDoc}
-     */
-    public function db_format() {
-        return "DATE '" . $this->value . "'";
-    }
-
-    //------------------------------------------------------//
-
-    public function diff(Pgsql_date $pgsql_date, $absolute = false) {
-        return (new Pgsql_interval($this->convert()->diff($pgsql_date->convert(), $absolute)->format(PGSQL_INTERVAL_FORMAT)));
-    }
-
-    public function add(Pgsql_interval $pgsql_interval) {
-        $this->value = $this->convert()->add($pgsql_interval->convert())->format(PGSQL_DATE_FORMAT);
-        return $this;
-    }
-
-    public function sub(Pgsql_interval $pgsql_interval) {
-        $this->value = $this->convert()->sub($pgsql_interval->convert())->format(PGSQL_DATE_FORMAT);
-        return $this;
-    }
-
-    public function modify(string $modify) {
-        $this->value = $this->convert()->modify($modify)->format(PGSQL_DATE_FORMAT);
-        return $this;
+        return \DateInterval::createFromDateString($hours . ' hours ' . $minutes . ' minutes ' . $seconds . ' seconds');
     }
 }

@@ -99,11 +99,18 @@ defined('PGSQL_TIMESTAMP_FORMAT')        OR define('PGSQL_TIMESTAMP_FORMAT', 'Y-
 defined('PGSQL_TIMETZ_FORMAT')           OR define('PGSQL_TIMETZ_FORMAT', 'H:i:s.uP');
 defined('PGSQL_TIME_FORMAT')             OR define('PGSQL_TIME_FORMAT', 'H:i:s.u');
 defined('PGSQL_DATE_FORMAT')             OR define('PGSQL_DATE_FORMAT', 'Y-m-d');
+defined('PGSQL_INTERVAL_FORMAT')         OR define('PGSQL_INTERVAL_FORMAT', '%y years %m months %d days %h hours %i minutes %s seconds');
 
 defined('MYSQL_BOOL_TRUE_FROM_SERVER')   OR define('MYSQL_BOOL_TRUE_FROM_SERVER', '1');
 defined('MYSQL_BOOL_FALSE_FROM_SERVER')  OR define('MYSQL_BOOL_FALSE_FROM_SERVER', '0');
 defined('MYSQL_BOOL_TRUE_TO_SERVER')     OR define('MYSQL_BOOL_TRUE_TO_SERVER', '1');
 defined('MYSQL_BOOL_FALSE_TO_SERVER')    OR define('MYSQL_BOOL_FALSE_TO_SERVER', '0');
+defined('MYSQL_DATETIME_FORMAT')         OR define('MYSQL_DATETIME_FORMAT', 'Y-m-d H:i:s.u');
+defined('MYSQL_TIMESTAMP_FORMAT')        OR define('MYSQL_TIMESTAMP_FORMAT', 'Y-m-d H:i:s.u');
+defined('MYSQL_DATE_FORMAT')             OR define('MYSQL_DATE_FORMAT', 'Y-m-d');
+defined('MYSQL_YEAR_FORMAT')             OR define('MYSQL_YEAR_FORMAT', 'Y');
+defined('MYSQL_TIME_FORMAT')             OR define('MYSQL_TIME_FORMAT', 'H:i:s.u');
+defined('MYSQL_INTERVAL_FORMAT')         OR define('MYSQL_INTERVAL_FORMAT', '%h:%i:%s');
 
 /*
 |--------------------------------------------------------------------------

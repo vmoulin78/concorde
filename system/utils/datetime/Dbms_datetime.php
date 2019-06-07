@@ -51,10 +51,6 @@ abstract class Dbms_datetime
 {
     protected $value;
 
-    public function __construct($value) {
-        $this->value = $value;
-    }
-
     /**
      * Get the value
      *
@@ -65,9 +61,9 @@ abstract class Dbms_datetime
     }
 
     /**
-     * Convert the value $this->value into DateTime object
+     * Convert the value $this->value into a DateTime or DateInterval object
      *
-     * @return  DateTime
+     * @return  DateTime|DateInterval
      */
     abstract public function convert();
 
