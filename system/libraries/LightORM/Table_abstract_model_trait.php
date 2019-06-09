@@ -53,13 +53,36 @@ trait Table_abstract_model_trait
     use Table_model_trait;
 
     /**
-     * Get the table concrete models
+     * Get the names of the table concrete models
      *
      * @return  array
      */
     public static function get_table_concrete_models() {
         $table_abstract_model_loader = Table_abstract_model_loader::get_singleton();
         return $table_abstract_model_loader->get_table_concrete_models(self::get_business_short_name());
+    }
+
+    /**
+     * Get the name of the table concrete model whose id is $id
+     *
+     * @param   int  $id
+     * @return  string
+     */
+    public static function get_table_concrete_model($id) {
+        $models_metadata = Models_metadata::get_singleton();
+
+        $table_concrete_models = self::get_table_concrete_models();
+        foreach ($table_concrete_models as $table_concrete_model) {
+            $concrete_model_table = $models_metadata->models[$table_concrete_model]['table'];
+            $qm = new Query_manager();
+            $qm->from($concrete_model_table)
+               ->where('id', $id);
+            if ($qm->count_all_results() === 1) {
+                return $table_concrete_model;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -188,6 +211,27 @@ trait Table_abstract_model_trait
     }
 
     /**
+     * Update in the database the table model whose id is $id with the data $data
+     *
+     * @param   int    $id    The id of the table model
+     * @param   array  $data  An associative array whose keys are the fields and values are the values
+     * @return  bool
+     */
+    public static function update($id, $data) {
+        $models_metadata = Models_metadata::get_singleton();
+
+        $table_concrete_model = self::get_table_concrete_model($id);
+
+        if ($table_concrete_model === false) {
+            return true;
+        }
+
+        $table_concrete_model_full_name = $models_metadata->models[$table_concrete_model]['model_full_name'];
+
+        return $table_concrete_model_full_name::update($id, $data);
+    }
+
+    /**
      * Delete from the database the table model whose id is $id
      *
      * @param   int  $id
@@ -196,31 +240,14 @@ trait Table_abstract_model_trait
     public static function delete($id) {
         $models_metadata = Models_metadata::get_singleton();
 
-        $table_concrete_models = self::get_table_concrete_models();
-        foreach ($table_concrete_models as $table_concrete_model) {
-            $concrete_model_table = $models_metadata->models[$table_concrete_model]['table'];
-            $qm = new Query_manager();
-            $qm->from($concrete_model_table)
-               ->where('id', $id);
-            if ($qm->count_all_results() === 1) {
-                $qm = new Query_manager();
-                $qm->table($concrete_model_table)
-                   ->where('id', $id);
-                if ($qm->delete() === false) {
-                    return false;
-                }
+        $table_concrete_model = self::get_table_concrete_model($id);
 
-                break;
-            }
+        if ($table_concrete_model === false) {
+            return true;
         }
 
-        $qm = new Query_manager();
-        $qm->table($models_metadata->models[self::get_business_short_name()]['table'])
-           ->where('id', $id);
-        if ($qm->delete() === false) {
-            return false;
-        }
+        $table_concrete_model_full_name = $models_metadata->models[$table_concrete_model]['model_full_name'];
 
-        return true;
+        return $table_concrete_model_full_name::delete($id);
     }
 }

@@ -180,11 +180,11 @@ trait Table_association_trait
     }
 
     /**
-     * Trigger the UPDATE query
+     * Save the modifications in the database
      *
      * @return  bool
      */
-    public function update() {
+    public function save() {
         $associations_metadata  = Associations_metadata::get_singleton();
         $lightORM               = LightORM::get_singleton();
 
@@ -207,12 +207,12 @@ trait Table_association_trait
     }
 
     /**
-     * Insert in the database the Table_association whose data are $data
+     * Set the data $data for the database
      *
      * @param   array  $data  An associative array whose keys are the fields and values are the values
-     * @return  bool
+     * @return  object
      */
-    public static function insert($data) {
+    private static function set_data_for_database($data) {
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
@@ -237,11 +237,40 @@ trait Table_association_trait
             $qm->simple_set($field, $db_value, false);
         }
 
+        return $qm;
+    }
+
+    /**
+     * Insert in the database the table association whose data are $data
+     *
+     * @param   array  $data  An associative array whose keys are the fields and values are the values
+     * @return  bool
+     */
+    public static function insert($data) {
+        $qm = self::set_data_for_database($data);
+
         return $qm->insert();
     }
 
     /**
-     * Delete from the database the Table_association whose ids of the primary key are $primary_key_ids
+     * Update in the database the table association whose ids of the primary key are $primary_key_ids with the data $data
+     *
+     * @param   array  $data             An associative array whose keys are the fields and values are the values
+     * @param   array  $primary_key_ids  An associative array whose keys are the fields of the primary key and values are the values of the primary key
+     * @return  bool
+     */
+    public static function update($primary_key_ids, $data) {
+        $qm = self::set_data_for_database($data);
+
+        foreach ($primary_key_ids as $field => $value) {
+            $qm->where($field, $value);
+        }
+
+        return $qm->update();
+    }
+
+    /**
+     * Delete from the database the table association whose ids of the primary key are $primary_key_ids
      *
      * @param   array  $primary_key_ids  An associative array whose keys are the fields of the primary key and values are the values of the primary key
      * @return  bool

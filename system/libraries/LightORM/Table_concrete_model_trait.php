@@ -322,11 +322,11 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Trigger the UPDATE query
+     * Save the modifications in the database
      *
      * @return  bool
      */
-    public function update() {
+    public function save() {
         $models_metadata  = Models_metadata::get_singleton();
         $lightORM         = LightORM::get_singleton();
 
@@ -354,13 +354,12 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Insert in the database the table model whose data are $data
+     * Set the data $data for the database
      *
-     * @param   array  $data            An associative array whose keys are the fields and values are the values
-     * @param   bool   $with_insert_id  If true, the method will return the insert id
-     * @return  bool|int
+     * @param   array  $data  An associative array whose keys are the fields and values are the values
+     * @return  array
      */
-    public static function insert($data, $with_insert_id = false) {
+    private static function set_data_for_database($data) {
         $models_metadata  = Models_metadata::get_singleton();
         $data_conv        = Data_conv::factory();
 
@@ -370,10 +369,11 @@ trait Table_concrete_model_trait
 
         $abstract_table = self::get_abstract_table();
         if (is_null($abstract_table)) {
-            $abstract_table_object = null;
+            $abstract_table_object  = null;
+            $qm_abstract_table      = null;
         } else {
-            $abstract_table_object = $data_conv->schema[$abstract_table];
-            $qm_abstract_table = new Query_manager();
+            $abstract_table_object  = $data_conv->schema[$abstract_table];
+            $qm_abstract_table      = new Query_manager();
             $qm_abstract_table->table($abstract_table_object->name);
         }
 
@@ -401,7 +401,25 @@ trait Table_concrete_model_trait
             ${'qm_' . $current_table_type . '_table'}->simple_set($field, $db_value, false);
         }
 
-        if (is_null($abstract_table_object)) {
+        return array(
+            'qm_abstract_table'  => $qm_abstract_table,
+            'qm_concrete_table'  => $qm_concrete_table,
+        );
+    }
+
+    /**
+     * Insert in the database the table model whose data are $data
+     *
+     * @param   array  $data            An associative array whose keys are the fields and values are the values
+     * @param   bool   $with_insert_id  If true, the method will return the insert id
+     * @return  bool|int
+     */
+    public static function insert($data, $with_insert_id = false) {
+        $query_managers     = self::set_data_for_database($data);
+        $qm_abstract_table  = $query_managers['qm_abstract_table'];
+        $qm_concrete_table  = $query_managers['qm_concrete_table'];
+
+        if (is_null($qm_abstract_table)) {
             return $qm_concrete_table->insert($with_insert_id);
         }
 
@@ -422,6 +440,30 @@ trait Table_concrete_model_trait
         } else {
             return true;
         }
+    }
+
+    /**
+     * Update in the database the table model whose id is $id with the data $data
+     *
+     * @param   int    $id    The id of the table model
+     * @param   array  $data  An associative array whose keys are the fields and values are the values
+     * @return  bool
+     */
+    public static function update($id, $data) {
+        $query_managers = self::set_data_for_database($data);
+
+        foreach ($query_managers as $query_manager) {
+            if ( ! is_null($query_manager)) {
+                $query_manager->where('id', $id);
+
+                $update_result = $query_manager->update();
+                if ($update_result === false) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
