@@ -57,52 +57,23 @@ class Business_tables_metadata
     private function __construct() {
         $this->CI =& get_instance();
 
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+
         $this->tables = array();
 
-        $scandir = array(
-            'models'        => scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models'),
-            'associations'  => scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'associations'),
-        );
+        foreach ($models_metadata->models as $key => $item) {
+            $this->tables[$item['table']] = array(
+                'business_short_name'  => $key,
+                'business_full_name'   => $item['model_full_name'],
+            );
+        }
 
-        foreach ($scandir as $scandir_key => $scandir_item) {
-            foreach ($scandir_item as $item) {
-                $item_array = explode('.', $item);
-
-                if (count($item_array) != 2) {
-                    continue;
-                }
-
-                list($item_main, $item_ext) = $item_array;
-
-                if ($item_ext != 'php') {
-                    continue;
-                }
-
-                switch ($scandir_key) {
-                    case 'models':
-                        $item_main_full_name = model_full_name($item_main);
-                        if ( ! is_table_model($item_main_full_name)) {
-                            continue 2;
-                        }
-                        break;
-                    case 'associations':
-                        $item_main_full_name = association_full_name($item_main);
-                        if ( ! is_table_association($item_main_full_name)) {
-                            continue 2;
-                        }
-                        break;
-                    default:
-                        exit(1);
-                        break;
-                }
-
-                $table = business_to_table($item_main_full_name);
-
-                $this->tables[$table] = array(
-                    'business_short_name'  => $item_main,
-                    'business_full_name'   => $item_main_full_name,
-                );
-            }
+        foreach ($associations_metadata->get_association_array() as $item) {
+            $this->tables[$item['table']] = array(
+                'business_short_name'  => $item['class'],
+                'business_full_name'   => $item['class_full_name'],
+            );
         }
     }
 

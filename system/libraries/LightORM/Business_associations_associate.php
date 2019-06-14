@@ -83,7 +83,7 @@ class Business_associations_associate
      * @return  void
      */
     public function add_associatonents_group(Business_associations_associatonents_group $associatonents_group, $associatound_atom_full_path, $associatound_atom_path, $associatound_atom_model, $associatound_atom_property) {
-        $business_associations = Business_associations::get_singleton();
+        $associations_metadata = Associations_metadata::get_singleton();
 
         $this->associatonents_groups[] = $associatonents_group;
 
@@ -93,9 +93,9 @@ class Business_associations_associate
         $associatonents_group->associatound_atom_model      = $associatound_atom_model;
         $associatonents_group->associatound_atom_property   = $associatound_atom_property;
 
-        $association_array = $business_associations->associations[$associatonents_group->association_numbered_name];
+        $association_array = $associations_metadata->associations[$associatonents_group->association_numbered_name];
         if ($association_array['type'] === 'many_to_many') {
-            $associate_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+            $associate_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
 
             $associatonents_group->associatound_atom_field          = $associate_array['field'];
             $associatonents_group->associatound_atom_joining_field  = $associate_array['joining_field'];

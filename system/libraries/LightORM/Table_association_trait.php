@@ -60,7 +60,9 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        $table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
+        $association_array  = $associations_metadata->get_association_array(self::get_business_short_name());
+        $table_object       = $data_conv->schema[$association_array['table']];
+
         return $table_object->get_primary_key_fields();
     }
 
@@ -116,7 +118,9 @@ trait Table_association_trait
 
         $association_table_alias = 'alias_' . $table_alias_number;
 
-        $association_table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
+        $association_array         = $associations_metadata->get_association_array(self::get_business_short_name());
+        $association_table_object  = $data_conv->schema[$association_array['table']];
+
         $association_table_object->business_selection($query_manager, $association_table_alias);
 
         // This is a "LEFT JOIN" because there could be no matching row
@@ -161,7 +165,7 @@ trait Table_association_trait
     public function get_concrete_update_manager() {
         $lightORM = LightORM::get_singleton();
 
-        $association_short_name = $this::get_business_short_name();
+        $association_short_name = self::get_business_short_name();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
 
@@ -188,8 +192,9 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $lightORM               = LightORM::get_singleton();
 
-        $association_short_name  = $this::get_business_short_name();
-        $table                   = $associations_metadata->associations[$association_short_name]['table'];
+        $association_short_name  = self::get_business_short_name();
+        $association_array       = $associations_metadata->get_association_array($association_short_name);
+        $table                   = $association_array['table'];
 
         $update_manager = $this->get_concrete_update_manager();
         $update_manager->table($table);
@@ -216,7 +221,8 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        $table_object = $data_conv->schema[$associations_metadata->associations[self::get_business_short_name()]['table']];
+        $association_array  = $associations_metadata->get_association_array(self::get_business_short_name());
+        $table_object       = $data_conv->schema[$association_array['table']];
 
         $qm = new Query_manager();
         $qm->table($table_object->name);
@@ -278,8 +284,10 @@ trait Table_association_trait
     public static function delete($primary_key_ids) {
         $associations_metadata = Associations_metadata::get_singleton();
 
+        $association_array = $associations_metadata->get_association_array(self::get_business_short_name());
+
         $qm = new Query_manager();
-        $qm->table($associations_metadata->associations[self::get_business_short_name()]['table']);
+        $qm->table($association_array['table']);
         foreach ($primary_key_ids as $field => $value) {
             $qm->where($field, $value);
         }

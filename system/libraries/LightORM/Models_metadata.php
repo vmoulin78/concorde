@@ -53,39 +53,23 @@ class Models_metadata
 
     private $CI;
     public $models;
+    private $basic_properties;
     
     private function __construct() {
         $this->CI =& get_instance();
 
         $this->models = array();
 
-        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
-            $item_array = explode('.', $item);
-
-            if (count($item_array) != 2) {
-                continue;
-            }
-
-            list($item_main, $item_ext) = $item_array;
-
-            if ($item_ext != 'php') {
-                continue;
-            }
-
-            $item_main_full_name = model_full_name($item_main);
-
-            if (is_table_model($item_main_full_name)) {
-                $item_main_is_table_model  = true;
-                $item_main_table           = business_to_table($item_main_full_name);
+        foreach ($this->CI->config->item('lightORM_business_models') as $model_short_name => $config_model) {
+            if (isset($config_model['table'])) {
+                $table = $config_model['table'];
             } else {
-                $item_main_is_table_model  = false;
-                $item_main_table           = null;
+                $table = strtolower($model_short_name);
             }
 
-            $this->models[$item_main] = array(
-                'model_full_name'  => $item_main_full_name,
-                'is_table_model'   => $item_main_is_table_model,
-                'table'            => $item_main_table,
+            $this->models[$model_short_name] = array(
+                'model_full_name'  => $this->CI->config->item('application_namespace') . '\\business\\models\\' . $model_short_name,
+                'table'            => $table,
             );
         }
     }
@@ -101,5 +85,28 @@ class Models_metadata
         }
 
         return self::$singleton;
+    }
+
+    /**
+     * Get the basic properties of the model $model_short_name
+     *
+     * @param   string  $model_short_name
+     * @return  array
+     */
+    public function get_basic_properties($model_short_name) {
+        if (isset($this->basic_properties[$model_short_name])) {
+            return $this->basic_properties[$model_short_name];
+        }
+
+        $this->basic_properties[$model_short_name] = array();
+
+        $model_reflection  = new \ReflectionClass($this->models[$model_short_name]['model_full_name']);
+        $model_parameters  = $model_reflection->getConstructor()->getParameters();
+
+        foreach ($model_parameters as $model_parameter) {
+            $this->basic_properties[$model_short_name][] = $model_parameter->getName();
+        }
+
+        return $this->basic_properties[$model_short_name];
     }
 }

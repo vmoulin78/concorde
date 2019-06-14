@@ -70,11 +70,11 @@ trait Table_model_trait
     public static function get_table_depth($property, $filter = null) {
         $CI =& get_instance();
         $models_metadata        = Models_metadata::get_singleton();
-        $business_associations  = Business_associations::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
 
         $model_short_name = self::get_business_short_name();
 
-        $associate_array = $business_associations->get_associate_array($model_short_name, $property);
+        $associate_array = $associations_metadata->get_associate_array($model_short_name, $property);
 
         return $CI->db->get_table_depth($models_metadata->models[$model_short_name]['table'], $associate_array['field'], $filter);
     }

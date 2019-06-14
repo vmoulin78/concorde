@@ -48,8 +48,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 // ------------------------------------------------------------------------
 
+use LightORM\Associations_metadata;
 use LightORM\Business;
 use LightORM\Databubble;
+use LightORM\Models_metadata;
 
 // ------------------------------------------------------------------------
 
@@ -62,9 +64,13 @@ if ( ! function_exists('model_full_name'))
      * @return  string
      */
     function model_full_name($model_short_name) {
-        $CI =& get_instance();
+        $models_metadata = Models_metadata::get_singleton();
 
-        return $CI->config->item('application_namespace') . '\\business\\models\\' . $model_short_name;
+        if ( ! isset($models_metadata->models[$model_short_name])) {
+            return false;
+        }
+
+        return $models_metadata->models[$model_short_name]['model_full_name'];
     }
 }
 
@@ -77,25 +83,63 @@ if ( ! function_exists('association_full_name'))
      * @return  string
      */
     function association_full_name($association_short_name) {
-        $CI =& get_instance();
+        $associations_metadata = Associations_metadata::get_singleton();
 
-        return $CI->config->item('application_namespace') . '\\business\\associations\\' . $association_short_name;
+        $association_array = $associations_metadata->get_association_array($association_short_name);
+
+        if ($association_array === false) {
+            return false;
+        }
+
+        return $association_array['class_full_name'];
     }
 }
 
-if ( ! function_exists('business_to_table'))
+if ( ! function_exists('model_to_table'))
 {
     /**
-     * Return the name of the table related to the given business full name or business object
+     * Return the name of the table related to the given model short name or model object
      *
      * @param   string|object
      * @return  string
      */
-    function business_to_table($business) {
-        if (is_object($business)) {
-            $business = get_class($business);
+    function model_to_table($model) {
+        $models_metadata = Models_metadata::get_singleton();
+
+        if (is_object($model)) {
+            $model = get_class_short_name($model);
         }
-        return isset($business::$table) ? $business::$table : strtolower(get_class_short_name($business));
+
+        if ( ! isset($models_metadata->models[$model])) {
+            return false;
+        }
+
+        return $models_metadata->models[$model]['table'];
+    }
+}
+
+if ( ! function_exists('association_to_table'))
+{
+    /**
+     * Return the name of the table related to the given association short name or association object
+     *
+     * @param   string|object
+     * @return  string
+     */
+    function association_to_table($association) {
+        $associations_metadata = Associations_metadata::get_singleton();
+
+        if (is_object($association)) {
+            $association = get_class_short_name($association);
+        }
+
+        $association_array = $associations_metadata->get_association_array($association);
+
+        if ($association_array === false) {
+            return false;
+        }
+
+        return $association_array['table'];
     }
 }
 

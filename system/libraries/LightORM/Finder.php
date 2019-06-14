@@ -58,6 +58,7 @@ class Finder
 
     private $model_short_name;
     private $constructor_reflexive_part;
+    private $databubble;
     private $dimension;
     private $associations;
     private $user_aliases;
@@ -72,8 +73,12 @@ class Finder
      * @param $model      The model
      * @param $dimension  The dimension
      */
-    public function __construct($model, $dimension = self::DIMENSION_AUTO) {
+    public function __construct($model, $databubble = null, $dimension = self::DIMENSION_AUTO) {
         $model = trim($model);
+
+        if (is_null($databubble)) {
+            $databubble = new Databubble();
+        }
 
         //------------------------------------------------------//
 
@@ -96,6 +101,7 @@ class Finder
         $associate = new Business_associations_associate($model_short_name);
 
         $this->model_short_name  = $model_short_name;
+        $this->databubble        = $databubble;
         $this->dimension         = $dimension;
         $this->associations      = $associate;
         $this->user_aliases      = array();
@@ -120,10 +126,16 @@ class Finder
 
     //------------------------------------------------------//
 
+    public function get_databubble() {
+        return $this->databubble;
+    }
+    public function set_databubble($databubble) {
+        $this->databubble = $databubble;
+    }
+
     public function get_dimension() {
         return $this->dimension;
     }
-
     public function set_dimension($dimension) {
         $this->dimension = $dimension;
     }
@@ -363,7 +375,7 @@ class Finder
      * @return  array
      */
     private function with_rec(array $associations, array $associatounds) {
-        $business_associations = Business_associations::get_singleton();
+        $associations_metadata = Associations_metadata::get_singleton();
 
         if (count($associatounds) == 1) {
             $only_one_associatound = true;
@@ -430,14 +442,14 @@ class Finder
                     continue;
                 }
 
-                $association_numbered_name = $business_associations->get_association_numbered_name($associatound_atom_path_last_model, $associatound_atom_property);
+                $association_numbered_name = $associations_metadata->get_association_numbered_name($associatound_atom_path_last_model, $associatound_atom_property);
                 if ($association_numbered_name === false) {
                     trigger_error('LightORM error: No association for model "' . $associatound_atom_path_last_model . '" with property "' . $associatound_atom_property . '"', E_USER_ERROR);
                 }
                 $business_associations_associatonents_group = new Business_associations_associatonents_group($association_numbered_name);
                 $associatound->add_associatonents_group($business_associations_associatonents_group, $associatound_atom_full_path, $associatound_atom_path, $associatound_atom_path_last_model, $associatound_atom_property);
 
-                $association_array = $business_associations->associations[$association_numbered_name];
+                $association_array = $associations_metadata->associations[$association_numbered_name];
                 foreach ($association_array['associates'] as $associate_array) {
                     if (($associate_array['model'] != $associatound_atom_path_last_model)
                         || ($associate_array['property'] != $associatound_atom_property)
@@ -608,7 +620,7 @@ class Finder
      */
     private function associations_business_initialization(Query_manager $query_manager, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER) {
         $models_metadata        = Models_metadata::get_singleton();
-        $business_associations  = Business_associations::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
 
         $associate_full_name = $models_metadata->models[$associate->model]['model_full_name'];
 
@@ -624,7 +636,7 @@ class Finder
             $associatonents_group->associatound_atom_numbered_name  = $associate->atoms_numbered_names[$associatonents_group->associatound_atom_path];
             $associatonents_group->associatound_atom_alias          = $associate->atoms_aliases[$associatonents_group->associatound_atom_path];
 
-            $association_array = $business_associations->associations[$associatonents_group->association_numbered_name];
+            $association_array = $associations_metadata->associations[$associatonents_group->association_numbered_name];
 
             if ($association_array['type'] === 'many_to_many') {
                 $association_table_alias = 'alias_' . $table_alias_number;
@@ -638,13 +650,13 @@ class Finder
             }
 
             foreach ($associatonents_group->associatonents as $associatonent_instance) {
-                $associatonent_array = $business_associations->get_associate_array($associatonent_instance->model, $associatonent_instance->property);
+                $associatonent_array = $associations_metadata->get_associate_array($associatonent_instance->model, $associatonent_instance->property);
 
                 if ($association_array['type'] === 'many_to_many') {
                     $associatonent_instance->joining_field        = $associatonent_array['joining_field'];
                     $associatonent_instance->associatonent_field  = 'id';
                 } else {
-                    $associatound_atom_array = $business_associations->get_associate_array($associatonents_group->associatound_atom_model, $associatonents_group->associatound_atom_property);
+                    $associatound_atom_array = $associations_metadata->get_associate_array($associatonents_group->associatound_atom_model, $associatonents_group->associatound_atom_property);
 
                     $associatonent_instance->joining_field        = $associatound_atom_array['field'];
                     $associatonent_instance->associatonent_field  = $associatonent_array['field'];
@@ -664,13 +676,11 @@ class Finder
      * @return  mixed
      */
     public function get($filter = null) {
-        $business_associations  = Business_associations::get_singleton();
+        $associations_metadata = Associations_metadata::get_singleton();
 
         if ( ! is_null($this->constructor_reflexive_part)) {
             $this->with(array());
         }
-
-        $databubble = new Databubble();
 
         $qm = new Query_manager();
 
@@ -687,9 +697,10 @@ class Finder
 
         $query = $qm->get();
 
-        $retour                        = array();
-        $already_managed_retour_ids    = array();
-        $already_managed_associations  = array();
+        $retour                            = array();
+        $already_reinitialized_properties  = array();
+        $already_managed_retour_ids        = array();
+        $already_managed_associations      = array();
 
         foreach ($query->result() as $row) {
             $qm->convert_row($row);
@@ -698,11 +709,11 @@ class Finder
             $associations_pool  = array();
 
             foreach ($qm->models as $qm_model_key => $qm_model_item) {
-                $model_instance = $databubble->add_model_row($qm_model_item, $row, $qm->aliases);
+                $model_instance = $this->databubble->add_model_row($qm_model_item, $row, $qm->aliases);
 
                 if ( ! is_null($model_instance)) {
-                    $concrete_model_full_name  = $model_instance->get_business_full_name();
-                    $concrete_model            = $model_instance->get_business_short_name();
+                    $concrete_model_full_name  = get_class($model_instance);
+                    $concrete_model            = $concrete_model_full_name::get_business_short_name();
                     $abstract_model            = $concrete_model_full_name::get_table_abstract_model();
 
                     // We set to null or array() the associatonents properties that should not be undefined anymore
@@ -726,8 +737,10 @@ class Finder
 
                     foreach ($associatonents_properties as $model_type => $model_type_associatonents_properties) {
                         foreach ($model_type_associatonents_properties as $associatonent_property) {
-                            if (is_undefined($model_instance->{'get_' . $associatonent_property}())) {
-                                $associatonent_array = $business_associations->get_associate_array(${$model_type}, $associatonent_property);
+                            if (( ! isset($already_reinitialized_properties[$concrete_model][$model_instance->get_id()]))
+                                || ( ! in_array($associatonent_property, $already_reinitialized_properties[$concrete_model][$model_instance->get_id()]))
+                            ) {
+                                $associatonent_array = $associations_metadata->get_associate_array(${$model_type}, $associatonent_property);
                                 switch ($associatonent_array['dimension']) {
                                     case 'one':
                                         $model_instance->{'set_' . $associatonent_property}(null);
@@ -739,6 +752,8 @@ class Finder
                                         exit(1);
                                         break;
                                 }
+
+                                $already_reinitialized_properties[$concrete_model][$model_instance->get_id()][] = $associatonent_property;
                             }
                         }
                     }
@@ -775,14 +790,14 @@ class Finder
                         continue;
                     }
 
-                    $association_array = $business_associations->associations[$association_numbered_name];
+                    $association_array = $associations_metadata->associations[$association_numbered_name];
 
                     switch ($association_array['type']) {
                         case 'one_to_one':
                             $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
                             break;
                         case 'one_to_many':
-                            $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                            $associatound_atom_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
                             switch ($associatound_atom_array['dimension']) {
                                 case 'one':
                                     $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
@@ -806,11 +821,11 @@ class Finder
                                 $associatound_associatonents[] = $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property];
                                 $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($associatound_associatonents);
 
-                                $associatound_atom_array = $business_associations->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                                $associatound_atom_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
                                 $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associatound_atom_array['reverse_property']}($models_pool[$associatound_atom_numbered_name]);
                             }
 
-                            $associate_array = $business_associations->get_associate_array($qm_model_item['name'], $qm_model_item['associate']->property);
+                            $associate_array = $associations_metadata->get_associate_array($qm_model_item['name'], $qm_model_item['associate']->property);
                             $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associate_array['reverse_property']}($current_model);
                             break;
                         default:

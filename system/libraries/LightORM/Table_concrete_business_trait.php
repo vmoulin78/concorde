@@ -78,11 +78,14 @@ trait Table_concrete_business_trait
 
         $field_is_found = $this->seek_field_in_abstract_table($attribute, $value);
 
+        $business_short_name = self::get_business_short_name();
+
         if ( ! $field_is_found) {
             if (is_table_concrete_model($this)) {
-                $table_object = $data_conv->schema[$models_metadata->models[$this::get_business_short_name()]['table']];
+                $table_object = $data_conv->schema[$models_metadata->models[$business_short_name]['table']];
             } elseif (is_table_association($this)) {
-                $table_object = $data_conv->schema[$associations_metadata->associations[$this::get_business_short_name()]['table']];
+                $association_array  = $associations_metadata->get_association_array($business_short_name);
+                $table_object       = $data_conv->schema[$association_array['table']];
             } else {
                 trigger_error('LightORM error: Business type error', E_USER_ERROR);
             }

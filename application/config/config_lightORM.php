@@ -16,7 +16,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |         'name'       => 'string',
 |         'parent_id'  => 'fk:folder',
 |     ),
-|     'status' => array(
+|     'blg_status' => array(
 |         'id'     => 'pk',
 |         'name'   => 'string',
 |         'color'  => 'string',
@@ -36,11 +36,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |         'email'  => 'string',
 |     ),
 |     'article' => array(
-|         'id'          => 'pk',
-|         'status_id'   => 'enum_model_id:status',
-|         'author_id'   => 'fk:author',
-|         'folder_id'   => 'fk:folder',
-|         'created_at'  => 'timestamptz',
+|         'id'             => 'pk',
+|         'blg_status_id'  => 'enum_model_id:blg_status',
+|         'author_id'      => 'fk:author',
+|         'folder_id'      => 'fk:folder',
+|         'created_at'     => 'timestamptz',
 |     ),
 |     'title' => array(
 |         'id'          => 'pk',
@@ -85,6 +85,30 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 $config['lightORM_data_conv'] = array();
+
+/*
+|--------------------------------------------------------------------------
+| The Business Models for LightORM
+|--------------------------------------------------------------------------
+|
+| Example:
+|
+| $config['lightORM_business_models'] = array(
+|     'Article'      => [],
+|     'Author'       => [],
+|     'Comment'      => [],
+|     'Commentator'  => [],
+|     'Discount'     => [],
+|     'Folder'       => [],
+|     'Paragraph'    => [],
+|     'Person'       => [],
+|     'Status'       => ['table' => 'blg_status'], // Here, we set the 'table' key because the table name doesn't match the class name
+|     'Tag'          => [],
+|     'Title'        => [],
+| );
+|
+*/
+$config['lightORM_business_models'] = array();
 
 /*
 |--------------------------------------------------------------------------

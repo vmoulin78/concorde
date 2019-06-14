@@ -135,28 +135,35 @@ class Databubble
                 break;
         }
 
+        $created_model_instance = $model_full_name::business_creation($qm_model_item, $row, $qm_aliases);
+
         if ($this->has_model_instance($qm_model_item['name'], $row->{$alias . ':id'})) {
             $model_instance = $this->get_model_instance($qm_model_item['name'], $row->{$alias . ':id'});
+
+            foreach ($models_metadata->get_basic_properties($qm_model_item['name']) as $basic_property) {
+                $model_instance->{'set_' . $basic_property}($created_model_instance->{'get_' . $basic_property}());
+            }
+
+            return $model_instance;
         } else {
-            $model_instance = $model_full_name::business_creation($qm_model_item, $row, $qm_aliases);
-            if ( ! is_null($model_instance)) {
-                $this->add_model_instance($qm_model_item['name'], $model_instance);
+            if ( ! is_null($created_model_instance)) {
+                $this->add_model_instance($qm_model_item['name'], $created_model_instance);
 
                 if ($qm_model_item['model_info']['type'] == 'concrete_model') {
-                    $this->add_model_instance($model_full_name::get_table_abstract_model(), $model_instance);
+                    $this->add_model_instance($model_full_name::get_table_abstract_model(), $created_model_instance);
                 } elseif ($qm_model_item['model_info']['type'] == 'abstract_model') {
                     $model_instance_table = $models_metadata->models[$qm_model_item['name']]['table'];
                     foreach ($qm_model_item['model_info']['concrete_aliases'] as $abstract_model_concrete_alias) {
                         $abstract_model_concrete_table = $qm_aliases[$abstract_model_concrete_alias];
                         if ($model_instance_table === $abstract_model_concrete_table) {
-                            $this->add_model_instance($model_instance::get_business_short_name(), $model_instance);
+                            $this->add_model_instance($created_model_instance::get_business_short_name(), $created_model_instance);
                             break;
                         }
                     }
                 }
             }
-        }
 
-        return $model_instance;
+            return $created_model_instance;
+        }
     }
 }

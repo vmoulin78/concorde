@@ -209,7 +209,7 @@ trait Table_concrete_model_trait
     public function concrete_update_manager_exists() {
         $lightORM = LightORM::get_singleton();
 
-        $model_short_name = $this::get_business_short_name();
+        $model_short_name = self::get_business_short_name();
 
         if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['concrete'])) {
             return true;
@@ -226,7 +226,7 @@ trait Table_concrete_model_trait
     public function abstract_update_manager_exists() {
         $lightORM = LightORM::get_singleton();
 
-        $model_short_name = $this::get_business_short_name();
+        $model_short_name = self::get_business_short_name();
 
         if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['abstract'])) {
             return true;
@@ -243,7 +243,7 @@ trait Table_concrete_model_trait
     private function &get_update_managers() {
         $lightORM = LightORM::get_singleton();
 
-        $model_short_name = $this::get_business_short_name();
+        $model_short_name = self::get_business_short_name();
 
         if ( ! isset($lightORM->model_update_managers[$model_short_name][$this->get_id()])) {
             $lightORM->model_update_managers[$model_short_name][$this->get_id()] = array(
@@ -330,7 +330,7 @@ trait Table_concrete_model_trait
         $models_metadata  = Models_metadata::get_singleton();
         $lightORM         = LightORM::get_singleton();
 
-        $model_short_name                = $this::get_business_short_name();
+        $model_short_name                = self::get_business_short_name();
         $concrete_update_manager_result  = true;
         $abstract_update_manager_result  = true;
 
