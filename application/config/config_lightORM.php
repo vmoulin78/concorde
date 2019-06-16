@@ -25,6 +25,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |         'id'          => 'pk',
 |         'username'    => 'string',
 |         'password'    => 'string',
+|         'phones'      => 'string[]',
 |         'created_at'  => 'timestamptz',
 |     ),
 |     'author' => array(
