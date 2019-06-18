@@ -442,7 +442,12 @@ class Finder
                     continue;
                 }
 
-                $association_numbered_name = $associations_metadata->get_association_numbered_name($associatound_atom_path_last_model, $associatound_atom_property);
+                $association_numbered_name = $associations_metadata->get_association_numbered_name(
+                    array(
+                        'model'     => $associatound_atom_path_last_model,
+                        'property'  => $associatound_atom_property,
+                    )
+                );
                 if ($association_numbered_name === false) {
                     trigger_error('LightORM error: No association for model "' . $associatound_atom_path_last_model . '" with property "' . $associatound_atom_property . '"', E_USER_ERROR);
                 }
@@ -650,13 +655,23 @@ class Finder
             }
 
             foreach ($associatonents_group->associatonents as $associatonent_instance) {
-                $associatonent_array = $associations_metadata->get_associate_array($associatonent_instance->model, $associatonent_instance->property);
+                $associatonent_array = $associations_metadata->get_associate_array(
+                    array(
+                        'model'     => $associatonent_instance->model,
+                        'property'  => $associatonent_instance->property,
+                    )
+                );
 
                 if ($association_array['type'] === 'many_to_many') {
                     $associatonent_instance->joining_field        = $associatonent_array['joining_field'];
                     $associatonent_instance->associatonent_field  = 'id';
                 } else {
-                    $associatound_atom_array = $associations_metadata->get_associate_array($associatonents_group->associatound_atom_model, $associatonents_group->associatound_atom_property);
+                    $associatound_atom_array = $associations_metadata->get_associate_array(
+                        array(
+                            'model'     => $associatonents_group->associatound_atom_model,
+                            'property'  => $associatonents_group->associatound_atom_property,
+                        )
+                    );
 
                     $associatonent_instance->joining_field        = $associatound_atom_array['field'];
                     $associatonent_instance->associatonent_field  = $associatonent_array['field'];
@@ -740,7 +755,12 @@ class Finder
                             if (( ! isset($already_reinitialized_properties[$concrete_model][$model_instance->get_id()]))
                                 || ( ! in_array($associatonent_property, $already_reinitialized_properties[$concrete_model][$model_instance->get_id()]))
                             ) {
-                                $associatonent_array = $associations_metadata->get_associate_array(${$model_type}, $associatonent_property);
+                                $associatonent_array = $associations_metadata->get_associate_array(
+                                    array(
+                                        'model'     => ${$model_type},
+                                        'property'  => $associatonent_property,
+                                    )
+                                );
                                 switch ($associatonent_array['dimension']) {
                                     case 'one':
                                         $model_instance->{'set_' . $associatonent_property}(null);
@@ -797,7 +817,12 @@ class Finder
                             $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
                             break;
                         case 'one_to_many':
-                            $associatound_atom_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                            $associatound_atom_array = $associations_metadata->get_associate_array(
+                                array(
+                                    'model'     => $associatound_atom_model,
+                                    'property'  => $associatound_atom_property,
+                                )
+                            );
                             switch ($associatound_atom_array['dimension']) {
                                 case 'one':
                                     $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($current_model);
@@ -821,11 +846,21 @@ class Finder
                                 $associatound_associatonents[] = $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property];
                                 $models_pool[$associatound_atom_numbered_name]->{'set_' . $associatound_atom_property}($associatound_associatonents);
 
-                                $associatound_atom_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
+                                $associatound_atom_array = $associations_metadata->get_associate_array(
+                                    array(
+                                        'model'     => $associatound_atom_model,
+                                        'property'  => $associatound_atom_property,
+                                    )
+                                );
                                 $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associatound_atom_array['reverse_property']}($models_pool[$associatound_atom_numbered_name]);
                             }
 
-                            $associate_array = $associations_metadata->get_associate_array($qm_model_item['name'], $qm_model_item['associate']->property);
+                            $associate_array = $associations_metadata->get_associate_array(
+                                array(
+                                    'model'     => $qm_model_item['name'],
+                                    'property'  => $qm_model_item['associate']->property,
+                                )
+                            );
                             $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associate_array['reverse_property']}($current_model);
                             break;
                         default:

@@ -85,7 +85,7 @@ if ( ! function_exists('association_full_name'))
     function association_full_name($association_short_name) {
         $associations_metadata = Associations_metadata::get_singleton();
 
-        $association_array = $associations_metadata->get_association_array($association_short_name);
+        $association_array = $associations_metadata->get_association_array(['association' => $association_short_name]);
 
         if ($association_array === false) {
             return false;
@@ -133,7 +133,7 @@ if ( ! function_exists('association_to_table'))
             $association = get_class_short_name($association);
         }
 
-        $association_array = $associations_metadata->get_association_array($association);
+        $association_array = $associations_metadata->get_association_array(['association' => $association]);
 
         if ($association_array === false) {
             return false;

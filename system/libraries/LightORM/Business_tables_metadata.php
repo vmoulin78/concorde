@@ -69,7 +69,7 @@ class Business_tables_metadata
             );
         }
 
-        foreach ($associations_metadata->get_association_array() as $item) {
+        foreach ($associations_metadata->get_many_to_many_associations_arrays() as $item) {
             $this->tables[$item['table']] = array(
                 'business_short_name'  => $item['class'],
                 'business_full_name'   => $item['class_full_name'],

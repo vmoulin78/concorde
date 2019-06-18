@@ -74,7 +74,12 @@ trait Table_model_trait
 
         $model_short_name = self::get_business_short_name();
 
-        $associate_array = $associations_metadata->get_associate_array($model_short_name, $property);
+        $associate_array = $associations_metadata->get_associate_array(
+            array(
+                'model'     => $model_short_name,
+                'property'  => $property,
+            )
+        );
 
         return $CI->db->get_table_depth($models_metadata->models[$model_short_name]['table'], $associate_array['field'], $filter);
     }

@@ -194,8 +194,13 @@ class Databubble
             if ($field_object->is_foreign_key
                 && ( ! is_null($value))
             ) {
-                $association_numbered_name  = $associations_metadata->get_association_numbered_name($model_short_name, substr($field, 0, -3));
-                $association_array          = $associations_metadata->associations[$association_numbered_name];
+                $association_numbered_name = $associations_metadata->get_association_numbered_name(
+                    array(
+                        'model'  => $model_short_name,
+                        'field'  => $field,
+                    )
+                );
+                $association_array = $associations_metadata->associations[$association_numbered_name];
 
                 foreach ($association_array['associates'] as $associate) {
                     if (($associate['model'] != $model_short_name)

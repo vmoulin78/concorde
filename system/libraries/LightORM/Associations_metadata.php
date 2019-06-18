@@ -116,24 +116,70 @@ class Associations_metadata
     }
 
     /**
-     * Get the numbered name of the association corresponding to the model $model and the property $property
+     * Get the numbered name of the association given the data $data
      *
-     * @param   string  $model
-     * @param   string  $property
+     * @param   array  $data
      * @return  string|false
      */
-    public function get_association_numbered_name($model, $property) {
-        foreach ($this->associations as $association_numbered_name => $association_array) {
-            foreach ($association_array['associates'] as $associate_array) {
-                if (($associate_array['model'] == $model)
-                    && ($associate_array['property'] == $property)
+    public function get_association_numbered_name($data) {
+        if (isset($data['model'])
+            && (isset($data['property']) || isset($data['field']))
+        ) {
+            foreach ($this->associations as $association_numbered_name => $association_array) {
+                foreach ($association_array['associates'] as $associate_array) {
+                    if ($associate_array['model'] == $data['model']) {
+                        if ((isset($data['property']) && ($associate_array['property'] == $data['property']))
+                            || (isset($data['field']) && ($associate_array['field'] == $data['field']))
+                        ) {
+                            return $association_numbered_name;
+                        }
+                    }
+                }
+            }
+        } elseif (isset($data['association'])) {
+            foreach ($this->associations as $association_numbered_name => $association_array) {
+                if (($association_array['type'] === 'many_to_many')
+                    && ($association_array['class'] == $data['association'])
                 ) {
                     return $association_numbered_name;
                 }
             }
+        } else {
+            trigger_error('LightORM error: Error in parameters', E_USER_ERROR);
         }
 
         return false;
+    }
+
+    /**
+     * Get the association array given the data $data
+     *
+     * @param   string  $data
+     * @return  array|false
+     */
+    public function get_association_array($data) {
+        $association_numbered_name = $this->get_association_numbered_name($data);
+
+        if ($association_numbered_name === false) {
+            return false;
+        }
+
+        return $this->associations[$association_numbered_name];
+    }
+
+    /**
+     * Get the many-to-many associations arrays
+     *
+     * @return  array
+     */
+    public function get_many_to_many_associations_arrays() {
+        return array_filter($this->associations, function ($association_array) {
+            if ($association_array['type'] === 'many_to_many') {
+                return true;
+            } else {
+                return false;
+            }
+        });
     }
 
     /**
@@ -143,71 +189,50 @@ class Associations_metadata
      * @param   string  $property
      * @return  string|false
      */
-    public function get_associate_array($model, $property) {
-        foreach ($this->associations as $association_numbered_name => $association_array) {
-            foreach ($association_array['associates'] as $associate_array) {
-                if (($associate_array['model'] == $model)
-                    && ($associate_array['property'] == $property)
-                ) {
-                    return $associate_array;
+    public function get_associate_array($data) {
+        if (isset($data['model'])
+            && (isset($data['property']) || isset($data['field']))
+        ) {
+            foreach ($this->associations as $association_numbered_name => $association_array) {
+                foreach ($association_array['associates'] as $associate_array) {
+                    if ($associate_array['model'] == $data['model']) {
+                        if ((isset($data['property']) && ($associate_array['property'] == $data['property']))
+                            || (isset($data['field']) && ($associate_array['field'] == $data['field']))
+                        ) {
+                            return $associate_array;
+                        }
+                    }
                 }
             }
+        } else {
+            trigger_error('LightORM error: Error in parameters', E_USER_ERROR);
         }
 
         return false;
     }
 
     /**
-     * Get the association array corresponding to the association $association_short_name
+     * Get the basic properties of the association $association
      *
-     * @param   string  $association_short_name
-     * @return  array|false
-     */
-    public function get_association_array($association_short_name = null) {
-        if (is_null($association_short_name)) {
-            $retour = array();
-        } else {
-            $retour = false;
-        }
-
-        foreach ($this->associations as $association_array) {
-            if (($association_array['type'] === 'many_to_many')
-                && ($association_array['class'] === $association_short_name)
-            ) {
-                if (is_null($association_short_name)) {
-                    $retour[] = $association_array;
-                } else {
-                    $retour = $association_array;
-                    break;
-                }
-            }
-        }
-
-        return $retour;
-    }
-
-    /**
-     * Get the basic properties of the association $association_short_name
-     *
-     * @param   string  $association_short_name
+     * @param   string  $association
      * @return  array
      */
-    public function get_basic_properties($association_short_name) {
-        if (isset($this->basic_properties[$association_short_name])) {
-            return $this->basic_properties[$association_short_name];
+    public function get_basic_properties($association) {
+        if (isset($this->basic_properties[$association])) {
+            return $this->basic_properties[$association];
         }
 
-        $association_array = $this->get_association_array($association_short_name);
+        $association_array = $this->get_association_array(['association' => $association]);
 
-        $this->basic_properties[$association_short_name] = array();
+        $this->basic_properties[$association] = array();
 
         $association_reflection  = new \ReflectionClass($association_array['class_full_name']);
         $association_parameters  = $association_reflection->getConstructor()->getParameters();
 
         foreach ($association_parameters as $association_parameter) {
-            $this->basic_properties[$association_short_name][] = $association_parameter->getName();
+            $this->basic_properties[$association][] = $association_parameter->getName();
         }
 
-        return $this->basic_properties[$association_short_name];
+        return $this->basic_properties[$association];
     }
 }

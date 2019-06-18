@@ -84,7 +84,7 @@ trait Table_concrete_business_trait
             if (is_table_concrete_model($this)) {
                 $table_object = $data_conv->schema[$models_metadata->models[$business_short_name]['table']];
             } elseif (is_table_association($this)) {
-                $association_array  = $associations_metadata->get_association_array($business_short_name);
+                $association_array  = $associations_metadata->get_association_array(['association' => $business_short_name]);
                 $table_object       = $data_conv->schema[$association_array['table']];
             } else {
                 trigger_error('LightORM error: Business type error', E_USER_ERROR);

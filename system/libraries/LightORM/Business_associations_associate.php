@@ -95,7 +95,12 @@ class Business_associations_associate
 
         $association_array = $associations_metadata->associations[$associatonents_group->association_numbered_name];
         if ($association_array['type'] === 'many_to_many') {
-            $associate_array = $associations_metadata->get_associate_array($associatound_atom_model, $associatound_atom_property);
+            $associate_array = $associations_metadata->get_associate_array(
+                array(
+                    'model'     => $associatound_atom_model,
+                    'property'  => $associatound_atom_property,
+                )
+            );
 
             $associatonents_group->associatound_atom_field          = $associate_array['field'];
             $associatonents_group->associatound_atom_joining_field  = $associate_array['joining_field'];

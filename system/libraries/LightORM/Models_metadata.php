@@ -60,15 +60,15 @@ class Models_metadata
 
         $this->models = array();
 
-        foreach ($this->CI->config->item('lightORM_business_models') as $model_short_name => $config_model) {
+        foreach ($this->CI->config->item('lightORM_business_models') as $model => $config_model) {
             if (isset($config_model['table'])) {
                 $table = $config_model['table'];
             } else {
-                $table = strtolower($model_short_name);
+                $table = strtolower($model);
             }
 
-            $this->models[$model_short_name] = array(
-                'model_full_name'  => $this->CI->config->item('application_namespace') . '\\business\\models\\' . $model_short_name,
+            $this->models[$model] = array(
+                'model_full_name'  => $this->CI->config->item('application_namespace') . '\\business\\models\\' . $model,
                 'table'            => $table,
             );
         }
@@ -88,25 +88,25 @@ class Models_metadata
     }
 
     /**
-     * Get the basic properties of the model $model_short_name
+     * Get the basic properties of the model $model
      *
-     * @param   string  $model_short_name
+     * @param   string  $model
      * @return  array
      */
-    public function get_basic_properties($model_short_name) {
-        if (isset($this->basic_properties[$model_short_name])) {
-            return $this->basic_properties[$model_short_name];
+    public function get_basic_properties($model) {
+        if (isset($this->basic_properties[$model])) {
+            return $this->basic_properties[$model];
         }
 
-        $this->basic_properties[$model_short_name] = array();
+        $this->basic_properties[$model] = array();
 
-        $model_reflection  = new \ReflectionClass($this->models[$model_short_name]['model_full_name']);
+        $model_reflection  = new \ReflectionClass($this->models[$model]['model_full_name']);
         $model_parameters  = $model_reflection->getConstructor()->getParameters();
 
         foreach ($model_parameters as $model_parameter) {
-            $this->basic_properties[$model_short_name][] = $model_parameter->getName();
+            $this->basic_properties[$model][] = $model_parameter->getName();
         }
 
-        return $this->basic_properties[$model_short_name];
+        return $this->basic_properties[$model];
     }
 }
