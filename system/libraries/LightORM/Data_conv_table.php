@@ -66,13 +66,27 @@ class Data_conv_table
      * @return  bool
      */
     public function field_exists($field) {
-        foreach ($this->fields as $key => $item) {
-            if ($key == $field) {
-                return true;
-            }
+        if (isset($this->fields[$field])) {
+            return true;
+        } else {
+            return false;
         }
+    }
 
-        return false;
+    /**
+     * Return true if the field $field is an enum_model_id and false otherwise
+     *
+     * @param   string  $field
+     * @return  bool
+     */
+    public function field_is_enum_model_id($field) {
+        $field_object = $this->fields[$field];
+
+        if ($field_object->is_enum_model_id) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

@@ -43,7 +43,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 trait Table_concrete_model_trait
 {
-    use Table_concrete_business_trait;
     use Table_model_trait;
 
     /**
@@ -286,39 +285,109 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * {@inheritDoc}
+     * Set the field related to the property $property with the value $value for the reference model type $ref_model_type
+     *
+     * @param   string                 $property
+     * @param   mixed                  $value
+     * @param   'abstract'|'concrete'  $ref_model_type
+     * @return  bool
      */
-    protected function seek_field_in_abstract_table($attribute, $value) {
-        $data_conv = Data_conv::factory();
+    private function set_for_ref_model_type($property, $value, $ref_model_type) {
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
 
-        $class_full_name  = get_class($this);
-        $abstract_table   = $class_full_name::get_abstract_table();
-        if (is_null($abstract_table)) {
-            return false;
+        $model_short_name  = self::get_business_short_name();
+        $model_full_name   = self::get_business_full_name();
+
+        switch ($ref_model_type) {
+            case 'abstract':
+                $table = $model_full_name::get_abstract_table();
+                if (is_null($table)) {
+                    return false;
+                }
+                $ref_model_short_name = self::get_table_abstract_model();
+                break;
+            case 'concrete':
+                $table                 = $models_metadata->models[$model_short_name]['table'];
+                $ref_model_short_name  = $model_short_name;
+                break;
+            default:
+                exit(1);
+                break;
         }
 
-        $abstract_table_object  = $data_conv->schema[$abstract_table];
-        $field_is_found         = false;
-        if ($abstract_table_object->field_exists($attribute)) {
-            $field_name      = $attribute;
-            $field_value     = $value;
-            $field_is_found  = true;
-        } elseif ($abstract_table_object->field_exists($attribute . '_id')) {
-            $field_name = $attribute . '_id';
+        $field_is_found  = false;
+        $table_object    = $data_conv->schema[$table];
+        if ($table_object->field_exists($property)) {
+            $field_name   = $property;
+            $field_value  = $value;
+
+            $field_is_found = true;
+        } elseif ($table_object->field_exists($property . '_id')
+            && $table_object->field_is_enum_model_id($property . '_id')
+        ) {
+            $field_name = $property . '_id';
             if (is_null($value)) {
                 $field_value = null;
             } else {
                 $field_value = $value->get_id();
             }
+
             $field_is_found = true;
+        } else {
+            $associate_array = $associations_metadata->get_associate_array(
+                array(
+                    'model'     => $ref_model_short_name,
+                    'property'  => $property,
+                )
+            );
+
+            if ($associate_array !== false) {
+                if ($associate_array['dimension'] !== 'one') {
+                    trigger_error('LightORM error: Property error', E_USER_ERROR);
+                }
+
+                $field_name = $associate_array['field'];
+                if (is_null($value)) {
+                    $field_value = null;
+                } else {
+                    $field_value = $value->get_id();
+                }
+
+                $field_is_found = true;
+            }
         }
 
         if ($field_is_found) {
-            $this->get_abstract_update_manager()->set($field_name, $field_value);
+            $this->{'get_' . $ref_model_type . '_update_manager'}()->set($field_name, $field_value);
             return true;
         } else {
             return false;
         }
+    }
+
+    /**
+     * Set the property $property with the value $value
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @return  object
+     */
+    public function set($property, $value) {
+        $this->{'set_' . $property}($value);
+
+        //------------------------------------------------------//
+
+        if ($this->set_for_ref_model_type($property, $value, 'abstract')) {
+            return $this;
+        }
+
+        if ($this->set_for_ref_model_type($property, $value, 'concrete')) {
+            return $this;
+        }
+
+        trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
     }
 
     /**

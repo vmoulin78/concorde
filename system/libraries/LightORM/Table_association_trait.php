@@ -49,7 +49,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 trait Table_association_trait
 {
-    use Table_concrete_business_trait;
+    use Table_business_trait;
 
     /**
      * Get the primary key fields
@@ -72,12 +72,18 @@ trait Table_association_trait
      * @param   string  $field_name
      * @return  int
      */
-    public function get_model_id_by_field_name($field_name) {
-        if (substr($field_name, -3) != '_id') {
-            trigger_error('LightORM error: Error in field name', E_USER_ERROR);
+    public function get_model_id_by_joining_field($joining_field) {
+        $associations_metadata = Associations_metadata::get_singleton();
+
+        $association_array = $associations_metadata->get_association_array(['association' => self::get_business_short_name()]);
+
+        foreach ($association_array['associates'] as $associate) {
+            if ($associate['joining_field'] == $joining_field) {
+                return call_user_func([call_user_func([$this, 'get_' . $associate['reverse_property']]), 'get_id']);
+            }
         }
 
-        return call_user_func([call_user_func([$this, 'get_' . substr($field_name, 0, -3)]), 'get_id']);
+        return false;
     }
 
     /**
@@ -88,7 +94,7 @@ trait Table_association_trait
     public function get_primary_key() {
         $retour = array();
         foreach (self::get_primary_key_fields() as $primary_key_field) {
-            $retour[$primary_key_field] = $this->get_model_id_by_field_name($primary_key_field);
+            $retour[$primary_key_field] = $this->get_model_id_by_joining_field($primary_key_field);
         }
 
         return $retour;
@@ -177,10 +183,45 @@ trait Table_association_trait
     }
 
     /**
-     * {@inheritDoc}
+     * Set the property $property with the value $value
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @return  object
      */
-    protected function seek_field_in_abstract_table($attribute, $value) {
-        return false;
+    public function set($property, $value) {
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
+        $this->{'set_' . $property}($value);
+
+        //------------------------------------------------------//
+
+        $association_short_name  = self::get_business_short_name();
+        $association_array       = $associations_metadata->get_association_array(['association' => $association_short_name]);
+        $table_object            = $data_conv->schema[$association_array['table']];
+
+        if ($table_object->field_exists($property)) {
+            $field_name   = $property;
+            $field_value  = $value;
+        } elseif ($table_object->field_exists($property . '_id')
+            && $table_object->field_is_enum_model_id($property . '_id')
+        ) {
+            $field_name = $property . '_id';
+            if (is_null($value)) {
+                $field_value = null;
+            } else {
+                $field_value = $value->get_id();
+            }
+        } else {
+            trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
+        }
+
+        $this->get_concrete_update_manager()->set($field_name, $field_value);
+
+        //------------------------------------------------------//
+
+        return $this;
     }
 
     /**

@@ -49,7 +49,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 trait Table_abstract_model_trait
 {
-    use Table_abstract_business_trait;
     use Table_model_trait;
 
     /**

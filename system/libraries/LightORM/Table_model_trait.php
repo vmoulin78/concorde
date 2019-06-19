@@ -49,6 +49,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 trait Table_model_trait
 {
+    use Table_business_trait;
+
     /**
      * Find one or many table models given the filter $filter
      *
