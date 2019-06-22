@@ -348,6 +348,86 @@ trait Table_concrete_model_trait
                     trigger_error('LightORM error: Property error', E_USER_ERROR);
                 }
 
+                //------------------------------------------------------//
+
+                list($opposite_associate_array) = $associations_metadata->get_opposite_associates_arrays(
+                    array(
+                        'model'     => $ref_model_short_name,
+                        'property'  => $property,
+                    )
+                );
+
+                if (isset($this->databubble->{$opposite_associate_array['model']})) {
+                    $associate_is_found = false;
+                    foreach ($this->databubble->{$opposite_associate_array['model']} as $item1) {
+                        $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+
+                        if (is_undefined($opposite_associate_property_value)) {
+                            continue;
+                        }
+
+                        switch ($opposite_associate_array['dimension']) {
+                            case 'one':
+                                if (( ! is_null($opposite_associate_property_value))
+                                    && ($opposite_associate_property_value->get_id() === $this->get_id())
+                                ) {
+                                    $item1->{'set_' . $opposite_associate_array['property']}(null);
+                                    $associate_is_found = true;
+                                }
+                                break;
+                            case 'many':
+                                $new_opposite_associate_property_value = array();
+                                foreach ($opposite_associate_property_value as $item2) {
+                                    if ($item2->get_id() === $this->get_id()) {
+                                        $associate_is_found = true;
+                                    } else {
+                                        $new_opposite_associate_property_value[] = $item2;
+                                    }
+                                }
+                                $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
+                                break;
+                            default:
+                                exit(1);
+                                break;
+                        }
+
+                        if ($associate_is_found) {
+                            break;
+                        }
+                    }
+
+                    if ( ! is_null($value)) {
+                        foreach ($this->databubble->{$opposite_associate_array['model']} as $item1) {
+                            if ($item1->get_id() !== $value->get_id()) {
+                                continue;
+                            }
+
+                            $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+
+                            if (is_undefined($opposite_associate_property_value)) {
+                                break;
+                            }
+
+                            switch ($opposite_associate_array['dimension']) {
+                                case 'one':
+                                    $item1->{'set_' . $opposite_associate_array['property']}($this);
+                                    break;
+                                case 'many':
+                                    $opposite_associate_property_value[] = $this;
+                                    $item1->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                                    break;
+                                default:
+                                    exit(1);
+                                    break;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                //------------------------------------------------------//
+
                 $field_name = $associate_array['field'];
                 if (is_null($value)) {
                     $field_value = null;
@@ -379,15 +459,15 @@ trait Table_concrete_model_trait
 
         //------------------------------------------------------//
 
-        if ($this->set_for_ref_model_type($property, $value, 'abstract')) {
-            return $this;
+        if ($this->set_for_ref_model_type($property, $value, 'abstract') === false) {
+            if ($this->set_for_ref_model_type($property, $value, 'concrete') === false) {
+                trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
+            }
         }
 
-        if ($this->set_for_ref_model_type($property, $value, 'concrete')) {
-            return $this;
-        }
+        //------------------------------------------------------//
 
-        trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
+        return $this;
     }
 
     /**

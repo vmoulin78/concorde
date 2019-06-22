@@ -125,14 +125,20 @@ class Associations_metadata
         if (isset($data['model'])
             && (isset($data['property']) || isset($data['field']))
         ) {
+            if (isset($data['property'])) {
+                $data_item_name = 'property';
+            } elseif (isset($data['field'])) {
+                $data_item_name = 'field';
+            } else {
+                exit(1);
+            }
+
             foreach ($this->associations as $association_numbered_name => $association_array) {
                 foreach ($association_array['associates'] as $associate_array) {
-                    if ($associate_array['model'] == $data['model']) {
-                        if ((isset($data['property']) && ($associate_array['property'] == $data['property']))
-                            || (isset($data['field']) && ($associate_array['field'] == $data['field']))
-                        ) {
-                            return $association_numbered_name;
-                        }
+                    if (($associate_array['model'] == $data['model'])
+                        && ($associate_array[$data_item_name] == $data[$data_item_name])
+                    ) {
+                        return $association_numbered_name;
                     }
                 }
             }
@@ -154,7 +160,7 @@ class Associations_metadata
     /**
      * Get the association array given the data $data
      *
-     * @param   string  $data
+     * @param   array  $data
      * @return  array|false
      */
     public function get_association_array($data) {
@@ -183,24 +189,29 @@ class Associations_metadata
     }
 
     /**
-     * Get the associate array corresponding to the model $model and the property $property
+     * Get the associate array given the data $data
      *
-     * @param   string  $model
-     * @param   string  $property
+     * @param   array  $data
      * @return  string|false
      */
     public function get_associate_array($data) {
         if (isset($data['model'])
             && (isset($data['property']) || isset($data['field']))
         ) {
-            foreach ($this->associations as $association_numbered_name => $association_array) {
+            if (isset($data['property'])) {
+                $data_item_name = 'property';
+            } elseif (isset($data['field'])) {
+                $data_item_name = 'field';
+            } else {
+                exit(1);
+            }
+
+            foreach ($this->associations as $association_array) {
                 foreach ($association_array['associates'] as $associate_array) {
-                    if ($associate_array['model'] == $data['model']) {
-                        if ((isset($data['property']) && ($associate_array['property'] == $data['property']))
-                            || (isset($data['field']) && ($associate_array['field'] == $data['field']))
-                        ) {
-                            return $associate_array;
-                        }
+                    if (($associate_array['model'] == $data['model'])
+                        && ($associate_array[$data_item_name] == $data[$data_item_name])
+                    ) {
+                        return $associate_array;
                     }
                 }
             }
@@ -209,6 +220,41 @@ class Associations_metadata
         }
 
         return false;
+    }
+
+    /**
+     * Get the opposite associates arrays given the data $data
+     *
+     * @param   array  $data
+     * @return  array
+     */
+    public function get_opposite_associates_arrays($data) {
+        $retour = array();
+
+        if (isset($data['model'])
+            && (isset($data['property']) || isset($data['field']))
+        ) {
+            if (isset($data['property'])) {
+                $data_item_name = 'property';
+            } elseif (isset($data['field'])) {
+                $data_item_name = 'field';
+            } else {
+                exit(1);
+            }
+
+            $association_array = $this->get_association_array($data);
+            foreach ($association_array['associates'] as $associate_array) {
+                if (($associate_array['model'] != $data['model'])
+                    || ($associate_array[$data_item_name] != $data[$data_item_name])
+                ) {
+                    $retour[] = $associate_array;
+                }
+            }
+        } else {
+            trigger_error('LightORM error: Error in parameters', E_USER_ERROR);
+        }
+
+        return $retour;
     }
 
     /**

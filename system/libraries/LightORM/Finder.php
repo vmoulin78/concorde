@@ -454,33 +454,35 @@ class Finder
                 $business_associations_associatonents_group = new Business_associations_associatonents_group($association_numbered_name);
                 $associatound->add_associatonents_group($business_associations_associatonents_group, $associatound_atom_full_path, $associatound_atom_path, $associatound_atom_path_last_model, $associatound_atom_property);
 
-                $association_array = $associations_metadata->associations[$association_numbered_name];
-                foreach ($association_array['associates'] as $associate_array) {
-                    if (($associate_array['model'] != $associatound_atom_path_last_model)
-                        || ($associate_array['property'] != $associatound_atom_property)
-                    ) {
-                        $associatonent = new Business_associations_associate($associate_array['model'], $associate_array['property']);
-                        $business_associations_associatonents_group->add_associatonent($associatonent);
+                $opposite_associates_arrays = $associations_metadata->get_opposite_associates_arrays(
+                    array(
+                        'model'     => $associatound_atom_path_last_model,
+                        'property'  => $associatound_atom_property,
+                    )
+                );
+                foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                    $associatonent = new Business_associations_associate($opposite_associate_array['model'], $opposite_associate_array['property']);
+                    $business_associations_associatonents_group->add_associatonent($associatonent);
 
-                        if (isset($user_aliases['models'][$associate_array['model']])) {
-                            $user_alias_candidate = $user_aliases['models'][$associate_array['model']];
-                        } elseif (isset($user_aliases['unique_model'])) {
-                            $user_alias_candidate = $user_aliases['unique_model'];
-                        } else {
-                            $user_alias_candidate = null;
+                    if (isset($user_aliases['models'][$opposite_associate_array['model']])) {
+                        $user_alias_candidate = $user_aliases['models'][$opposite_associate_array['model']];
+                    } elseif (isset($user_aliases['unique_model'])) {
+                        $user_alias_candidate = $user_aliases['unique_model'];
+                    } else {
+                        $user_alias_candidate = null;
+                    }
+                    if ( ! is_null($user_alias_candidate)) {
+                        if (isset($this->user_aliases[$user_alias_candidate])) {
+                            trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
                         }
-                        if ( ! is_null($user_alias_candidate)) {
-                            if (isset($this->user_aliases[$user_alias_candidate])) {
-                                trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
-                            }
-                            $this->user_aliases[$user_alias_candidate] = array(
-                                'type'    => 'model',
-                                'object'  => $associatonent,
-                            );
-                        }
+                        $this->user_aliases[$user_alias_candidate] = array(
+                            'type'    => 'model',
+                            'object'  => $associatonent,
+                        );
                     }
                 }
 
+                $association_array = $associations_metadata->associations[$association_numbered_name];
                 if (isset($user_aliases['association'])) {
                     if (isset($this->user_aliases[$user_aliases['association']])
                         || ($association_array['type'] !== 'many_to_many')
