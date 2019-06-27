@@ -285,7 +285,7 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Set the field related to the property $property with the value $value for the reference model type $ref_model_type
+     * Manage the 'set' for the objects and for the database
      *
      * @param   string                 $property
      * @param   mixed                  $value
@@ -320,6 +320,8 @@ trait Table_concrete_model_trait
         $field_is_found  = false;
         $table_object    = $data_conv->schema[$table];
         if ($table_object->field_exists($property)) {
+            $this->{'set_' . $property}($value);
+
             $field_name   = $property;
             $field_value  = $value;
 
@@ -327,6 +329,8 @@ trait Table_concrete_model_trait
         } elseif ($table_object->field_exists($property . '_id')
             && $table_object->field_is_enum_model_id($property . '_id')
         ) {
+            $this->{'set_' . $property}($value);
+
             $field_name = $property . '_id';
             if (is_null($value)) {
                 $field_value = null;
@@ -347,6 +351,14 @@ trait Table_concrete_model_trait
                 if ($associate_array['dimension'] !== 'one') {
                     trigger_error('LightORM error: Property error', E_USER_ERROR);
                 }
+
+                if (( ! is_null($value))
+                    && ($this->databubble !== $value->databubble)
+                ) {
+                    trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
+                }
+
+                $this->{'set_' . $property}($value);
 
                 //------------------------------------------------------//
 
@@ -369,7 +381,7 @@ trait Table_concrete_model_trait
                         switch ($opposite_associate_array['dimension']) {
                             case 'one':
                                 if (( ! is_null($opposite_associate_property_value))
-                                    && ($opposite_associate_property_value->get_id() === $this->get_id())
+                                    && ($opposite_associate_property_value === $this)
                                 ) {
                                     $item1->{'set_' . $opposite_associate_array['property']}(null);
                                     $associate_is_found = true;
@@ -378,7 +390,7 @@ trait Table_concrete_model_trait
                             case 'many':
                                 $new_opposite_associate_property_value = array();
                                 foreach ($opposite_associate_property_value as $item2) {
-                                    if ($item2->get_id() === $this->get_id()) {
+                                    if ($item2 === $this) {
                                         $associate_is_found = true;
                                     } else {
                                         $new_opposite_associate_property_value[] = $item2;
@@ -398,7 +410,7 @@ trait Table_concrete_model_trait
 
                     if ( ! is_null($value)) {
                         foreach ($this->databubble->{$opposite_associate_array['model']} as $item1) {
-                            if ($item1->get_id() !== $value->get_id()) {
+                            if ($item1 !== $value) {
                                 continue;
                             }
 
@@ -455,19 +467,210 @@ trait Table_concrete_model_trait
      * @return  object
      */
     public function set($property, $value) {
-        $this->{'set_' . $property}($value);
-
-        //------------------------------------------------------//
-
         if ($this->set_for_ref_model_type($property, $value, 'abstract') === false) {
             if ($this->set_for_ref_model_type($property, $value, 'concrete') === false) {
-                trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
+                trigger_error('LightORM error: Unable to find the field', E_USER_ERROR);
             }
         }
 
         //------------------------------------------------------//
 
         return $this;
+    }
+
+    /**
+     * Manage the 'add' for the objects and for the database
+     *
+     * @param   string                 $property
+     * @param   mixed                  $data
+     * @param   'abstract'|'concrete'  $ref_model_type
+     * @return  bool
+     */
+    private function add_for_ref_model_type($property, $data, $ref_model_type) {
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
+        $model_short_name  = self::get_business_short_name();
+        $model_full_name   = self::get_business_full_name();
+
+        switch ($ref_model_type) {
+            case 'abstract':
+                $ref_model_short_name = self::get_table_abstract_model();
+                if (is_null($ref_model_short_name)) {
+                    return 0;
+                }
+                break;
+            case 'concrete':
+                $ref_model_short_name = $model_short_name;
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        $association_array = $associations_metadata->get_association_array(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if ($association_array === false) {
+            return 0;
+        }
+
+        $associate_array = $associations_metadata->get_associate_array(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if ($associate_array['dimension'] !== 'many') {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
+
+        $opposite_associates_arrays = $associations_metadata->get_opposite_associates_arrays(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        switch ($association_array['type']) {
+            case 'one_to_many':
+                if ( ! is_object($data)) {
+                    trigger_error('LightORM error: Property error', E_USER_ERROR);
+                }
+
+                if ($this->databubble !== $data->databubble) {
+                    trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
+                }
+
+                $associate_property_value = $this->{'get_' . $property}();
+                $associate_property_value[] = $data;
+                $this->{'set_' . $property}($associate_property_value);
+
+                list($opposite_associate_array) = $opposite_associates_arrays;
+
+                if (isset($this->databubble->{$opposite_associate_array['model']})) {
+                    foreach ($this->databubble->{$opposite_associate_array['model']} as $item) {
+                        if ($item === $data) {
+                            $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
+
+                            if ( ! is_undefined($opposite_associate_property_value)) {
+                                $item->{'set_' . $opposite_associate_array['property']}($this);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                $query_manager = new Query_manager();
+                $query_manager->table($models_metadata->models[$opposite_associate_array['model']]['table'])
+                              ->set($opposite_associate_array['field'], $this->get_id())
+                              ->where('id', $data->get_id());
+                $query_manager_result = $query_manager->update();
+
+                if ($query_manager_result === false) {
+                    return -1;
+                }
+                break;
+            case 'many_to_many':
+                if ( ! is_array($data)) {
+                    trigger_error('LightORM error: Property error', E_USER_ERROR);
+                }
+
+                foreach ($opposite_associates_arrays as $item) {
+                    if ($this->databubble !== $data[$item['reverse_property']]->databubble) {
+                        trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
+                    }
+                }
+
+                $association_short_name        = $association_array['class'];
+                $association_full_name         = $association_array['class_full_name'];
+                $association_basic_properties  = $associations_metadata->get_basic_properties($association_short_name);
+
+                $data_for_association_insert = array();
+                $data_for_association_insert[$associate_array['joining_field']] = $this->get_id();
+                foreach ($opposite_associates_arrays as $item) {
+                    $data_for_association_insert[$item['joining_field']] = $data[$item['reverse_property']]->get_id();
+                }
+                foreach ($data as $key => $item) {
+                    if (in_array($key, $association_basic_properties)) {
+                        $data_for_association_insert[$key] = $item;
+                    }
+                }
+                $association_insert_result = $association_full_name::insert($data_for_association_insert);
+
+                if ($association_insert_result === false) {
+                    return -1;
+                }
+
+                $association_table_object = $data_conv->schema[$association_array['table']];
+                $qm = new Query_manager();
+                $association_table_object->business_selection($qm);
+                $qm->from($association_array['table'])
+                   ->where($associate_array['joining_field'], $this->get_id());
+                foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                    $qm->where($opposite_associate_array['joining_field'], $data[$opposite_associate_array['reverse_property']]->get_id());
+                }
+                $query = $qm->get();
+                $row = $query->row();
+                $args = $association_table_object->business_creation_args($row);
+                $association_instance = new $association_full_name(...$args);
+
+                $associate_property_value = $this->{'get_' . $property}();
+                $associate_property_value[] = $association_instance;
+                $this->{'set_' . $property}($associate_property_value);
+                $association_instance->{'set_' . $associate_array['reverse_property']}($this);
+
+                foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                    $opposite_associate_instance = $data[$opposite_associate_array['reverse_property']];
+
+                    $association_instance->{'set_' . $opposite_associate_array['reverse_property']}($opposite_associate_instance);
+
+                    $opposite_associate_property_value = $opposite_associate_instance->{'get_' . $opposite_associate_array['property']}();
+                    if ( ! is_undefined($opposite_associate_property_value)) {
+                        $opposite_associate_property_value[] = $association_instance;
+                        $opposite_associate_instance->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                    }
+                }
+
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Add the data $data in the array $property
+     *
+     * @param   string  $property
+     * @param   mixed   $data
+     * @return  bool
+     */
+    public function add($property, $data) {
+        $abstract_add_result = $this->add_for_ref_model_type($property, $data, 'abstract');
+        if ($abstract_add_result === 1) {
+            return true;
+        } elseif ($abstract_add_result === -1) {
+            return false;
+        }
+
+        $concrete_add_result = $this->add_for_ref_model_type($property, $data, 'concrete');
+        if ($concrete_add_result === 1) {
+            return true;
+        } elseif ($concrete_add_result === -1) {
+            return false;
+        }
+
+        trigger_error('LightORM error: Unable to find the association', E_USER_ERROR);
     }
 
     /**

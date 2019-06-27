@@ -302,8 +302,8 @@ trait Table_association_trait
     /**
      * Update in the database the table association whose ids of the primary key are $primary_key_ids with the data $data
      *
-     * @param   array  $data             An associative array whose keys are the fields and values are the values
      * @param   array  $primary_key_ids  An associative array whose keys are the fields of the primary key and values are the values of the primary key
+     * @param   array  $data             An associative array whose keys are the fields and values are the values
      * @return  bool
      */
     public static function update($primary_key_ids, $data) {

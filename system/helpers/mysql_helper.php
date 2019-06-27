@@ -87,7 +87,7 @@ if ( ! function_exists('php_data_to_mysql_data'))
                 break;
             case 'string':
             case 'json':
-                //TODO
+                // @todo
                 $retour = "'" . mysqli_real_escape_string($CI->db->conn_id, $php_data) . "'";
                 break;
             case 'bool':
@@ -147,7 +147,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 break;
             case 'string':
             case 'json':
-                //TODO
+                // @todo
                 $retour = $mysql_data;
                 break;
             case 'bool':
