@@ -51,17 +51,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Databubble
 {
-    public function __construct() {}
+    public $models;
+    public $associations;
+    public $update_managers;
+
+    public function __construct() {
+        $this->models           = array();
+        $this->associations     = array();
+        $this->update_managers  = array(
+            'models'        => array(),
+            'associations'  => array(),
+        );
+    }
 
     /**
-     * Return true if the current Databubble has the instance of the model $model_short_name whose id is $model_instance_id and false otherwise
+     * Return true if the current databubble has the instance of the model $model_short_name whose id is $model_instance_id and false otherwise
      *
      * @param   string  $model_short_name
      * @param   int     $model_instance_id
      * @return  bool
      */
     public function has_model_instance($model_short_name, $model_instance_id) {
-        if (isset($this->{$model_short_name}[$model_instance_id])) {
+        if (isset($this->models[$model_short_name][$model_instance_id])) {
             return true;
         } else {
             return false;
@@ -77,22 +88,39 @@ class Databubble
      */
     public function get_model_instance($model_short_name, $model_instance_id) {
         if ($this->has_model_instance($model_short_name, $model_instance_id)) {
-            return $this->{$model_short_name}[$model_instance_id];
+            return $this->models[$model_short_name][$model_instance_id];
         } else {
             return null;
         }
     }
 
     /**
-     * Add the instance $model_instance of the model $model_short_name
+     * Add the instance $model_instance in the current databubble
      *
-     * @param   string  $model_short_name
      * @param   object  $model_instance
      * @return  void
      */
-    public function add_model_instance($model_short_name, $model_instance) {
-        $this->{$model_short_name}[$model_instance->get_id()] = $model_instance;
+    public function add_model_instance($model_instance) {
+        $this->models[$model_instance::get_business_short_name()][$model_instance->get_id()] = $model_instance;
+
+        $table_abstract_model = $model_instance::get_table_abstract_model();
+        if ( ! is_null($table_abstract_model)) {
+            $this->models[$table_abstract_model][$model_instance->get_id()] = $model_instance;
+        }
+
         $model_instance->databubble = $this;
+    }
+
+    /**
+     * Add the instance $association_instance in the current databubble
+     *
+     * @param   object  $association_instance
+     * @return  void
+     */
+    public function add_association_instance($association_instance) {
+        $this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()] = $association_instance;
+
+        $association_instance->databubble = $this;
     }
 
     /**
@@ -103,8 +131,8 @@ class Databubble
      * @return  void
      */
     public function remove_model_instance($model_short_name, $model_instance_id) {
-        unset($this->{$model_short_name}[$model_instance_id]->databubble);
-        unset($this->{$model_short_name}[$model_instance_id]);
+        unset($this->models[$model_short_name][$model_instance_id]->databubble);
+        unset($this->models[$model_short_name][$model_instance_id]);
     }
 
     /**
@@ -147,20 +175,7 @@ class Databubble
             return $model_instance;
         } else {
             if ( ! is_null($created_model_instance)) {
-                $this->add_model_instance($qm_model_item['name'], $created_model_instance);
-
-                if ($qm_model_item['model_info']['type'] == 'concrete_model') {
-                    $this->add_model_instance($model_full_name::get_table_abstract_model(), $created_model_instance);
-                } elseif ($qm_model_item['model_info']['type'] == 'abstract_model') {
-                    $model_instance_table = $models_metadata->models[$qm_model_item['name']]['table'];
-                    foreach ($qm_model_item['model_info']['concrete_aliases'] as $abstract_model_concrete_alias) {
-                        $abstract_model_concrete_table = $qm_aliases[$abstract_model_concrete_alias];
-                        if ($model_instance_table === $abstract_model_concrete_table) {
-                            $this->add_model_instance($created_model_instance::get_business_short_name(), $created_model_instance);
-                            break;
-                        }
-                    }
-                }
+                $this->add_model_instance($created_model_instance);
             }
 
             return $created_model_instance;

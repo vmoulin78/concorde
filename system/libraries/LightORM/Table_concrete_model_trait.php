@@ -206,11 +206,9 @@ trait Table_concrete_model_trait
      * @return  bool
      */
     public function concrete_update_manager_exists() {
-        $lightORM = LightORM::get_singleton();
-
         $model_short_name = self::get_business_short_name();
 
-        if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['concrete'])) {
+        if (isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]['concrete'])) {
             return true;
         } else {
             return false;
@@ -223,11 +221,9 @@ trait Table_concrete_model_trait
      * @return  bool
      */
     public function abstract_update_manager_exists() {
-        $lightORM = LightORM::get_singleton();
-
         $model_short_name = self::get_business_short_name();
 
-        if (isset($lightORM->model_update_managers[$model_short_name][$this->get_id()]['abstract'])) {
+        if (isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]['abstract'])) {
             return true;
         } else {
             return false;
@@ -240,18 +236,16 @@ trait Table_concrete_model_trait
      * @return  array
      */
     private function &get_update_managers() {
-        $lightORM = LightORM::get_singleton();
-
         $model_short_name = self::get_business_short_name();
 
-        if ( ! isset($lightORM->model_update_managers[$model_short_name][$this->get_id()])) {
-            $lightORM->model_update_managers[$model_short_name][$this->get_id()] = array(
+        if ( ! isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()])) {
+            $this->databubble->update_managers['models'][$model_short_name][$this->get_id()] = array(
                 'abstract'  => null,
                 'concrete'  => null,
             );
         }
 
-        return $lightORM->model_update_managers[$model_short_name][$this->get_id()];
+        return $this->databubble->update_managers['models'][$model_short_name][$this->get_id()];
     }
 
     /**
@@ -369,9 +363,9 @@ trait Table_concrete_model_trait
                     )
                 );
 
-                if (isset($this->databubble->{$opposite_associate_array['model']})) {
+                if (isset($this->databubble->models[$opposite_associate_array['model']])) {
                     $associate_is_found = false;
-                    foreach ($this->databubble->{$opposite_associate_array['model']} as $item1) {
+                    foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
                         $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
 
                         if (is_undefined($opposite_associate_property_value)) {
@@ -409,7 +403,7 @@ trait Table_concrete_model_trait
                     }
 
                     if ( ! is_null($value)) {
-                        foreach ($this->databubble->{$opposite_associate_array['model']} as $item1) {
+                        foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
                             if ($item1 !== $value) {
                                 continue;
                             }
@@ -554,8 +548,8 @@ trait Table_concrete_model_trait
 
                 list($opposite_associate_array) = $opposite_associates_arrays;
 
-                if (isset($this->databubble->{$opposite_associate_array['model']})) {
-                    foreach ($this->databubble->{$opposite_associate_array['model']} as $item) {
+                if (isset($this->databubble->models[$opposite_associate_array['model']])) {
+                    foreach ($this->databubble->models[$opposite_associate_array['model']] as $item) {
                         if ($item === $data) {
                             $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
 
@@ -639,6 +633,8 @@ trait Table_concrete_model_trait
                     }
                 }
 
+                $this->databubble->add_association_instance($association_instance);
+
                 break;
             default:
                 exit(1);
@@ -679,8 +675,7 @@ trait Table_concrete_model_trait
      * @return  bool
      */
     public function save() {
-        $models_metadata  = Models_metadata::get_singleton();
-        $lightORM         = LightORM::get_singleton();
+        $models_metadata = Models_metadata::get_singleton();
 
         $model_short_name                = self::get_business_short_name();
         $concrete_update_manager_result  = true;
@@ -700,7 +695,7 @@ trait Table_concrete_model_trait
             $abstract_update_manager_result = $abstract_update_manager->update();
         }
 
-        unset($lightORM->model_update_managers[$model_short_name][$this->get_id()]);
+        unset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]);
 
         return $concrete_update_manager_result && $abstract_update_manager_result;
     }

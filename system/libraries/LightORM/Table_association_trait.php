@@ -79,7 +79,7 @@ trait Table_association_trait
 
         foreach ($association_array['associates'] as $associate) {
             if ($associate['joining_field'] == $joining_field) {
-                return call_user_func([call_user_func([$this, 'get_' . $associate['reverse_property']]), 'get_id']);
+                return $this->{'get_' . $associate['reverse_property']}()->get_id();
             }
         }
 
@@ -169,17 +169,15 @@ trait Table_association_trait
      * @return  array
      */
     public function get_concrete_update_manager() {
-        $lightORM = LightORM::get_singleton();
-
         $association_short_name = self::get_business_short_name();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
 
-        if ( ! isset($lightORM->association_update_managers[$association_short_name][$primary_key_scalar])) {
-            $lightORM->association_update_managers[$association_short_name][$primary_key_scalar] = new Query_manager();
+        if ( ! isset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar])) {
+            $this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar] = new Query_manager();
         }
 
-        return $lightORM->association_update_managers[$association_short_name][$primary_key_scalar];
+        return $this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar];
     }
 
     /**
@@ -230,8 +228,7 @@ trait Table_association_trait
      * @return  bool
      */
     public function save() {
-        $associations_metadata  = Associations_metadata::get_singleton();
-        $lightORM               = LightORM::get_singleton();
+        $associations_metadata = Associations_metadata::get_singleton();
 
         $association_short_name  = self::get_business_short_name();
         $association_array       = $associations_metadata->get_association_array(['association' => $association_short_name]);
@@ -247,7 +244,7 @@ trait Table_association_trait
         $retour = $update_manager->update();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
-        unset($lightORM->association_update_managers[$association_short_name][$primary_key_scalar]);
+        unset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar]);
 
         return $retour;
     }

@@ -293,24 +293,26 @@ if ( ! function_exists('sanitize_business_rec'))
 
         $retour = clone $business;
 
-        if (is_table_concrete_model($business)) {
-            $reflection_retour = new ReflectionObject($retour);
+        //------------------------------------------------------//
 
-            $properties_names_to_unset = array();
-            foreach ($reflection_retour->getProperties() as $property) {
-                if ( ! $property->isPublic()) {
-                    continue;
-                }
+        $reflection_retour = new ReflectionObject($retour);
 
-                if ($retour->{$property->getName()} instanceof Databubble) {
-                    $properties_names_to_unset[] = $property->getName();
-                }
+        $properties_names_to_unset = array();
+        foreach ($reflection_retour->getProperties() as $property) {
+            if ( ! $property->isPublic()) {
+                continue;
             }
 
-            foreach ($properties_names_to_unset as $property_name_to_unset) {
-                unset($retour->{$property_name_to_unset});
+            if ($retour->{$property->getName()} instanceof Databubble) {
+                $properties_names_to_unset[] = $property->getName();
             }
         }
+
+        foreach ($properties_names_to_unset as $property_name_to_unset) {
+            unset($retour->{$property_name_to_unset});
+        }
+
+        //------------------------------------------------------//
 
         $processed_instances[$business_type][$business_short_name][$primary_key_scalar] = $retour;
 

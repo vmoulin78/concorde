@@ -718,6 +718,7 @@ class Finder
         $already_reinitialized_properties  = array();
         $already_managed_retour_ids        = array();
         $already_managed_associations      = array();
+        $associations_instances            = array();
 
         foreach ($query->result() as $row) {
             $qm->convert_row($row);
@@ -840,9 +841,24 @@ class Finder
                             }
                             break;
                         case 'many_to_many':
+                            $association_short_name   = $association_array['class'];
+                            $association_full_name    = $association_array['class_full_name'];
+                            $association_table_alias  = $qm_model_item['associate']->associatound_associatonents_group->joining_alias;
+
                             if ( ! isset($associations_pool[$associatound_atom_numbered_name][$associatound_atom_property])) {
-                                $association_full_name = $association_array['class_full_name'];
-                                $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $association_full_name::business_creation($qm_model_item, $row, $qm->aliases);
+                                $association_primary_key_ids = array();
+                                foreach ($association_full_name::get_primary_key_fields() as $association_primary_key_field) {
+                                    $association_primary_key_ids[] = $row->{$association_table_alias . ':' . $association_primary_key_field};
+                                }
+                                $association_primary_key_scalar = implode(':', $association_primary_key_ids);
+
+                                if ( ! isset($associations_instances[$association_short_name][$association_primary_key_scalar])) {
+                                    $associations_instances[$association_short_name][$association_primary_key_scalar] = $association_full_name::business_creation($qm_model_item, $row, $qm->aliases);
+                                }
+
+                                $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $associations_instances[$association_short_name][$association_primary_key_scalar];
+
+                                //------------------------------------------------------//
 
                                 $associatound_associatonents = $models_pool[$associatound_atom_numbered_name]->{'get_' . $associatound_atom_property}();
                                 $associatound_associatonents[] = $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property];
@@ -872,6 +888,12 @@ class Finder
 
                     $already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()][] = $associatound_atom_property;
                 }
+            }
+        }
+
+        foreach ($associations_instances as $associations_instances_bunch) {
+            foreach ($associations_instances_bunch as $associations_instances_bunch_item) {
+                $this->databubble->add_association_instance($associations_instances_bunch_item);
             }
         }
 
