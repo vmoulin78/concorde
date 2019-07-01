@@ -54,12 +54,13 @@ class Models_metadata
     private $CI;
     public $models;
     private $basic_properties;
+    private $table_concrete_models;
+    private $table_abstract_models;
     
     private function __construct() {
         $this->CI =& get_instance();
 
         $this->models = array();
-
         foreach ($this->CI->config->item('lightORM_business_models') as $model => $config_model) {
             if (isset($config_model['table'])) {
                 $table = $config_model['table'];
@@ -72,6 +73,10 @@ class Models_metadata
                 'table'            => $table,
             );
         }
+
+        $this->basic_properties       = array();
+        $this->table_concrete_models  = array();
+        $this->table_abstract_models  = array();
     }
 
     /**
@@ -108,5 +113,83 @@ class Models_metadata
         }
 
         return $this->basic_properties[$model];
+    }
+
+    /**
+     * Get the table abstract model of the table concrete model $table_concrete_model
+     *
+     * @param   string  $table_concrete_model
+     * @return  string
+     */
+    public function get_table_abstract_model($table_concrete_model) {
+        $CI =& get_instance();
+        $models_metadata = Models_metadata::get_singleton();
+
+        if (isset($this->table_concrete_models[$table_concrete_model])) {
+            return $this->table_concrete_models[$table_concrete_model];
+        }
+
+        $table_concrete_model_full_name = $models_metadata->models[$table_concrete_model]['model_full_name'];
+
+        $parent_class_full_name   = get_parent_class($table_concrete_model_full_name);
+        $parent_class_short_name  = $parent_class_full_name::get_business_short_name();
+
+        if ($parent_class_full_name === false) {
+            return ($this->table_concrete_models[$table_concrete_model] = null);
+        }
+
+        $parent_class_reflection = new \ReflectionClass($parent_class_full_name);
+        $parent_class_namespace_name = $parent_class_reflection->getNamespaceName();
+
+        if ($parent_class_namespace_name != ($CI->config->item('application_namespace') . '\\business\\models')) {
+            return ($this->table_concrete_models[$table_concrete_model] = null);
+        }
+
+        $parent_class_trait_names = $parent_class_reflection->getTraitNames();
+        if (in_array('LightORM\\Table_abstract_model_trait', $parent_class_trait_names)) {
+            return ($this->table_concrete_models[$table_concrete_model] = $parent_class_short_name);
+        }
+
+        return ($this->table_concrete_models[$table_concrete_model] = $this->get_table_abstract_model($parent_class_short_name));
+    }
+
+    /**
+     * Get the table concrete models of the table abstract model $table_abstract_model
+     *
+     * @param   string  $table_abstract_model
+     * @return  array
+     */
+    public function get_table_concrete_models($table_abstract_model) {
+        $models_metadata = Models_metadata::get_singleton();
+
+        if (isset($this->table_abstract_models[$table_abstract_model])) {
+            return $this->table_abstract_models[$table_abstract_model];
+        }
+
+        $retour = array();
+
+        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
+            $item_array = explode('.', $item);
+
+            if (count($item_array) != 2) {
+                continue;
+            }
+
+            list($item_main, $item_ext) = $item_array;
+
+            if ($item_ext != 'php') {
+                continue;
+            }
+
+            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
+
+            if (is_subclass_of($item_main_full_name, $models_metadata->models[$table_abstract_model]['model_full_name'])
+                && is_table_concrete_model($item_main_full_name)
+            ) {
+                $retour[] = $item_main;
+            }
+        }
+
+        return ($this->table_abstract_models[$table_abstract_model] = $retour);
     }
 }

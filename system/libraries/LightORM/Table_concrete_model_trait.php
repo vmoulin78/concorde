@@ -51,8 +51,9 @@ trait Table_concrete_model_trait
      * @return  string
      */
     public static function get_table_abstract_model() {
-        $table_concrete_model_loader = Table_concrete_model_loader::get_singleton();
-        return $table_concrete_model_loader->get_table_abstract_model(self::get_business_short_name());
+        $models_metadata = Models_metadata::get_singleton();
+
+        return $models_metadata->get_table_abstract_model(self::get_business_short_name());
     }
 
     /**
