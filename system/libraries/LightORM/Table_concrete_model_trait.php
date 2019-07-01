@@ -288,39 +288,34 @@ trait Table_concrete_model_trait
      * @return  bool
      */
     private function set_for_ref_model_type($property, $value, $ref_model_type) {
-        $models_metadata        = Models_metadata::get_singleton();
-        $associations_metadata  = Associations_metadata::get_singleton();
-        $data_conv              = Data_conv::factory();
+        $models_metadata  = Models_metadata::get_singleton();
+        $data_conv        = Data_conv::factory();
 
-        $model_short_name  = self::get_business_short_name();
-        $model_full_name   = self::get_business_full_name();
+        $model_short_name = self::get_business_short_name();
 
         switch ($ref_model_type) {
             case 'abstract':
-                $table = $model_full_name::get_abstract_table();
-                if (is_null($table)) {
+                $ref_model_short_name = self::get_table_abstract_model();
+                if (is_null($ref_model_short_name)) {
                     return false;
                 }
-                $ref_model_short_name = self::get_table_abstract_model();
+                $table = self::get_abstract_table();
                 break;
             case 'concrete':
-                $table                 = $models_metadata->models[$model_short_name]['table'];
                 $ref_model_short_name  = $model_short_name;
+                $table                 = $models_metadata->models[$model_short_name]['table'];
                 break;
             default:
                 exit(1);
                 break;
         }
 
-        $field_is_found  = false;
-        $table_object    = $data_conv->schema[$table];
+        $table_object = $data_conv->schema[$table];
         if ($table_object->field_exists($property)) {
             $this->{'set_' . $property}($value);
 
             $field_name   = $property;
             $field_value  = $value;
-
-            $field_is_found = true;
         } elseif ($table_object->field_exists($property . '_id')
             && $table_object->field_is_enum_model_id($property . '_id')
         ) {
@@ -332,130 +327,17 @@ trait Table_concrete_model_trait
             } else {
                 $field_value = $value->get_id();
             }
-
-            $field_is_found = true;
-        } else {
-            $associate_array = $associations_metadata->get_associate_array(
-                array(
-                    'model'     => $ref_model_short_name,
-                    'property'  => $property,
-                )
-            );
-
-            if ($associate_array !== false) {
-                if ($associate_array['dimension'] !== 'one') {
-                    trigger_error('LightORM error: Property error', E_USER_ERROR);
-                }
-
-                if (( ! is_null($value))
-                    && ($this->databubble !== $value->databubble)
-                ) {
-                    trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
-                }
-
-                $this->{'set_' . $property}($value);
-
-                //------------------------------------------------------//
-
-                list($opposite_associate_array) = $associations_metadata->get_opposite_associates_arrays(
-                    array(
-                        'model'     => $ref_model_short_name,
-                        'property'  => $property,
-                    )
-                );
-
-                if (isset($this->databubble->models[$opposite_associate_array['model']])) {
-                    $associate_is_found = false;
-                    foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
-                        $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
-
-                        if (is_undefined($opposite_associate_property_value)) {
-                            continue;
-                        }
-
-                        switch ($opposite_associate_array['dimension']) {
-                            case 'one':
-                                if (( ! is_null($opposite_associate_property_value))
-                                    && ($opposite_associate_property_value === $this)
-                                ) {
-                                    $item1->{'set_' . $opposite_associate_array['property']}(null);
-                                    $associate_is_found = true;
-                                }
-                                break;
-                            case 'many':
-                                $new_opposite_associate_property_value = array();
-                                foreach ($opposite_associate_property_value as $item2) {
-                                    if ($item2 === $this) {
-                                        $associate_is_found = true;
-                                    } else {
-                                        $new_opposite_associate_property_value[] = $item2;
-                                    }
-                                }
-                                $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
-                                break;
-                            default:
-                                exit(1);
-                                break;
-                        }
-
-                        if ($associate_is_found) {
-                            break;
-                        }
-                    }
-
-                    if ( ! is_null($value)) {
-                        foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
-                            if ($item1 !== $value) {
-                                continue;
-                            }
-
-                            $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
-
-                            if (is_undefined($opposite_associate_property_value)) {
-                                break;
-                            }
-
-                            switch ($opposite_associate_array['dimension']) {
-                                case 'one':
-                                    $item1->{'set_' . $opposite_associate_array['property']}($this);
-                                    break;
-                                case 'many':
-                                    $opposite_associate_property_value[] = $this;
-                                    $item1->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
-                                    break;
-                                default:
-                                    exit(1);
-                                    break;
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                //------------------------------------------------------//
-
-                $field_name = $associate_array['field'];
-                if (is_null($value)) {
-                    $field_value = null;
-                } else {
-                    $field_value = $value->get_id();
-                }
-
-                $field_is_found = true;
-            }
-        }
-
-        if ($field_is_found) {
-            $this->{'get_' . $ref_model_type . '_update_manager'}()->set($field_name, $field_value);
-            return true;
         } else {
             return false;
         }
+
+        $this->{'get_' . $ref_model_type . '_update_manager'}()->set($field_name, $field_value);
+
+        return true;
     }
 
     /**
-     * Set the property $property with the value $value
+     * Set the basic property $property with the value $value
      *
      * @param   string  $property
      * @param   mixed   $value
@@ -474,12 +356,243 @@ trait Table_concrete_model_trait
     }
 
     /**
+     * Manage the 'set_assoc' for the objects and for the database
+     *
+     * @param   string                 $property
+     * @param   mixed                  $value
+     * @param   bool                   $auto_commit
+     * @param   'abstract'|'concrete'  $ref_model_type
+     * @return  int
+     */
+    private function set_assoc_for_ref_model_type($property, $value, $auto_commit, $ref_model_type) {
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+
+        $model_short_name = self::get_business_short_name();
+
+        switch ($ref_model_type) {
+            case 'abstract':
+                $ref_model_short_name = self::get_table_abstract_model();
+                if (is_null($ref_model_short_name)) {
+                    return 0;
+                }
+                break;
+            case 'concrete':
+                $ref_model_short_name = $model_short_name;
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        
+        $associate_array = $associations_metadata->get_associate_array(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if ($associate_array === false) {
+            return 0;
+        }
+
+        if ($associate_array['dimension'] !== 'one') {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
+
+        if (( ! is_null($value))
+            && ($this->databubble !== $value->databubble)
+        ) {
+            trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
+        }
+
+        if ( ! is_undefined($this->{'get_' . $property}())) {
+            $this->{'set_' . $property}($value);
+        }
+
+        //------------------------------------------------------//
+
+        list($opposite_associate_array) = $associations_metadata->get_opposite_associates_arrays(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if (isset($this->databubble->models[$opposite_associate_array['model']])) {
+            $associate_is_found = false;
+            foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
+                $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+
+                if (is_undefined($opposite_associate_property_value)) {
+                    continue;
+                }
+
+                switch ($opposite_associate_array['dimension']) {
+                    case 'one':
+                        if (( ! is_null($opposite_associate_property_value))
+                            && ($opposite_associate_property_value === $this)
+                        ) {
+                            $item1->{'set_' . $opposite_associate_array['property']}(null);
+                            $associate_is_found = true;
+                        }
+                        break;
+                    case 'many':
+                        $new_opposite_associate_property_value = array();
+                        foreach ($opposite_associate_property_value as $item2) {
+                            if ($item2 === $this) {
+                                $associate_is_found = true;
+                            } else {
+                                $new_opposite_associate_property_value[] = $item2;
+                            }
+                        }
+                        $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
+                        break;
+                    default:
+                        exit(1);
+                        break;
+                }
+
+                if ($associate_is_found) {
+                    break;
+                }
+            }
+
+            if ( ! is_null($value)) {
+                foreach ($this->databubble->models[$opposite_associate_array['model']] as $item1) {
+                    if ($item1 !== $value) {
+                        continue;
+                    }
+
+                    $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+
+                    if (is_undefined($opposite_associate_property_value)) {
+                        break;
+                    }
+
+                    switch ($opposite_associate_array['dimension']) {
+                        case 'one':
+                            $item1->{'set_' . $opposite_associate_array['property']}($this);
+                            break;
+                        case 'many':
+                            $opposite_associate_property_value[] = $this;
+                            $item1->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                            break;
+                        default:
+                            exit(1);
+                            break;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        //------------------------------------------------------//
+
+        if ($auto_commit) {
+            $qm = new Query_manager();
+
+            if ($associate_array['field'] !== 'id') {
+                switch ($ref_model_type) {
+                    case 'abstract':
+                        $table = self::get_abstract_table();
+                        break;
+                    case 'concrete':
+                        $table = $models_metadata->models[$model_short_name]['table'];
+                        break;
+                    default:
+                        exit(1);
+                        break;
+                }
+
+                if (is_null($value)) {
+                    $field_value = null;
+                } else {
+                    $field_value = $value->get_id();
+                }
+
+                $qm->table($table)
+                   ->set($associate_array['field'], $field_value)
+                   ->where('id', $this->get_id());
+            } elseif ($opposite_associate_array['field'] !== 'id') {
+                $table = $models_metadata->models[$opposite_associate_array['model']]['table'];
+
+                $qm->table($table);
+
+                if (is_null($value)) {
+                    $qm->set($opposite_associate_array['field'], null)
+                       ->where($opposite_associate_array['field'], $this->get_id());
+                } else {
+                    $qm->set($opposite_associate_array['field'], $this->get_id())
+                       ->where('id', $value->get_id());
+                }
+            } else {
+                exit(1);
+            }
+
+            $qm_result = $qm->update();
+
+            if ($qm_result) {
+                return 1;
+            } else {
+                return -1;
+            }
+        } else {
+            if ($associate_array['field'] === 'id') {
+                trigger_error('LightORM error: The updated field must be in the table corresponding to the current object', E_USER_ERROR);
+            }
+
+            if (is_null($value)) {
+                $field_value = null;
+            } else {
+                $field_value = $value->get_id();
+            }
+
+            $this->{'get_' . $ref_model_type . '_update_manager'}()->set($associate_array['field'], $field_value);
+
+            return 1;
+        }
+    }
+
+    /**
+     * Set the association property $property with the value $value
+     *
+     * If $auto_commit is true then the database will be automatically updated
+     * Otherwise a call to the function save() will be required
+     * The parameter $auto_commit may be set to false only if the updated field is in the table corresponding to the current object
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @param   bool    $auto_commit
+     * @return  bool
+     */
+    public function set_assoc($property, $value, $auto_commit = true) {
+        $abstract_set_assoc_result = $this->set_assoc_for_ref_model_type($property, $value, $auto_commit, 'abstract');
+        if ($abstract_set_assoc_result === 1) {
+            return true;
+        } elseif ($abstract_set_assoc_result === -1) {
+            return false;
+        }
+
+        $concrete_set_assoc_result = $this->set_assoc_for_ref_model_type($property, $value, $auto_commit, 'concrete');
+        if ($concrete_set_assoc_result === 1) {
+            return true;
+        } elseif ($concrete_set_assoc_result === -1) {
+            return false;
+        }
+
+        trigger_error('LightORM error: Unable to find the association', E_USER_ERROR);
+    }
+
+    /**
      * Manage the 'add' for the objects and for the database
      *
      * @param   string                 $property
      * @param   mixed                  $data
      * @param   'abstract'|'concrete'  $ref_model_type
-     * @return  bool
+     * @return  int
      */
     private function add_for_ref_model_type($property, $data, $ref_model_type) {
         $models_metadata        = Models_metadata::get_singleton();

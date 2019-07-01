@@ -212,7 +212,7 @@ trait Table_association_trait
                 $field_value = $value->get_id();
             }
         } else {
-            trigger_error('LightORM error: Unable to find table field', E_USER_ERROR);
+            trigger_error('LightORM error: Unable to find the field', E_USER_ERROR);
         }
 
         $this->get_concrete_update_manager()->set($field_name, $field_value);
