@@ -587,20 +587,19 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Manage the 'add' for the objects and for the database
+     * Manage the 'add_assoc' for the objects and for the database
      *
      * @param   string                 $property
      * @param   mixed                  $data
      * @param   'abstract'|'concrete'  $ref_model_type
      * @return  int
      */
-    private function add_for_ref_model_type($property, $data, $ref_model_type) {
+    private function add_assoc_for_ref_model_type($property, $data, $ref_model_type) {
         $models_metadata        = Models_metadata::get_singleton();
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        $model_short_name  = self::get_business_short_name();
-        $model_full_name   = self::get_business_full_name();
+        $model_short_name = self::get_business_short_name();
 
         switch ($ref_model_type) {
             case 'abstract':
@@ -657,8 +656,10 @@ trait Table_concrete_model_trait
                 }
 
                 $associate_property_value = $this->{'get_' . $property}();
-                $associate_property_value[] = $data;
-                $this->{'set_' . $property}($associate_property_value);
+                if ( ! is_undefined($associate_property_value)) {
+                    $associate_property_value[] = $data;
+                    $this->{'set_' . $property}($associate_property_value);
+                }
 
                 list($opposite_associate_array) = $opposite_associates_arrays;
 
@@ -730,10 +731,13 @@ trait Table_concrete_model_trait
                 $args = $association_table_object->business_creation_args($row);
                 $association_instance = new $association_full_name(...$args);
 
-                $associate_property_value = $this->{'get_' . $property}();
-                $associate_property_value[] = $association_instance;
-                $this->{'set_' . $property}($associate_property_value);
                 $association_instance->{'set_' . $associate_array['reverse_property']}($this);
+
+                $associate_property_value = $this->{'get_' . $property}();
+                if ( ! is_undefined($associate_property_value)) {
+                    $associate_property_value[] = $association_instance;
+                    $this->{'set_' . $property}($associate_property_value);
+                }
 
                 foreach ($opposite_associates_arrays as $opposite_associate_array) {
                     $opposite_associate_instance = $data[$opposite_associate_array['reverse_property']];
@@ -759,24 +763,24 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Add the data $data in the array $property
+     * Add the data $data in the association property $property
      *
      * @param   string  $property
      * @param   mixed   $data
      * @return  bool
      */
-    public function add($property, $data) {
-        $abstract_add_result = $this->add_for_ref_model_type($property, $data, 'abstract');
-        if ($abstract_add_result === 1) {
+    public function add_assoc($property, $data) {
+        $abstract_add_assoc_result = $this->add_assoc_for_ref_model_type($property, $data, 'abstract');
+        if ($abstract_add_assoc_result === 1) {
             return true;
-        } elseif ($abstract_add_result === -1) {
+        } elseif ($abstract_add_assoc_result === -1) {
             return false;
         }
 
-        $concrete_add_result = $this->add_for_ref_model_type($property, $data, 'concrete');
-        if ($concrete_add_result === 1) {
+        $concrete_add_assoc_result = $this->add_assoc_for_ref_model_type($property, $data, 'concrete');
+        if ($concrete_add_assoc_result === 1) {
             return true;
-        } elseif ($concrete_add_result === -1) {
+        } elseif ($concrete_add_assoc_result === -1) {
             return false;
         }
 
