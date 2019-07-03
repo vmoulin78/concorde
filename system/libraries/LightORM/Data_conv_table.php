@@ -74,22 +74,6 @@ class Data_conv_table
     }
 
     /**
-     * Return true if the field $field is an enum_model_id and false otherwise
-     *
-     * @param   string  $field
-     * @return  bool
-     */
-    public function field_is_enum_model_id($field) {
-        $field_object = $this->fields[$field];
-
-        if ($field_object->is_enum_model_id) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Get the fields of the primary key
      *
      * @return  array

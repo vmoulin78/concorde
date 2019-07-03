@@ -79,28 +79,41 @@ if ( ! function_exists('php_element_to_pgsql_element'))
             case 'int':
             case 'float':
             case 'pk':
-            case 'fk':
-            case 'pk_fk':
                 $retour = (string) $php_element;
                 break;
+
             case 'string':
             case 'json':
                 $retour = pg_escape_literal($CI->db->conn_id, $php_element);
                 break;
+
             case 'bool':
                 $retour = $php_element ? PGSQL_BOOL_TRUE_TO_SERVER : PGSQL_BOOL_FALSE_TO_SERVER;
                 break;
+
             case 'date':
             case 'interval':
             case 'time':
             case 'timestamp':
             case 'timestamptz':
             case 'timetz':
-                $retour = $php_element->db_format();
+                if (is_object($php_element)) {
+                    $retour = $php_element->db_format();
+                } else {
+                    $retour = (string) $php_element;
+                }
                 break;
+
+            case 'fk':
+            case 'pk_fk':
             case 'enum_model_id':
-                $retour = (string) $php_element->get_id();
+                if (is_object($php_element)) {
+                    $retour = (string) $php_element->get_id();
+                } else {
+                    $retour = (string) $php_element;
+                }
                 break;
+
             default:
                 trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 break;
@@ -188,9 +201,11 @@ if ( ! function_exists('pgsql_element_to_php_element'))
             case 'pk_fk':
                 $retour = (int) $pgsql_element;
                 break;
+
             case 'float':
                 $retour = (float) $pgsql_element;
                 break;
+
             case 'string':
                 if (db_substr($pgsql_element, 0, 1) === '"') {
                     $retour = str_replace('\\"', '"', db_substr($pgsql_element, 1, -1));
@@ -198,9 +213,11 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                     $retour = $pgsql_element;
                 }
                 break;
+
             case 'json':
                 $retour = $pgsql_element;
                 break;
+
             case 'bool':
                 if ($pgsql_element === PGSQL_BOOL_TRUE_FROM_SERVER) {
                     $retour = true;
@@ -210,24 +227,31 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                     trigger_error("LightORM error: Unknown PostgreSQL boolean", E_USER_ERROR);
                 }
                 break;
+
             case 'date':
                 $retour = new Pgsql_date($pgsql_element);
                 break;
+
             case 'interval':
                 $retour = new Pgsql_interval($pgsql_element);
                 break;
+
             case 'time':
                 $retour = new Pgsql_time($pgsql_element);
                 break;
+
             case 'timestamp':
                 $retour = new Pgsql_timestamp($pgsql_element);
                 break;
+
             case 'timestamptz':
                 $retour = new Pgsql_timestamptz($pgsql_element);
                 break;
+
             case 'timetz':
                 $retour = new Pgsql_timetz($pgsql_element);
                 break;
+
             case 'enum_model_id':
                 if (count($element_type_array) == 0) {
                     trigger_error("LightORM error: Error in element type '" . $element_type . "'", E_USER_ERROR);
@@ -238,6 +262,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 $model_full_name     = $table_metadata['business_full_name'];
                 $retour              = $model_full_name::find($pgsql_element);
                 break;
+
             default:
                 trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 break;

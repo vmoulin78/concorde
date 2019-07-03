@@ -37,11 +37,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |         'email'  => 'string',
 |     ),
 |     'article' => array(
-|         'id'             => 'pk',
-|         'blg_status_id'  => 'enum_model_id:blg_status',
-|         'author_id'      => 'fk:author',
-|         'folder_id'      => 'fk:folder',
-|         'created_at'     => 'timestamptz',
+|         'id'          => 'pk',
+|         'status'      => 'enum_model_id:blg_status',
+|         'author_id'   => 'fk:author',
+|         'folder_id'   => 'fk:folder',
+|         'created_at'  => 'timestamptz',
 |     ),
 |     'title' => array(
 |         'id'          => 'pk',

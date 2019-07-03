@@ -191,35 +191,36 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        $this->{'set_' . $property}($value);
-
-        //------------------------------------------------------//
-
         $association_short_name  = self::get_business_short_name();
         $association_array       = $associations_metadata->get_association_array(['association' => $association_short_name]);
         $table_object            = $data_conv->schema[$association_array['table']];
 
-        if ($table_object->field_exists($property)) {
-            $field_name   = $property;
-            $field_value  = $value;
-        } elseif ($table_object->field_exists($property . '_id')
-            && $table_object->field_is_enum_model_id($property . '_id')
-        ) {
-            $field_name = $property . '_id';
-            if (is_null($value)) {
-                $field_value = null;
-            } else {
-                $field_value = $value->get_id();
-            }
-        } else {
+        if ( ! $table_object->field_exists($property)) {
             trigger_error('LightORM error: Unable to find the field', E_USER_ERROR);
         }
 
-        $this->get_concrete_update_manager()->set($field_name, $field_value);
+        if ( ! in_array($property, $associations_metadata->get_basic_properties($association_short_name))) {
+            trigger_error('LightORM error: The property \'' . $property . '\' is not a basic property', E_USER_ERROR);
+        }
 
-        //------------------------------------------------------//
+        $this->{'set_' . $property}($value);
+
+        $this->get_concrete_update_manager()->set($property, $value);
 
         return $this;
+    }
+
+    /**
+     * Add the value $value to the property $property
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @return  object
+     */
+    public function add($property, $value) {
+        $property_value = $this->{'get_' . $property}();
+        $property_value[] = $value;
+        return $this->set($property, $property_value);
     }
 
     /**
@@ -265,20 +266,11 @@ trait Table_association_trait
         $qm = new Query_manager();
         $qm->table($table_object->name);
         foreach ($data as $field => $value) {
-            if ( ! isset($table_object->fields[$field])) {
+            if ( ! $table_object->field_exists($field)) {
                 trigger_error('LightORM error: Error while inserting data', E_USER_ERROR);
             }
 
-            $field_object = $table_object->fields[$field];
-            if ($field_object->is_enum_model_id
-                && ( ! is_null($value))
-            ) {
-                $db_value = (string) $value;
-            } else {
-                $db_value = $data_conv->convert_value_for_db($value, $field_object);
-            }
-
-            $qm->simple_set($field, $db_value, false);
+            $qm->set($field, $value);
         }
 
         return $qm;

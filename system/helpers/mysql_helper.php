@@ -81,32 +81,50 @@ if ( ! function_exists('php_data_to_mysql_data'))
             case 'int':
             case 'float':
             case 'pk':
-            case 'fk':
-            case 'pk_fk':
                 $retour = (string) $php_data;
                 break;
+
             case 'string':
             case 'json':
                 // @todo
                 $retour = "'" . mysqli_real_escape_string($CI->db->conn_id, $php_data) . "'";
                 break;
+
             case 'bool':
                 $retour = $php_data ? MYSQL_BOOL_TRUE_TO_SERVER : MYSQL_BOOL_FALSE_TO_SERVER;
                 break;
+
             case 'set':
-                $retour = '(' . implode(',', $php_data) . ')';
+                if (is_array($php_data)) {
+                    $retour = '(' . implode(',', $php_data) . ')';
+                } else {
+                    $retour = (string) $php_data;
+                }
                 break;
+
             case 'date':
             case 'datetime':
             case 'interval':
             case 'time':
             case 'timestamp':
             case 'year':
-                $retour = $php_data->db_format();
+                if (is_object($php_data)) {
+                    $retour = $php_data->db_format();
+                } else {
+                    $retour = (string) $php_data;
+                }
                 break;
+
+            case 'fk':
+            case 'pk_fk':
             case 'enum_model_id':
-                $retour = (string) $php_element->get_id();
+                if (is_object($php_data)) {
+                    $retour = (string) $php_data->get_id();
+                } else {
+                    $retour = (string) $php_data;
+                }
                 break;
+
             default:
                 trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
@@ -142,14 +160,17 @@ if ( ! function_exists('mysql_data_to_php_data'))
             case 'pk_fk':
                 $retour = (int) $mysql_data;
                 break;
+
             case 'float':
                 $retour = (float) $mysql_data;
                 break;
+
             case 'string':
             case 'json':
                 // @todo
                 $retour = $mysql_data;
                 break;
+
             case 'bool':
                 if ($mysql_data === MYSQL_BOOL_TRUE_FROM_SERVER) {
                     $retour = true;
@@ -159,27 +180,35 @@ if ( ! function_exists('mysql_data_to_php_data'))
                     trigger_error("LightORM error: Unknown MySQL boolean", E_USER_ERROR);
                 }
                 break;
+
             case 'set':
                 $retour = explode(',', $mysql_data);
                 break;
+
             case 'date':
                 $retour = new Mysql_date($mysql_data);
                 break;
+
             case 'datetime':
                 $retour = new Mysql_datetime($mysql_data);
                 break;
+
             case 'interval':
                 $retour = new Mysql_interval($mysql_data);
                 break;
+
             case 'time':
                 $retour = new Mysql_time($mysql_data);
                 break;
+
             case 'timestamp':
                 $retour = new Mysql_timestamp($mysql_data);
                 break;
+
             case 'year':
                 $retour = new Mysql_year($mysql_data);
                 break;
+
             case 'enum_model_id':
                 if (count($data_type_array) == 0) {
                     trigger_error("LightORM error: Error in data type '" . $data_type . "'", E_USER_ERROR);
@@ -190,6 +219,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 $model_full_name  = $table_metadata['business_full_name'];
                 $retour           = $model_full_name::find($mysql_data);
                 break;
+
             default:
                 trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;

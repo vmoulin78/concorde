@@ -311,27 +311,17 @@ trait Table_concrete_model_trait
         }
 
         $table_object = $data_conv->schema[$table];
-        if ($table_object->field_exists($property)) {
-            $this->{'set_' . $property}($value);
-
-            $field_name   = $property;
-            $field_value  = $value;
-        } elseif ($table_object->field_exists($property . '_id')
-            && $table_object->field_is_enum_model_id($property . '_id')
-        ) {
-            $this->{'set_' . $property}($value);
-
-            $field_name = $property . '_id';
-            if (is_null($value)) {
-                $field_value = null;
-            } else {
-                $field_value = $value->get_id();
-            }
-        } else {
+        if ( ! $table_object->field_exists($property)) {
             return false;
         }
 
-        $this->{'get_' . $ref_model_type . '_update_manager'}()->set($field_name, $field_value);
+        if ( ! in_array($property, $models_metadata->get_basic_properties($model_short_name))) {
+            trigger_error('LightORM error: The property \'' . $property . '\' is not a basic property', E_USER_ERROR);
+        }
+
+        $this->{'set_' . $property}($value);
+
+        $this->{'get_' . $ref_model_type . '_update_manager'}()->set($property, $value);
 
         return true;
     }
@@ -353,6 +343,19 @@ trait Table_concrete_model_trait
         //------------------------------------------------------//
 
         return $this;
+    }
+
+    /**
+     * Add the value $value to the property $property
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @return  object
+     */
+    public function add($property, $value) {
+        $property_value = $this->{'get_' . $property}();
+        $property_value[] = $value;
+        return $this->set($property, $property_value);
     }
 
     /**
@@ -844,26 +847,16 @@ trait Table_concrete_model_trait
 
         foreach ($data as $field => $value) {
             if (isset($concrete_table_object->fields[$field])) {
-                $field_object        = $concrete_table_object->fields[$field];
-                $current_table_type  = 'concrete';
+                $current_table_type = 'concrete';
             } elseif (( ! is_null($abstract_table_object))
                 && isset($abstract_table_object->fields[$field])
             ) {
-                $field_object        = $abstract_table_object->fields[$field];
-                $current_table_type  = 'abstract';
+                $current_table_type = 'abstract';
             } else {
                 trigger_error('LightORM error: Error while inserting data', E_USER_ERROR);
             }
 
-            if ($field_object->is_enum_model_id
-                && ( ! is_null($value))
-            ) {
-                $db_value = (string) $value;
-            } else {
-                $db_value = $data_conv->convert_value_for_db($value, $field_object);
-            }
-
-            ${'qm_' . $current_table_type . '_table'}->simple_set($field, $db_value, false);
+            ${'qm_' . $current_table_type . '_table'}->set($field, $value);
         }
 
         return array(

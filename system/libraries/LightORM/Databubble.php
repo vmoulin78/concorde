@@ -209,6 +209,10 @@ class Databubble
             if ($field_object->is_foreign_key
                 && ( ! is_null($value))
             ) {
+                if (is_object($value)) {
+                    $value = $value->get_id();
+                }
+
                 $association_numbered_name = $associations_metadata->get_association_numbered_name(
                     array(
                         'model'  => $model_short_name,
