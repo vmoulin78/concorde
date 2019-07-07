@@ -410,9 +410,7 @@ trait Table_concrete_model_trait
             trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
         }
 
-        if ( ! is_undefined($this->{'get_' . $property}())) {
-            $this->{'set_' . $property}($value);
-        }
+        $this->{'set_' . $property}($value);
 
         //------------------------------------------------------//
 
@@ -470,17 +468,15 @@ trait Table_concrete_model_trait
 
                     $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
 
-                    if (is_undefined($opposite_associate_property_value)) {
-                        break;
-                    }
-
                     switch ($opposite_associate_array['dimension']) {
                         case 'one':
                             $item1->{'set_' . $opposite_associate_array['property']}($this);
                             break;
                         case 'many':
-                            $opposite_associate_property_value[] = $this;
-                            $item1->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                            if ( ! is_undefined($opposite_associate_property_value)) {
+                                $opposite_associate_property_value[] = $this;
+                                $item1->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                            }
                             break;
                         default:
                             exit(1);
@@ -572,6 +568,12 @@ trait Table_concrete_model_trait
      * @return  bool
      */
     public function set_assoc($property, $value, $auto_commit = true) {
+        if (( ! is_null($value))
+            && ( ! is_object($value))
+        ) {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
+
         $abstract_set_assoc_result = $this->set_assoc_for_ref_model_type($property, $value, $auto_commit, 'abstract');
         if ($abstract_set_assoc_result === 1) {
             return true;
@@ -650,45 +652,13 @@ trait Table_concrete_model_trait
 
         switch ($association_array['type']) {
             case 'one_to_many':
-                if ( ! is_object($data)) {
-                    trigger_error('LightORM error: Property error', E_USER_ERROR);
-                }
-
-                if ($this->databubble !== $data->databubble) {
-                    trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
-                }
-
-                $associate_property_value = $this->{'get_' . $property}();
-                if ( ! is_undefined($associate_property_value)) {
-                    $associate_property_value[] = $data;
-                    $this->{'set_' . $property}($associate_property_value);
-                }
-
                 list($opposite_associate_array) = $opposite_associates_arrays;
 
-                if (isset($this->databubble->models[$opposite_associate_array['model']])) {
-                    foreach ($this->databubble->models[$opposite_associate_array['model']] as $item) {
-                        if ($item === $data) {
-                            $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
-
-                            if ( ! is_undefined($opposite_associate_property_value)) {
-                                $item->{'set_' . $opposite_associate_array['property']}($this);
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                $query_manager = new Query_manager();
-                $query_manager->table($models_metadata->models[$opposite_associate_array['model']]['table'])
-                              ->set($opposite_associate_array['field'], $this->get_id())
-                              ->where('id', $data->get_id());
-                $query_manager_result = $query_manager->update();
-
-                if ($query_manager_result === false) {
+                $set_assoc_result = $data->set_assoc($opposite_associate_array['property'], $this);
+                if ($set_assoc_result === false) {
                     return -1;
                 }
+
                 break;
             case 'many_to_many':
                 if ( ! is_array($data)) {
