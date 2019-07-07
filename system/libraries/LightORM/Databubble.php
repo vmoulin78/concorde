@@ -188,61 +188,135 @@ class Databubble
      *
      * @param   string  $model_short_name
      * @param   array   $data
-     * @return  object
+     * @return  object  The created instance
      */
     public function insert_model($model_short_name, $data) {
-        $data_conv              = Data_conv::factory();
         $models_metadata        = Models_metadata::get_singleton();
         $associations_metadata  = Associations_metadata::get_singleton();
 
-        $model_full_name  = $models_metadata->models[$model_short_name]['model_full_name'];
-        $table            = $models_metadata->models[$model_short_name]['table'];
+        $model_full_name = $models_metadata->models[$model_short_name]['model_full_name'];
 
-        $insert_id = $model_full_name::insert($data, true);
+        $basic_properties = $models_metadata->get_basic_properties($model_short_name);
+
+        $data_for_insert_query  = array();
+        $associations_data      = array();
+        foreach ($data as $property => $value) {
+            if (in_array($property, $basic_properties)) {
+                $data_for_insert_query[$property] = $value;
+            } else {
+                if (( ! is_null($value))
+                    && ( ! is_object($value))
+                    && ( ! is_array($value))
+                ) {
+                    trigger_error('LightORM error: Property value error', E_USER_ERROR);
+                }
+
+                if (is_object($value)
+                    || (is_array($value) && ( ! empty($value)))
+                ) {
+                    $associations_data[$property] = $value;
+                }
+            }
+        }
+
+        $association_properties        = array();
+        $opposite_instances_to_manage  = array();
+        $remaining_associations_data   = array();
+        foreach ($associations_metadata->associations as $association_array) {
+            foreach ($association_array['associates'] as $associate) {
+                if ($associate['model'] == $model_short_name) {
+                    switch ($associate['dimension']) {
+                        case 'one':
+                            $association_properties[$associate['property']] = null;
+                            break;
+
+                        case 'many':
+                            $association_properties[$associate['property']] = array();
+                            break;
+
+                        default:
+                            exit(1);
+                            break;
+                    }
+
+                    if ($associate['field'] !== 'id') {
+                        if (isset($associations_data[$associate['property']])) {
+                            if ($associations_data[$associate['property']]->databubble !== $this) {
+                                trigger_error('LightORM error: The databubble of the associate must be the current one', E_USER_ERROR);
+                            }
+
+                            $association_properties[$associate['property']]  = $associations_data[$associate['property']];
+                            $data_for_insert_query[$associate['field']]      = $associations_data[$associate['property']]->get_id();
+
+                            list($opposite_associate_array) = $associations_metadata->get_opposite_associates_arrays(
+                                array(
+                                    'model'     => $associate['model'],
+                                    'property'  => $associate['property'],
+                                )
+                            );
+                            $opposite_instances_to_manage[] = array(
+                                'instance'   => $associations_data[$associate['property']],
+                                'property'   => $opposite_associate_array['property'],
+                                'dimension'  => $opposite_associate_array['dimension'],
+                            );
+                        } else {
+                            $data_for_insert_query[$associate['field']] = null;
+                        }
+                    } else {
+                        if (isset($associations_data[$associate['property']])) {
+                            $remaining_associations_data[$association_array['type']][$associate['property']] = $associations_data[$associate['property']];
+                        }
+                    }
+                }
+            }
+        }
+
+        $insert_id = $model_full_name::insert($data_for_insert_query, true);
 
         $finder = new Finder($model_short_name, $this);
         $inserted_instance = $finder->get($insert_id);
 
-        foreach ($data as $field => $value) {
-            $field_object = $data_conv->get_table_field_object($table, $field);
+        foreach ($association_properties as $property => $value) {
+            $inserted_instance->{'set_' . $property}($value);
+        }
 
-            if ($field_object->is_foreign_key
-                && ( ! is_null($value))
-            ) {
-                if (is_object($value)) {
-                    $value = $value->get_id();
-                }
+        foreach ($opposite_instances_to_manage as $opposite_instance_array) {
+            switch ($opposite_instance_array['dimension']) {
+                case 'one':
+                    $opposite_instance_array['instance']->{'set_' . $opposite_instance_array['property']}($inserted_instance);
+                    break;
 
-                $association_numbered_name = $associations_metadata->get_association_numbered_name(
-                    array(
-                        'model'  => $model_short_name,
-                        'field'  => $field,
-                    )
-                );
-                $association_array = $associations_metadata->associations[$association_numbered_name];
-
-                foreach ($association_array['associates'] as $associate) {
-                    if (($associate['model'] != $model_short_name)
-                        && $this->has_model_instance($associate['model'], $value)
-                    ) {
-                        $associate_instance = $this->get_model_instance($associate['model'], $value);
-
-                        if ( ! is_undefined($associate_instance->{'get_' . $associate['property']}())) {
-                            switch ($associate['dimension']) {
-                                case 'one':
-                                    trigger_error('LightORM error: Error in one-to-one association', E_USER_ERROR);
-                                    break;
-                                case 'many':
-                                    $associate_property_value = $associate_instance->{'get_' . $associate['property']}();
-                                    $associate_property_value[] = $inserted_instance;
-                                    $associate_instance->{'set_' . $associate['property']}($associate_property_value);
-                                    break;
-                                default:
-                                    exit(1);
-                                    break;
-                            }
-                        }
+                case 'many':
+                    $opposite_associate_property_value = $opposite_instance_array['instance']->{'get_' . $opposite_instance_array['property']}();
+                    if ( ! is_undefined($opposite_associate_property_value)) {
+                        $opposite_associate_property_value[] = $inserted_instance;
+                        $opposite_instance_array['instance']->{'set_' . $opposite_instance_array['property']}($opposite_associate_property_value);
                     }
+                    break;
+
+                default:
+                    exit(1);
+                    break;
+            }
+        }
+
+        foreach ($remaining_associations_data as $dimension => $remaining_associations_data_bunch) {
+            foreach ($remaining_associations_data_bunch as $property => $value) {
+                switch ($dimension) {
+                    case 'one_to_one':
+                        $inserted_instance->set_assoc($property, $value);
+                        break;
+
+                    case 'one_to_many':
+                    case 'many_to_many':
+                        foreach ($value as $item) {
+                            $inserted_instance->add_assoc($property, $item);
+                        }
+                        break;
+
+                    default:
+                        exit(1);
+                        break;
                 }
             }
         }
