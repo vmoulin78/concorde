@@ -164,6 +164,23 @@ trait Table_association_trait
     }
 
     /**
+     * Return true if the concrete update manager exists and false otherwise
+     *
+     * @return  bool
+     */
+    public function concrete_update_manager_exists() {
+        $association_short_name = self::get_business_short_name();
+
+        $primary_key_scalar = $this->get_primary_key_scalar();
+
+        if (isset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar])) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Get the concrete update manager
      *
      * @return  array
@@ -215,12 +232,48 @@ trait Table_association_trait
      *
      * @param   string  $property
      * @param   mixed   $value
+     * @param   bool    $allow_duplicate_values
      * @return  object
      */
-    public function add($property, $value) {
+    public function add($property, $value, $allow_duplicate_values = true) {
         $property_value = $this->{'get_' . $property}();
+
+        if (( ! $allow_duplicate_values)
+            && (in_array($value, $property_value))
+        ) {
+            return $this;
+        }
+
         $property_value[] = $value;
         return $this->set($property, $property_value);
+    }
+
+    /**
+     * Remove the value $value from the property $property
+     * If $only_one is true then only one value will be removed (in case of duplicate values)
+     *
+     * @param   string  $property
+     * @param   mixed   $value
+     * @param   bool    $only_one
+     * @return  object
+     */
+    public function remove($property, $value, $only_one = true) {
+        $property_value      = $this->{'get_' . $property}();
+        $new_property_value  = array();
+        $found               = false;
+        foreach ($property_value as $key => $item) {
+            if (($item != $value)
+                || ($only_one && $found)
+            ) {
+                $new_property_value[$key] = $item;
+            }
+
+            if ($item == $value) {
+                $found = true;
+            }
+        }
+
+        return $this->set($property, $new_property_value);
     }
 
     /**
@@ -235,14 +288,18 @@ trait Table_association_trait
         $association_array       = $associations_metadata->get_association_array(['association' => $association_short_name]);
         $table                   = $association_array['table'];
 
-        $update_manager = $this->get_concrete_update_manager();
-        $update_manager->table($table);
+        $retour = true;
 
-        foreach ($this->get_primary_key() as $field_name => $field_value) {
-            $update_manager->where($field_name, $field_value);
+        if ($this->concrete_update_manager_exists()) {
+            $update_manager = $this->get_concrete_update_manager();
+            $update_manager->table($table);
+
+            foreach ($this->get_primary_key() as $field_name => $field_value) {
+                $update_manager->where($field_name, $field_value);
+            }
+
+            $retour = $update_manager->update();
         }
-
-        $retour = $update_manager->update();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
         unset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar]);
