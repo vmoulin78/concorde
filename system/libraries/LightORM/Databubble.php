@@ -112,6 +112,23 @@ class Databubble
     }
 
     /**
+     * Remove the instance $model_instance from the current databubble
+     *
+     * @param   object  $model_instance
+     * @return  void
+     */
+    public function remove_model_instance($model_instance) {
+        unset($this->models[$model_instance::get_business_short_name()][$model_instance->get_id()]);
+
+        $table_abstract_model = $model_instance::get_table_abstract_model();
+        if ( ! is_null($table_abstract_model)) {
+            unset($this->models[$table_abstract_model][$model_instance->get_id()]);
+        }
+
+        unset($model_instance->databubble);
+    }
+
+    /**
      * Add the instance $association_instance in the current databubble
      *
      * @param   object  $association_instance
@@ -119,20 +136,18 @@ class Databubble
      */
     public function add_association_instance($association_instance) {
         $this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()] = $association_instance;
-
         $association_instance->databubble = $this;
     }
 
     /**
-     * Remove the instance of the model $model_short_name whose id is $model_instance_id
+     * Remove the instance $association_instance from the current databubble
      *
-     * @param   string  $model_short_name
-     * @param   int     $model_instance_id
+     * @param   object  $association_instance
      * @return  void
      */
-    public function remove_model_instance($model_short_name, $model_instance_id) {
-        unset($this->models[$model_short_name][$model_instance_id]->databubble);
-        unset($this->models[$model_short_name][$model_instance_id]);
+    public function remove_association_instance($association_instance) {
+        unset($this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()]);
+        unset($association_instance->databubble);
     }
 
     /**

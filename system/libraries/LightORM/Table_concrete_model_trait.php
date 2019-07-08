@@ -379,11 +379,11 @@ trait Table_concrete_model_trait
         $property_value      = $this->{'get_' . $property}();
         $new_property_value  = array();
         $found               = false;
-        foreach ($property_value as $key => $item) {
+        foreach ($property_value as $item) {
             if (($item != $value)
                 || ($only_one && $found)
             ) {
-                $new_property_value[$key] = $item;
+                $new_property_value[] = $item;
             }
 
             if ($item == $value) {
@@ -727,40 +727,47 @@ trait Table_concrete_model_trait
                     return -1;
                 }
 
-                $association_table_object = $data_conv->schema[$association_array['table']];
-                $qm = new Query_manager();
-                $association_table_object->business_selection($qm);
-                $qm->from($association_array['table'])
-                   ->where($associate_array['joining_field'], $this->get_id());
-                foreach ($opposite_associates_arrays as $opposite_associate_array) {
-                    $qm->where($opposite_associate_array['joining_field'], $data[$opposite_associate_array['reverse_property']]->get_id());
-                }
-                $query = $qm->get();
-                $row = $query->row();
-                $args = $association_table_object->business_creation_args($row);
-                $association_instance = new $association_full_name(...$args);
-
-                $association_instance->{'set_' . $associate_array['reverse_property']}($this);
-
-                $associate_property_value = $this->{'get_' . $property}();
-                if ( ! is_undefined($associate_property_value)) {
-                    $associate_property_value[] = $association_instance;
-                    $this->{'set_' . $property}($associate_property_value);
-                }
-
+                $all_association_properties_are_undefined = is_undefined($this->{'get_' . $property}());
                 foreach ($opposite_associates_arrays as $opposite_associate_array) {
                     $opposite_associate_instance = $data[$opposite_associate_array['reverse_property']];
-
-                    $association_instance->{'set_' . $opposite_associate_array['reverse_property']}($opposite_associate_instance);
-
-                    $opposite_associate_property_value = $opposite_associate_instance->{'get_' . $opposite_associate_array['property']}();
-                    if ( ! is_undefined($opposite_associate_property_value)) {
-                        $opposite_associate_property_value[] = $association_instance;
-                        $opposite_associate_instance->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
-                    }
+                    $all_association_properties_are_undefined = $all_association_properties_are_undefined && is_undefined($opposite_associate_instance->{'get_' . $opposite_associate_array['property']}());
                 }
+                if ( ! $all_association_properties_are_undefined) {
+                    $association_table_object = $data_conv->schema[$association_array['table']];
+                    $qm = new Query_manager();
+                    $association_table_object->business_selection($qm);
+                    $qm->from($association_array['table'])
+                       ->where($associate_array['joining_field'], $this->get_id());
+                    foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                        $qm->where($opposite_associate_array['joining_field'], $data[$opposite_associate_array['reverse_property']]->get_id());
+                    }
+                    $query = $qm->get();
+                    $row = $query->row();
+                    $args = $association_table_object->business_creation_args($row);
+                    $association_instance = new $association_full_name(...$args);
 
-                $this->databubble->add_association_instance($association_instance);
+                    $association_instance->{'set_' . $associate_array['reverse_property']}($this);
+
+                    $associate_property_value = $this->{'get_' . $property}();
+                    if ( ! is_undefined($associate_property_value)) {
+                        $associate_property_value[] = $association_instance;
+                        $this->{'set_' . $property}($associate_property_value);
+                    }
+
+                    foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                        $opposite_associate_instance = $data[$opposite_associate_array['reverse_property']];
+
+                        $association_instance->{'set_' . $opposite_associate_array['reverse_property']}($opposite_associate_instance);
+
+                        $opposite_associate_property_value = $opposite_associate_instance->{'get_' . $opposite_associate_array['property']}();
+                        if ( ! is_undefined($opposite_associate_property_value)) {
+                            $opposite_associate_property_value[] = $association_instance;
+                            $opposite_associate_instance->{'set_' . $opposite_associate_array['property']}($opposite_associate_property_value);
+                        }
+                    }
+
+                    $this->databubble->add_association_instance($association_instance);
+                }
 
                 break;
             default:
@@ -772,7 +779,7 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Add the data $data in the association property $property
+     * Add the data $data to the association property $property
      *
      * @param   string  $property
      * @param   mixed   $data
@@ -790,6 +797,171 @@ trait Table_concrete_model_trait
         if ($concrete_add_assoc_result === 1) {
             return true;
         } elseif ($concrete_add_assoc_result === -1) {
+            return false;
+        }
+
+        trigger_error('LightORM error: Unable to find the association', E_USER_ERROR);
+    }
+
+    /**
+     * Manage the 'remove_assoc' for the objects and for the database
+     *
+     * @param   string                 $property
+     * @param   mixed                  $data
+     * @param   'abstract'|'concrete'  $ref_model_type
+     * @return  int
+     */
+    private function remove_assoc_for_ref_model_type($property, $data, $ref_model_type) {
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
+        $model_short_name = self::get_business_short_name();
+
+        switch ($ref_model_type) {
+            case 'abstract':
+                $ref_model_short_name = self::get_table_abstract_model();
+                if (is_null($ref_model_short_name)) {
+                    return 0;
+                }
+                break;
+            case 'concrete':
+                $ref_model_short_name = $model_short_name;
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        $association_array = $associations_metadata->get_association_array(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if ($association_array === false) {
+            return 0;
+        }
+
+        $associate_array = $associations_metadata->get_associate_array(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if ($associate_array['dimension'] !== 'many') {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
+
+        $opposite_associates_arrays = $associations_metadata->get_opposite_associates_arrays(
+            array(
+                'model'     => $ref_model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        switch ($association_array['type']) {
+            case 'one_to_many':
+                list($opposite_associate_array) = $opposite_associates_arrays;
+
+                $set_assoc_result = $data->set_assoc($opposite_associate_array['property'], null);
+                if ($set_assoc_result === false) {
+                    return -1;
+                }
+
+                break;
+            case 'many_to_many':
+                if ( ! is_array($data)) {
+                    trigger_error('LightORM error: Property error', E_USER_ERROR);
+                }
+
+                foreach ($opposite_associates_arrays as $item) {
+                    if ($this->databubble !== $data[$item['reverse_property']]->databubble) {
+                        trigger_error('LightORM error: The databubble of the associate must be the one of the current object', E_USER_ERROR);
+                    }
+                }
+
+                $association_short_name  = $association_array['class'];
+                $association_full_name   = $association_array['class_full_name'];
+
+                $data_for_association_delete = array();
+                $data_for_association_delete[$associate_array['joining_field']] = $this->get_id();
+                foreach ($opposite_associates_arrays as $item) {
+                    $data_for_association_delete[$item['joining_field']] = $data[$item['reverse_property']]->get_id();
+                }
+                $association_delete_result = $association_full_name::delete($data_for_association_delete);
+
+                if ($association_delete_result === false) {
+                    return -1;
+                }
+
+                $association_instance = null;
+                foreach ($this->databubble->associations[$association_short_name] as $item1) {
+                    $item1_associate_instance = $item1->{'get_' . $associate_array['reverse_property']}();
+                    if ($item1_associate_instance->get_id() !== $this->get_id()) {
+                        continue;
+                    }
+
+                    foreach ($opposite_associates_arrays as $item2) {
+                        $item1_opposite_associate_instance = $item1->{'get_' . $item2['reverse_property']}();
+                        if ($item1_opposite_associate_instance->get_id() !== $data[$item2['reverse_property']]->get_id()) {
+                            continue 2;
+                        }
+                    }
+
+                    $association_instance = $item1;
+                    break;
+                }
+
+                if ( ! is_null($association_instance)) {
+                    foreach ($association_array['associates'] as $item1) {
+                        $item1_associate_instance = $association_instance->{'get_' . $item1['reverse_property']}();
+
+                        $item1_associate_instance_property_value = $item1_associate_instance->{'get_' . $item1['property']}();
+                        if ( ! is_undefined($item1_associate_instance_property_value)) {
+                            $new_item1_associate_instance_property_value = array();
+                            foreach ($item1_associate_instance_property_value as $item2) {
+                                if ($item2 !== $association_instance) {
+                                    $new_item1_associate_instance_property_value[] = $item2;
+                                }
+                            }
+                            $item1_associate_instance->{'set_' . $item1['property']}($new_item1_associate_instance_property_value);
+                        }
+                    }
+
+                    $this->databubble->remove_association_instance($association_instance);
+                }
+
+                break;
+            default:
+                exit(1);
+                break;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Remove the data $data from the association property $property
+     *
+     * @param   string  $property
+     * @param   mixed   $data
+     * @return  bool
+     */
+    public function remove_assoc($property, $data) {
+        $abstract_remove_assoc_result = $this->remove_assoc_for_ref_model_type($property, $data, 'abstract');
+        if ($abstract_remove_assoc_result === 1) {
+            return true;
+        } elseif ($abstract_remove_assoc_result === -1) {
+            return false;
+        }
+
+        $concrete_remove_assoc_result = $this->remove_assoc_for_ref_model_type($property, $data, 'concrete');
+        if ($concrete_remove_assoc_result === 1) {
+            return true;
+        } elseif ($concrete_remove_assoc_result === -1) {
             return false;
         }
 

@@ -67,9 +67,9 @@ trait Table_association_trait
     }
 
     /**
-     * Get the model id given the field name $field_name
+     * Get the model id given the joining field $joining_field
      *
-     * @param   string  $field_name
+     * @param   string  $joining_field
      * @return  int
      */
     public function get_model_id_by_joining_field($joining_field) {
@@ -261,11 +261,11 @@ trait Table_association_trait
         $property_value      = $this->{'get_' . $property}();
         $new_property_value  = array();
         $found               = false;
-        foreach ($property_value as $key => $item) {
+        foreach ($property_value as $item) {
             if (($item != $value)
                 || ($only_one && $found)
             ) {
-                $new_property_value[$key] = $item;
+                $new_property_value[] = $item;
             }
 
             if ($item == $value) {
