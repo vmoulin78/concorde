@@ -39,11 +39,18 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * If a class is using the trait Table_concrete_model_trait, it means that this class is related to a database table.
+ * Table_concrete_model_trait Trait
+ *
+ * @package     Concorde
+ * @subpackage  Libraries
+ * @category    Libraries
+ * @author      Vincent MOULIN
+ * @link        
  */
 trait Table_concrete_model_trait
 {
     use Table_model_trait;
+    use Table_concrete_business_trait;
 
     /**
      * Get the name of the table abstract model
@@ -343,55 +350,6 @@ trait Table_concrete_model_trait
         //------------------------------------------------------//
 
         return $this;
-    }
-
-    /**
-     * Add the value $value to the property $property
-     *
-     * @param   string  $property
-     * @param   mixed   $value
-     * @param   bool    $allow_duplicate_values
-     * @return  object
-     */
-    public function add($property, $value, $allow_duplicate_values = true) {
-        $property_value = $this->{'get_' . $property}();
-
-        if (( ! $allow_duplicate_values)
-            && (in_array($value, $property_value))
-        ) {
-            return $this;
-        }
-
-        $property_value[] = $value;
-        return $this->set($property, $property_value);
-    }
-
-    /**
-     * Remove the value $value from the property $property
-     * If $only_one is true then only one value will be removed (in case of duplicate values)
-     *
-     * @param   string  $property
-     * @param   mixed   $value
-     * @param   bool    $only_one
-     * @return  object
-     */
-    public function remove($property, $value, $only_one = true) {
-        $property_value      = $this->{'get_' . $property}();
-        $new_property_value  = array();
-        $found               = false;
-        foreach ($property_value as $item) {
-            if (($item != $value)
-                || ($only_one && $found)
-            ) {
-                $new_property_value[] = $item;
-            }
-
-            if ($item == $value) {
-                $found = true;
-            }
-        }
-
-        return $this->set($property, $new_property_value);
     }
 
     /**
