@@ -118,11 +118,16 @@ class Databubble
      * @return  void
      */
     public function remove_model_instance($model_instance) {
-        unset($this->models[$model_instance::get_business_short_name()][$model_instance->get_id()]);
+        $model_short_name   = $model_instance::get_business_short_name();
+        $model_instance_id  = $model_instance->get_id();
+
+        unset($this->update_managers['models'][$model_short_name][$model_instance_id]);
+
+        unset($this->models[$model_short_name][$model_instance_id]);
 
         $table_abstract_model = $model_instance::get_table_abstract_model();
         if ( ! is_null($table_abstract_model)) {
-            unset($this->models[$table_abstract_model][$model_instance->get_id()]);
+            unset($this->models[$table_abstract_model][$model_instance_id]);
         }
 
         unset($model_instance->databubble);
@@ -136,6 +141,7 @@ class Databubble
      */
     public function add_association_instance($association_instance) {
         $this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()] = $association_instance;
+
         $association_instance->databubble = $this;
     }
 
@@ -146,7 +152,13 @@ class Databubble
      * @return  void
      */
     public function remove_association_instance($association_instance) {
-        unset($this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()]);
+        $association_short_name  = $association_instance::get_business_short_name();
+        $primary_key_scalar      = $association_instance->get_primary_key_scalar();
+
+        unset($this->update_managers['associations'][$association_short_name][$primary_key_scalar]);
+
+        unset($this->associations[$association_short_name][$primary_key_scalar]);
+
         unset($association_instance->databubble);
     }
 
@@ -203,7 +215,7 @@ class Databubble
      *
      * @param   string  $model_short_name
      * @param   array   $data
-     * @return  object  The created instance
+     * @return  object|false  The created instance or false if an error occurred
      */
     public function insert_model($model_short_name, $data) {
         $models_metadata        = Models_metadata::get_singleton();
@@ -288,6 +300,10 @@ class Databubble
 
         $insert_id = $model_full_name::insert($data_for_insert_query, true);
 
+        if ($insert_id === false) {
+            return false;
+        }
+
         $finder = new Finder($model_short_name, $this);
         $inserted_instance = $finder->get($insert_id);
 
@@ -337,5 +353,129 @@ class Databubble
         }
 
         return $inserted_instance;
+    }
+
+    /**
+     * Delete the model instance $model_instance from the database and from the current databubble
+     *
+     * @param   object  $model_instance
+     * @return  bool
+     */
+    public function delete_model($model_instance) {
+        $associations_metadata = Associations_metadata::get_singleton();
+
+        if ($model_instance->databubble !== $this) {
+            trigger_error('LightORM error: The databubble of the model instance must be the current one', E_USER_ERROR);
+        }
+
+        $model_short_name  = $model_instance::get_business_short_name();
+        $model_full_name   = $model_instance::get_business_full_name();
+
+        //----------------------------------------------------------------------------//
+
+        $delete_result = $model_full_name::delete($model_instance->get_id());
+
+        if ( ! $delete_result) {
+            return false;
+        }
+
+        //----------------------------------------------------------------------------//
+
+        foreach ($associations_metadata->associations as $association_array) {
+            foreach ($association_array['associates'] as $associate) {
+                if ($associate['model'] === $model_short_name) {
+                    $opposite_associates_arrays = $associations_metadata->get_opposite_associates_arrays(
+                        array(
+                            'model'     => $associate['model'],
+                            'property'  => $associate['property'],
+                        )
+                    );
+
+                    foreach ($opposite_associates_arrays as $opposite_associate_array) {
+                        if ($opposite_associate_array['dimension'] === 'one') {
+                            foreach ($this->models[$opposite_associate_array['model']] as $item) {
+                                $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
+                                if (( ! is_undefined($opposite_associate_property_value))
+                                    && ($opposite_associate_property_value === $model_instance)
+                                ) {
+                                    $item->{'set_' . $opposite_associate_array['property']}(null);
+                                }
+                            }
+                        } elseif ($association_array['type'] === 'one_to_many') {
+                            foreach ($this->models[$opposite_associate_array['model']] as $item1) {
+                                $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+                                if ( ! is_undefined($opposite_associate_property_value)) {
+                                    $new_opposite_associate_property_value = array();
+                                    foreach ($opposite_associate_property_value as $item2) {
+                                        if ($item2 !== $model_instance) {
+                                            $new_opposite_associate_property_value[] = $item2;
+                                        }
+                                    }
+                                    $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
+                                }
+                            }
+                        } elseif ($association_array['type'] === 'many_to_many') {
+                            $association_primary_key_scalars_to_remove = array();
+
+                            foreach ($this->associations[$association_array['class']] as $key1 => $item1) {
+                                if ($item1->{'get_' . $associate['reverse_property']}() === $model_instance) {
+                                    foreach ($association_array['associates'] as $item2) {
+                                        $item2_instance = $item1->{'get_' . $item2['reverse_property']}();
+                                        $item2_instance_property_value = $item2_instance->{'get_' . $item2['property']}();
+                                        if ( ! is_undefined($item2_instance_property_value)) {
+                                            $new_item2_instance_property_value = array();
+                                            foreach ($item2_instance_property_value as $item3) {
+                                                if ($item3 !== $item1) {
+                                                    $new_item2_instance_property_value[] = $item3;
+                                                }
+                                            }
+                                            $item2_instance->{'set_' . $item2['property']}($new_item2_instance_property_value);
+                                        }
+
+                                        $item1->{'set_' . $item2['reverse_property']}(null);
+                                    }
+
+                                    $association_primary_key_scalars_to_remove[] = $key1;
+                                }
+                            }
+
+                            foreach ($association_primary_key_scalars_to_remove as $item) {
+                                unset($this->associations[$association_array['class']][$item]->databubble);
+
+                                unset($this->update_managers['associations'][$association_array['class']][$item]);
+
+                                unset($this->associations[$association_array['class']][$item]);
+                            }
+                        } else {
+                            exit(1);
+                        }
+                    }
+
+                    //----------------------------------------------------------------------------//
+
+                    switch ($associate['dimension']) {
+                        case 'one':
+                            $model_instance->{'set_' . $associate['property']}(null);
+                            break;
+
+                        case 'many':
+                            $model_instance->{'set_' . $associate['property']}(array());
+                            break;
+
+                        default:
+                            exit(1);
+                            break;
+                    }
+                }
+            }
+        }
+
+        //----------------------------------------------------------------------------//
+
+        $this->remove_model_instance($model_instance);
+
+        //----------------------------------------------------------------------------//
+
+        return true;
     }
 }
