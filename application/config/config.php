@@ -548,3 +548,24 @@ $config['classes_autoload'] = array(
         }
     },
 );
+
+/*
+|--------------------------------------------------------------------------
+| Global Transaction
+|--------------------------------------------------------------------------
+|
+| 'enable_global_transaction'
+|
+|   Enable/Disable the Global Transaction feature
+|
+|   If you would like to use the Global Transaction feature you must enable it by
+|   setting this variable to TRUE (boolean).
+|
+| 'global_transaction_exclude_uris'
+|
+|   Array of URIs for which the Global Transaction feature will not be performed
+|   (useful only if 'enable_global_transaction' is TRUE)
+|
+*/
+$config['enable_global_transaction'] = TRUE;
+$config['global_transaction_exclude_uris'] = array();

@@ -272,6 +272,13 @@ abstract class CI_DB_driver {
 	protected $_trans_failure	= FALSE;
 
 	/**
+	 * Global Transaction ongoing flag
+	 *
+	 * @var	bool
+	 */
+	public $global_transaction_ongoing		= FALSE;
+
+	/**
 	 * Cache On flag
 	 *
 	 * @var	bool
@@ -938,9 +945,20 @@ abstract class CI_DB_driver {
 			return FALSE;
 		}
 		// When transactions are nested we only begin/commit/rollback the outermost ones
-		elseif ($this->_trans_depth > 1 OR $this->_trans_commit())
+		elseif ($this->_trans_depth > 1)
 		{
 			$this->_trans_depth--;
+			return TRUE;
+		}
+		elseif ($this->_trans_commit())
+		{
+			$this->_trans_depth = 0;
+
+			if ($this->global_transaction_ongoing)
+			{
+				$this->global_transaction_ongoing = FALSE;
+			}
+
 			return TRUE;
 		}
 
@@ -960,10 +978,15 @@ abstract class CI_DB_driver {
 		{
 			return FALSE;
 		}
-		// When transactions are nested we only begin/commit/rollback the outermost ones
-		elseif ($this->_trans_depth > 1 OR $this->_trans_rollback())
+		elseif ($this->_trans_rollback())
 		{
-			$this->_trans_depth--;
+			$this->_trans_depth = 0;
+
+			if ($this->global_transaction_ongoing)
+			{
+				$this->global_transaction_ongoing = FALSE;
+			}
+
 			return TRUE;
 		}
 

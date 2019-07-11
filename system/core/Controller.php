@@ -77,6 +77,33 @@ class CI_Controller {
 
 		$this->load =& load_class('Loader', 'core');
 		$this->load->initialize();
+
+		if ($this->config->item('enable_global_transaction'))
+		{
+			$global_transaction_performed = TRUE;
+
+			foreach ($this->config->item('global_transaction_exclude_uris') as $item)
+			{
+				if (preg_match('#^'.$item.'$#i'.(UTF8_ENABLED ? 'u' : ''), $this->uri->uri_string()))
+				{
+					$global_transaction_performed = FALSE;
+					break;
+				}
+			}
+
+			if ($global_transaction_performed)
+			{
+				if ($this->db->trans_start())
+				{
+					$this->db->global_transaction_ongoing = TRUE;
+				}
+				else
+				{
+					log_message('error', 'Global Transaction start error');
+				}
+			}
+		}
+
 		log_message('info', 'Controller Class Initialized');
 	}
 

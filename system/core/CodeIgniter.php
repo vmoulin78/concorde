@@ -560,6 +560,27 @@ if ( ! is_php('5.4'))
 
 /*
  * ------------------------------------------------------
+ *  Global Transaction commit
+ * ------------------------------------------------------
+ */
+	if ($CI->db->global_transaction_ongoing)
+	{
+		if ($CI->db->trans_commit())
+		{
+			// In case the Global Transaction is nested in a transaction
+			if ($CI->db->global_transaction_ongoing)
+			{
+				$CI->db->global_transaction_ongoing = FALSE;
+			}
+		}
+		else
+		{
+			log_message('error', 'Global Transaction commit error');
+		}
+	}
+
+/*
+ * ------------------------------------------------------
  *  Send the final rendered output to the browser
  * ------------------------------------------------------
  */
