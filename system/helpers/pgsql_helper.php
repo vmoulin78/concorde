@@ -77,9 +77,12 @@ if ( ! function_exists('php_element_to_pgsql_element'))
         $element_type_part1 = array_shift($element_type_array);
         switch ($element_type_part1) {
             case 'int':
-            case 'float':
             case 'pk':
-                $retour = (string) $php_element;
+                $retour = (int) $php_element;
+                break;
+
+            case 'float':
+                $retour = (float) $php_element;
                 break;
 
             case 'string':
@@ -108,10 +111,14 @@ if ( ! function_exists('php_element_to_pgsql_element'))
             case 'pk_fk':
             case 'enum_model_id':
                 if (is_object($php_element)) {
-                    $retour = (string) $php_element->get_id();
+                    $retour = $php_element->get_id();
                 } else {
-                    $retour = (string) $php_element;
+                    $retour = (int) $php_element;
                 }
+                break;
+
+            case 'binary':
+                $retour = $php_element;
                 break;
 
             default:
@@ -261,6 +268,10 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 $table_metadata      = $business_tables_metadata->tables[$element_type_part2];
                 $model_full_name     = $table_metadata['business_full_name'];
                 $retour              = $model_full_name::find($pgsql_element);
+                break;
+
+            case 'binary':
+                $retour = $pgsql_element;
                 break;
 
             default:

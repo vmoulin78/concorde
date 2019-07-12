@@ -79,14 +79,16 @@ if ( ! function_exists('php_data_to_mysql_data'))
         $data_type_part1 = array_shift($data_type_array);
         switch ($data_type_part1) {
             case 'int':
-            case 'float':
             case 'pk':
-                $retour = (string) $php_data;
+                $retour = (int) $php_data;
+                break;
+
+            case 'float':
+                $retour = (float) $php_data;
                 break;
 
             case 'string':
             case 'json':
-                // @todo
                 $retour = "'" . mysqli_real_escape_string($CI->db->conn_id, $php_data) . "'";
                 break;
 
@@ -119,10 +121,14 @@ if ( ! function_exists('php_data_to_mysql_data'))
             case 'pk_fk':
             case 'enum_model_id':
                 if (is_object($php_data)) {
-                    $retour = (string) $php_data->get_id();
+                    $retour = $php_data->get_id();
                 } else {
-                    $retour = (string) $php_data;
+                    $retour = (int) $php_data;
                 }
+                break;
+
+            case 'binary':
+                $retour = $php_data;
                 break;
 
             default:
@@ -167,7 +173,6 @@ if ( ! function_exists('mysql_data_to_php_data'))
 
             case 'string':
             case 'json':
-                // @todo
                 $retour = $mysql_data;
                 break;
 
@@ -218,6 +223,10 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 $table_metadata   = $business_tables_metadata->tables[$data_type_part2];
                 $model_full_name  = $table_metadata['business_full_name'];
                 $retour           = $model_full_name::find($mysql_data);
+                break;
+
+            case 'binary':
+                $retour = $mysql_data;
                 break;
 
             default:
