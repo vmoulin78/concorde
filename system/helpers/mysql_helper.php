@@ -98,7 +98,7 @@ if ( ! function_exists('php_data_to_mysql_data'))
 
             case 'set':
                 if (is_array($php_data)) {
-                    $retour = '(' . implode(',', $php_data) . ')';
+                    $retour = "'" . implode(',', $php_data) . "'";
                 } else {
                     $retour = (string) $php_data;
                 }

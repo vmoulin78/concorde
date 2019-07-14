@@ -85,4 +85,17 @@ class Data_conv_table_field
             $this->is_foreign_key  = false;
         }
     }
+
+    /**
+     * Return true if the current Data_conv_table_field is an array and false otherwise
+     *
+     * @return  bool
+     */
+    public function is_array() {
+        if ($this->array_depth === 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }

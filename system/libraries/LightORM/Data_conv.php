@@ -127,13 +127,13 @@ abstract class Data_conv
      */
     public function get_table_field_object($table, $field) {
         if ( ! isset($this->schema[$table])) {
-            return null;
+            return false;
         }
 
         $table_object = $this->schema[$table];
 
         if ( ! isset($table_object->fields[$field])) {
-            return null;
+            return false;
         }
 
         return $table_object->fields[$field];

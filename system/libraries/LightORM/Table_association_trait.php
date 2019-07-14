@@ -68,6 +68,26 @@ trait Table_association_trait
     }
 
     /**
+     * Get the table field object corresponding to the field $field in the related table
+     *
+     * @param   string  $field  The name of the field
+     * @return  object
+     */
+    public static function get_table_field_object($field) {
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
+        $table = $associations_metadata->associations[self::get_business_short_name()]['table'];
+
+        $field_object = $data_conv->get_table_field_object($table, $field);
+        if ($field_object !== false) {
+            return $field_object;
+        }
+
+        return false;
+    }
+
+    /**
      * Get the model id given the joining field $joining_field
      *
      * @param   string  $joining_field

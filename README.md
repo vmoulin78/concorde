@@ -1,5 +1,5 @@
 # The Concorde Project
-* **Version** : 0.0.38 Beta
+* **Version** : 0.0.39 Beta
 * Based on the CodeIgniter Framework
 * Comes with an integrated ORM named LightORM (compatible with PostgreSQL and MySQL)
 * Not ready for production use !

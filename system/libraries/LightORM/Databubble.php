@@ -101,11 +101,15 @@ class Databubble
      * @return  void
      */
     public function add_model_instance($model_instance) {
-        $this->models[$model_instance::get_business_short_name()][$model_instance->get_id()] = $model_instance;
+        $model_full_name    = get_class($model_instance);
+        $model_short_name   = $model_full_name::get_business_short_name();
+        $model_instance_id  = $model_instance->get_id();
 
-        $table_abstract_model = $model_instance::get_table_abstract_model();
+        $this->models[$model_short_name][$model_instance_id] = $model_instance;
+
+        $table_abstract_model = $model_full_name::get_table_abstract_model();
         if ( ! is_null($table_abstract_model)) {
-            $this->models[$table_abstract_model][$model_instance->get_id()] = $model_instance;
+            $this->models[$table_abstract_model][$model_instance_id] = $model_instance;
         }
 
         $model_instance->databubble = $this;
@@ -118,14 +122,15 @@ class Databubble
      * @return  void
      */
     public function remove_model_instance($model_instance) {
-        $model_short_name   = $model_instance::get_business_short_name();
+        $model_full_name    = get_class($model_instance);
+        $model_short_name   = $model_full_name::get_business_short_name();
         $model_instance_id  = $model_instance->get_id();
 
         unset($this->update_managers['models'][$model_short_name][$model_instance_id]);
 
         unset($this->models[$model_short_name][$model_instance_id]);
 
-        $table_abstract_model = $model_instance::get_table_abstract_model();
+        $table_abstract_model = $model_full_name::get_table_abstract_model();
         if ( ! is_null($table_abstract_model)) {
             unset($this->models[$table_abstract_model][$model_instance_id]);
         }
@@ -140,7 +145,11 @@ class Databubble
      * @return  void
      */
     public function add_association_instance($association_instance) {
-        $this->associations[$association_instance::get_business_short_name()][$association_instance->get_primary_key_scalar()] = $association_instance;
+        $association_full_name           = get_class($association_instance);
+        $association_short_name          = $association_full_name::get_business_short_name();
+        $association_primary_key_scalar  = $association_instance->get_primary_key_scalar();
+
+        $this->associations[$association_short_name][$association_primary_key_scalar] = $association_instance;
 
         $association_instance->databubble = $this;
     }
@@ -152,12 +161,13 @@ class Databubble
      * @return  void
      */
     public function remove_association_instance($association_instance) {
-        $association_short_name  = $association_instance::get_business_short_name();
-        $primary_key_scalar      = $association_instance->get_primary_key_scalar();
+        $association_full_name           = get_class($association_instance);
+        $association_short_name          = $association_full_name::get_business_short_name();
+        $association_primary_key_scalar  = $association_instance->get_primary_key_scalar();
 
-        unset($this->update_managers['associations'][$association_short_name][$primary_key_scalar]);
+        unset($this->update_managers['associations'][$association_short_name][$association_primary_key_scalar]);
 
-        unset($this->associations[$association_short_name][$primary_key_scalar]);
+        unset($this->associations[$association_short_name][$association_primary_key_scalar]);
 
         unset($association_instance->databubble);
     }
@@ -368,8 +378,8 @@ class Databubble
             trigger_error('LightORM error: The databubble of the model instance must be the current one', E_USER_ERROR);
         }
 
-        $model_short_name  = $model_instance::get_business_short_name();
-        $model_full_name   = $model_instance::get_business_full_name();
+        $model_full_name   = get_class($model_instance);
+        $model_short_name  = $model_full_name::get_business_short_name();
 
         //----------------------------------------------------------------------------//
 

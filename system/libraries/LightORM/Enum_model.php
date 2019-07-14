@@ -80,7 +80,7 @@ abstract class Enum_model extends Model
      * @return  int
      */
     public static function find_id($name) {
-        return (static::find_by_name($name))->get_id();
+        return (self::find_by_name($name))->get_id();
     }
 
     /**
@@ -90,6 +90,6 @@ abstract class Enum_model extends Model
      * @return  string
      */
     public static function find_name($id) {
-        return (static::find($id))->get_name();
+        return (self::find($id))->get_name();
     }
 }

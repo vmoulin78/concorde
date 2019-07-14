@@ -79,6 +79,34 @@ trait Table_concrete_model_trait
     }
 
     /**
+     * Get the table field object corresponding to the field $field in the related table or in the related abstract table
+     *
+     * @param   string  $field  The name of the field
+     * @return  object
+     */
+    public static function get_table_field_object($field) {
+        $models_metadata  = Models_metadata::get_singleton();
+        $data_conv        = Data_conv::factory();
+
+        $table = $models_metadata->models[self::get_business_short_name()]['table'];
+
+        $field_object = $data_conv->get_table_field_object($table, $field);
+        if ($field_object !== false) {
+            return $field_object;
+        }
+
+        $abstract_table = self::get_abstract_table();
+        if ( ! is_null($abstract_table)) {
+            $field_object = $data_conv->get_table_field_object($abstract_table, $field);
+            if ($field_object !== false) {
+                return $field_object;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Manage the SELECT, FROM and JOIN parts of the query for the current table concrete model
      *
      * @param   Query_manager                    $query_manager

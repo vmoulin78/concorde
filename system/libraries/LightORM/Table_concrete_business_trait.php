@@ -54,16 +54,28 @@ trait Table_concrete_business_trait
      *
      * @param   string  $property
      * @param   mixed   $value
-     * @param   bool    $allow_duplicate_values
      * @return  object
      */
-    public function add($property, $value, $allow_duplicate_values = true) {
+    public function add($property, $value) {
+        $CI =& get_instance();
+
+        $dbms          = $CI->db->dbms;
+        $field_object  = self::get_table_field_object($property);
+
         $property_value = $this->{'get_' . $property}();
 
-        if (( ! $allow_duplicate_values)
-            && (in_array($value, $property_value))
+        if (($dbms === 'postgresql')
+            && ($field_object->is_array())
         ) {
-            return $this;
+            // nothing to do
+        } elseif (($dbms === 'mysql')
+            && ($field_object->full_type === 'set')
+        ) {
+            if (in_array($value, $property_value)) {
+                return $this;
+            }
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
         }
 
         $property_value[] = $value;
@@ -72,29 +84,40 @@ trait Table_concrete_business_trait
 
     /**
      * Remove the value $value from the property $property
-     * If $only_one is true then only one value will be removed (in case of duplicate values)
+     *
+     * In case of duplicate values, only one value is removed.
      *
      * @param   string  $property
      * @param   mixed   $value
-     * @param   bool    $only_one
      * @return  object
      */
-    public function remove($property, $value, $only_one = true) {
-        $property_value      = $this->{'get_' . $property}();
-        $new_property_value  = array();
-        $found               = false;
-        foreach ($property_value as $item) {
-            if (($item != $value)
-                || ($only_one && $found)
-            ) {
-                $new_property_value[] = $item;
+    public function remove($property, $value) {
+        $CI =& get_instance();
+
+        $dbms          = $CI->db->dbms;
+        $field_object  = self::get_table_field_object($property);
+
+        if ((($dbms === 'postgresql') && ($field_object->is_array()))
+            || (($dbms === 'mysql') && ($field_object->full_type === 'set'))
+        ) {
+            $property_value      = $this->{'get_' . $property}();
+            $new_property_value  = array();
+            $found               = false;
+            foreach ($property_value as $item) {
+                if (($item != $value)
+                    || $found
+                ) {
+                    $new_property_value[] = $item;
+                }
+
+                if ($item == $value) {
+                    $found = true;
+                }
             }
 
-            if ($item == $value) {
-                $found = true;
-            }
+            return $this->set($property, $new_property_value);
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
         }
-
-        return $this->set($property, $new_property_value);
     }
 }
