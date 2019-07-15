@@ -100,7 +100,12 @@ trait Table_concrete_business_trait
         if ((($dbms === 'postgresql') && ($field_object->is_array()))
             || (($dbms === 'mysql') && ($field_object->full_type === 'set'))
         ) {
-            $property_value      = $this->{'get_' . $property}();
+            $property_value = $this->{'get_' . $property}();
+
+            if ( ! in_array($value, $property_value)) {
+                return $this;
+            }
+
             $new_property_value  = array();
             $found               = false;
             foreach ($property_value as $item) {

@@ -57,6 +57,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 	const CI_VERSION = '3.1.10';
 
+/**
+ * Concorde Version
+ *
+ * @var	string
+ *
+ */
+	const CONCORDE_VERSION = '1.0.0-rc.1';
+
 /*
  * ------------------------------------------------------
  *  Load the framework constants
