@@ -4,4 +4,4 @@
 * Comes with an integrated ORM named LightORM (compatible with PostgreSQL and MySQL)
 * Demo with PostgreSQL [https://github.com/vmoulin78/demo-concorde-postgresql](https://github.com/vmoulin78/demo-concorde-postgresql)
 * Demo with MySQL [https://github.com/vmoulin78/demo-concorde-mysql](https://github.com/vmoulin78/demo-concorde-mysql)
-* CodeIgniter Forum Thread : [https://forum.codeigniter.com/thread-72986.html](https://forum.codeigniter.com/thread-72986.html)
+* CodeIgniter Forum Thread : [https://forum.codeigniter.com/showthread.php?tid=72986](https://forum.codeigniter.com/showthread.php?tid=72986)
