@@ -87,11 +87,17 @@ class Dbms_manager_postgresql extends Dbms_manager
                     continue;
                 }
 
-                if ((( ! ($value instanceof Dbms_datetime_pgsql)) && ($item == $value))
-                    || (($value instanceof Dbms_datetime_pgsql) && ($value.equals($item)))
-                ) {
-                    $found = true;
+                if ($value instanceof Dbms_datetime_pgsql) {
+                    if ($value.equals($item)) {
+                        $found = true;
+                    }
                 } else {
+                    if ($item == $value) {
+                        $found = true;
+                    }
+                }
+
+                if ( ! $found) {
                     $retour[] = $item;
                 }
             }
