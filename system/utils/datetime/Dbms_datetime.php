@@ -83,4 +83,41 @@ abstract class Dbms_datetime
     public function format($format) {
         return $this->convert()->format($format);
     }
+
+    /**
+     * Compare the current dbms_datetime to the dbms_datetime $arg1
+     * Return :
+     *     0   if the current dbms_datetime is equal to the dbms_datetime $arg1
+     *     1   if the current dbms_datetime is greater than the dbms_datetime $arg1
+     *     -1  if the current dbms_datetime is less than the dbms_datetime $arg1
+     *
+     * @param   Dbms_datetime  $arg1
+     * @return  int
+     */
+    public function compare_to(Dbms_datetime $arg1) {
+        $current_datetime  = $this->convert();
+        $arg1_datetime     = $arg1->convert();
+
+        if ($current_datetime == $arg1_datetime) {
+            return 0;
+        } elseif ($current_datetime > $arg1_datetime) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+
+    /**
+     * Return true if the current dbms_datetime equals the dbms_datetime $arg1 and false otherwise
+     *
+     * @param   Dbms_datetime  $arg1
+     * @return  bool
+     */
+    public function equals(Dbms_datetime $arg1) {
+        if ($this->compare_to($arg1) === 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

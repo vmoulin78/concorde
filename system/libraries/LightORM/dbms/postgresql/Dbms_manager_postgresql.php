@@ -1,5 +1,5 @@
 <?php
-namespace LightORM\dbms\mysql;
+namespace LightORM\dbms\postgresql;
 
 /**
  * Concorde
@@ -38,12 +38,13 @@ namespace LightORM\dbms\mysql;
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-use LightORM\Data_conv;
+use LightORM\Dbms_manager;
+use Concorde\utils\datetime\Dbms_datetime_pgsql;
 
 /**
- * Data_conv_mysql Class
+ * Dbms_manager_postgresql Class
  *
- * Manage the data conversion for the MySQL DBMS
+ * Contain the specific code for the PostgreSQL DBMS
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -51,19 +52,53 @@ use LightORM\Data_conv;
  * @author      Vincent MOULIN
  * @link        
  */
-class Data_conv_mysql extends Data_conv
+class Dbms_manager_postgresql extends Dbms_manager
 {
     /**
      * {@inheritDoc}
      */
-    public function convert_value_for_db($value, $field_object) {
-        return php_data_to_mysql_data($value, $field_object->full_type);
+    public function manage_value_for_add($business_full_name, $property, $property_value, $value) {
+        $field_object = $business_full_name::get_table_field_object($property);
+
+        if ($field_object->is_array()) {
+            $retour = $property_value;
+
+            $retour[] = $value;
+
+            return $retour;
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convert_value_for_php($value, $field_object) {
-        return mysql_data_to_php_data($value, $field_object->full_type);
+    public function manage_value_for_remove($business_full_name, $property, $property_value, $value) {
+        $field_object = $business_full_name::get_table_field_object($property);
+
+        if ($field_object->is_array()) {
+            $retour = array();
+
+            $found = false;
+            foreach ($property_value as $item) {
+                if ($found) {
+                    $retour[] = $item;
+                    continue;
+                }
+
+                if ((( ! ($value instanceof Dbms_datetime_pgsql)) && ($item == $value))
+                    || (($value instanceof Dbms_datetime_pgsql) && ($value.equals($item)))
+                ) {
+                    $found = true;
+                } else {
+                    $retour[] = $item;
+                }
+            }
+
+            return $retour;
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
     }
 }

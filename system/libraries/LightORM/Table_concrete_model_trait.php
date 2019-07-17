@@ -369,10 +369,6 @@ trait Table_concrete_model_trait
      * @return  object
      */
     public function set($property, $value) {
-        if ($this->{'get_' . $property}() == $value) {
-            return $this;
-        }
-
         if ($this->set_for_ref_model_type($property, $value, 'abstract') === false) {
             if ($this->set_for_ref_model_type($property, $value, 'concrete') === false) {
                 trigger_error('LightORM error: Unable to find the field', E_USER_ERROR);

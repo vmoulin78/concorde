@@ -39,9 +39,9 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Data_conv Class
+ * Dbms_manager Class
  *
- * Manage the data conversion for the database
+ * Contain the specific code for the DBMS
  *
  * This class is a factory of singletons.
  *
@@ -51,7 +51,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-abstract class Data_conv
+abstract class Dbms_manager
 {
     /**
      * The singleton instance
@@ -60,35 +60,7 @@ abstract class Data_conv
      */
     protected static $singleton = null;
 
-    /**
-     * The CI instance
-     *
-     * @var object
-     */
-    protected $CI;
-
-    /**
-     * The schema of the database
-     *
-     * @var array
-     */
-    public $schema;
-
-    protected function __construct() {
-        $this->CI =& get_instance();
-
-        $this->schema = array();
-
-        foreach ($this->CI->config->item('lightORM_data_conv') as $table_name => $table_fields) {
-            $fields = array();
-
-            foreach ($table_fields as $table_field_name => $table_field_full_type) {
-                $fields[$table_field_name] = new Data_conv_table_field($table_field_name, $table_field_full_type);
-            }
-
-            $this->schema[$table_name] = new Data_conv_table($table_name, $fields);
-        }
-    }
+    protected function __construct() {}
 
     /**
      * The factory of singletons
@@ -103,7 +75,7 @@ abstract class Data_conv
             $dbms = $CI->db->dbms;
         }
 
-        return call_user_func('\\LightORM\\dbms\\' . $dbms . '\\Data_conv_' . $dbms . '::get_singleton');
+        return call_user_func('\\LightORM\\dbms\\' . $dbms . '\\Dbms_manager_' . $dbms . '::get_singleton');
     }
 
     /**
@@ -120,41 +92,26 @@ abstract class Data_conv
     }
 
     /**
-     * Get the table field object corresponding to the field $field in the table $table
+     * Manage the value $value for the method add() given the business full name $business_full_name,
+     * the property name $property and the property value $property_value
      *
-     * @param   string  $table  The name of the table
-     * @param   string  $field  The name of the field
-     * @return  object
-     */
-    public function get_table_field_object($table, $field) {
-        if ( ! isset($this->schema[$table])) {
-            return false;
-        }
-
-        $table_object = $this->schema[$table];
-
-        if ( ! isset($table_object->fields[$field])) {
-            return false;
-        }
-
-        return $table_object->fields[$field];
-    }
-
-    /**
-     * Convert the value $value related to the database field $field_object for the database
-     *
-     * @param   mixed                  $value         The value
-     * @param   Data_conv_table_field  $field_object  The related database field
+     * @param   string  $business_full_name  The business full name
+     * @param   string  $property            The name of the property
+     * @param   array   $property_value      The value of the property
+     * @param   mixed   $value               The value
      * @return  mixed
      */
-    abstract public function convert_value_for_db($value, $field_object);
+    abstract public function manage_value_for_add($business_full_name, $property, $property_value, $value);
 
     /**
-     * Convert the value $value related to the database field $field_object for PHP
+     * Manage the value $value for the method remove() given the business full name $business_full_name,
+     * the property name $property and the property value $property_value
      *
-     * @param   mixed                  $value         The value
-     * @param   Data_conv_table_field  $field_object  The related database field
+     * @param   string  $business_full_name  The business full name
+     * @param   string  $property            The name of the property
+     * @param   array   $property_value      The value of the property
+     * @param   mixed   $value               The value
      * @return  mixed
      */
-    abstract public function convert_value_for_php($value, $field_object);
+    abstract public function manage_value_for_remove($business_full_name, $property, $property_value, $value);
 }

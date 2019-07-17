@@ -43,7 +43,7 @@ use LightORM\Data_conv;
 /**
  * Data_conv_postgresql Class
  *
- * Manage the data conversion for the PostgreSQL database
+ * Manage the data conversion for the PostgreSQL DBMS
  *
  * @package     Concorde
  * @subpackage  Libraries

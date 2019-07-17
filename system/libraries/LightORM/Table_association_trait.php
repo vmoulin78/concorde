@@ -229,10 +229,6 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        if ($this->{'get_' . $property}() == $value) {
-            return $this;
-        }
-
         $association_short_name  = self::get_business_short_name();
         $association_array       = $associations_metadata->get_association_array(['association' => $association_short_name]);
         $table_object            = $data_conv->schema[$association_array['table']];

@@ -57,29 +57,14 @@ trait Table_concrete_business_trait
      * @return  object
      */
     public function add($property, $value) {
-        $CI =& get_instance();
+        $dbms_manager = Dbms_manager::factory();
 
-        $dbms          = $CI->db->dbms;
-        $field_object  = self::get_table_field_object($property);
+        $business_full_name  = self::get_business_full_name();
+        $property_value      = $this->{'get_' . $property}();
 
-        $property_value = $this->{'get_' . $property}();
+        $new_property_value = $dbms_manager->manage_value_for_add($business_full_name, $property, $property_value, $value);
 
-        if (($dbms === 'postgresql')
-            && ($field_object->is_array())
-        ) {
-            // nothing to do
-        } elseif (($dbms === 'mysql')
-            && ($field_object->full_type === 'set')
-        ) {
-            if (in_array($value, $property_value)) {
-                return $this;
-            }
-        } else {
-            trigger_error('LightORM error: Property error', E_USER_ERROR);
-        }
-
-        $property_value[] = $value;
-        return $this->set($property, $property_value);
+        return $this->set($property, $new_property_value);
     }
 
     /**
@@ -92,37 +77,13 @@ trait Table_concrete_business_trait
      * @return  object
      */
     public function remove($property, $value) {
-        $CI =& get_instance();
+        $dbms_manager = Dbms_manager::factory();
 
-        $dbms          = $CI->db->dbms;
-        $field_object  = self::get_table_field_object($property);
+        $business_full_name  = self::get_business_full_name();
+        $property_value      = $this->{'get_' . $property}();
 
-        if ((($dbms === 'postgresql') && ($field_object->is_array()))
-            || (($dbms === 'mysql') && ($field_object->full_type === 'set'))
-        ) {
-            $property_value = $this->{'get_' . $property}();
+        $new_property_value = $dbms_manager->manage_value_for_remove($business_full_name, $property, $property_value, $value);
 
-            if ( ! in_array($value, $property_value)) {
-                return $this;
-            }
-
-            $new_property_value  = array();
-            $found               = false;
-            foreach ($property_value as $item) {
-                if (($item != $value)
-                    || $found
-                ) {
-                    $new_property_value[] = $item;
-                }
-
-                if ($item == $value) {
-                    $found = true;
-                }
-            }
-
-            return $this->set($property, $new_property_value);
-        } else {
-            trigger_error('LightORM error: Property error', E_USER_ERROR);
-        }
+        return $this->set($property, $new_property_value);
     }
 }

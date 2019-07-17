@@ -38,12 +38,12 @@ namespace LightORM\dbms\mysql;
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-use LightORM\Data_conv;
+use LightORM\Dbms_manager;
 
 /**
- * Data_conv_mysql Class
+ * Dbms_manager_mysql Class
  *
- * Manage the data conversion for the MySQL DBMS
+ * Contain the specific code for the MySQL DBMS
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -51,19 +51,45 @@ use LightORM\Data_conv;
  * @author      Vincent MOULIN
  * @link        
  */
-class Data_conv_mysql extends Data_conv
+class Dbms_manager_mysql extends Dbms_manager
 {
     /**
      * {@inheritDoc}
      */
-    public function convert_value_for_db($value, $field_object) {
-        return php_data_to_mysql_data($value, $field_object->full_type);
+    public function manage_value_for_add($business_full_name, $property, $property_value, $value) {
+        $field_object = $business_full_name::get_table_field_object($property);
+
+        if ($field_object->full_type === 'set') {
+            $retour = $property_value;
+
+            if ( ! in_array($value, $property_value)) {
+                $retour[] = $value;
+            }
+
+            return $retour;
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public function convert_value_for_php($value, $field_object) {
-        return mysql_data_to_php_data($value, $field_object->full_type);
+    public function manage_value_for_remove($business_full_name, $property, $property_value, $value) {
+        $field_object = $business_full_name::get_table_field_object($property);
+
+        if ($field_object->full_type === 'set') {
+            $retour = array();
+
+            foreach ($property_value as $item) {
+                if ($item != $value) {
+                    $retour[] = $item;
+                }
+            }
+
+            return $retour;
+        } else {
+            trigger_error('LightORM error: Property error', E_USER_ERROR);
+        }
     }
 }
