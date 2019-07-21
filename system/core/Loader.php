@@ -1312,6 +1312,8 @@ class CI_Loader {
 			return;
 		}
 
+		// --------------------------------------------------------------------
+
 		// Autoload packages
 		if (isset($autoload['packages']))
 		{
@@ -1320,6 +1322,19 @@ class CI_Loader {
 				$this->add_package_path($package_path);
 			}
 		}
+
+		// --------------------------------------------------------------------
+
+		$default_added_configurations = array(
+			'config_lightORM',
+		);
+
+		foreach ($default_added_configurations as $val)
+		{
+			$this->config($val);
+		}
+
+		$autoload['config'] = array_diff($autoload['config'], $default_added_configurations);
 
 		// Load any custom config file
 		if (count($autoload['config']) > 0)
@@ -1330,14 +1345,35 @@ class CI_Loader {
 			}
 		}
 
-		// Autoload helpers and languages
-		foreach (array('helper', 'language') as $type)
+		// --------------------------------------------------------------------
+
+		$default_added_helpers = array(
+			'utils',
+			'mbstring',
+			'string',
+			'reflection',
+			'lightorm',
+		);
+
+		$this->helper($default_added_helpers);
+
+		// Autoload helpers
+		if (isset($autoload['helper']) && count($autoload['helper']) > 0)
 		{
-			if (isset($autoload[$type]) && count($autoload[$type]) > 0)
-			{
-				$this->$type($autoload[$type]);
-			}
+			$autoload['helper'] = array_diff($autoload['helper'], $default_added_helpers);
+
+			$this->helper($autoload['helper']);
 		}
+
+		// --------------------------------------------------------------------
+
+		// Autoload languages
+		if (isset($autoload['language']) && count($autoload['language']) > 0)
+		{
+			$this->language($autoload['language']);
+		}
+
+		// --------------------------------------------------------------------
 
 		// Autoload drivers
 		if (isset($autoload['drivers']))
@@ -1345,19 +1381,29 @@ class CI_Loader {
 			$this->driver($autoload['drivers']);
 		}
 
+		// --------------------------------------------------------------------
+
+		// Load the database library
+		$this->database();
+
+		$default_added_libraries = array(
+			'databubbles_warehouse',
+		);
+
+		$this->library($default_added_libraries);
+
+		array_unshift($default_added_libraries, 'database');
+
 		// Load libraries
 		if (isset($autoload['libraries']) && count($autoload['libraries']) > 0)
 		{
-			// Load the database driver.
-			if (in_array('database', $autoload['libraries']))
-			{
-				$this->database();
-				$autoload['libraries'] = array_diff($autoload['libraries'], array('database'));
-			}
+			$autoload['libraries'] = array_diff($autoload['libraries'], $default_added_libraries);
 
 			// Load all other libraries
 			$this->library($autoload['libraries']);
 		}
+
+		// --------------------------------------------------------------------
 
 		// Autoload models
 		if (isset($autoload['model']))
