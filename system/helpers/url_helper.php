@@ -564,6 +564,5 @@ if ( ! function_exists('redirect'))
 				header('Location: '.$uri, TRUE, $code);
 				break;
 		}
-		exit;
 	}
 }
