@@ -85,9 +85,9 @@ class Query_manager
 
     private $CI;
     private $stack;
-    public $table; //only for insert, update and delete operations
-    public $aliases; //only for read operation
-    public $models; //only for read operation
+    public $table; // The reference table
+    public $aliases;
+    public $models;
 
     public function __construct() {
         $this->CI =& get_instance();
@@ -123,15 +123,30 @@ class Query_manager
                     if ( ! isset($this->aliases[$alias])) {
                         trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
                     }
-                    $table = $this->aliases[$alias];
+
+                    $field_object = $data_conv->get_table_field_object($this->aliases[$alias], $simple_field);
+                    if ($field_object === false) {
+                        trigger_error('LightORM error: Unknown field', E_USER_ERROR);
+                    }
                 } else {
-                    $table = $this->table;
-                }
+                    $field_object = null;
+                    foreach ($this->aliases as $table) {
+                        $temp_field_object = $data_conv->get_table_field_object($table, $simple_field);
 
-                $field_object = $data_conv->get_table_field_object($table, $simple_field);
+                        if ($temp_field_object === false) {
+                            continue;
+                        }
 
-                if ($field_object === false) {
-                    trigger_error('LightORM error: Unknown field', E_USER_ERROR);
+                        if ( ! is_null($field_object)) {
+                            trigger_error('LightORM error: Ambiguous field name', E_USER_ERROR);
+                        }
+
+                        $field_object = $temp_field_object;
+                    }
+
+                    if (is_null($field_object)) {
+                        trigger_error('LightORM error: Unknown field', E_USER_ERROR);
+                    }
                 }
 
                 if (in_array($method, ['where_in', 'where_not_in', 'or_where_in', 'or_where_not_in'])) {
@@ -224,14 +239,12 @@ class Query_manager
             return $result;
         } else {
             if (in_array($method, ['table', 'from', 'join'])) {
-                if (count($args) == 0) {
+                if (count($args) === 0) {
                     trigger_error('LightORM error: Missing parameter', E_USER_ERROR);
                 }
 
                 if (is_array($args[0])) {
-                    if (($method == 'table')
-                        || ($method == 'join')
-                    ) {
+                    if (in_array($method, ['table', 'join'])) {
                         trigger_error('LightORM error: Parameter error', E_USER_ERROR);
                     }
 
@@ -241,9 +254,7 @@ class Query_manager
                 }
 
                 if (in_string(',', $first_snippet)) {
-                    if (($method == 'table')
-                        || ($method == 'join')
-                    ) {
+                    if (in_array($method, ['table', 'join'])) {
                         trigger_error('LightORM error: Parameter error', E_USER_ERROR);
                     }
 
@@ -262,7 +273,9 @@ class Query_manager
                     $alias = $table;
                 }
 
-                $this->table = $table;
+                if (in_array($method, ['table', 'from'])) {
+                    $this->table = $table;
+                }
                 $this->aliases[$alias] = $table;
             }
 
