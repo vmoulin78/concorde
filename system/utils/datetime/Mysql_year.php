@@ -54,10 +54,13 @@ class Mysql_year extends Dbms_datetime_mysql
 {
     public function __construct($value = 'now') {
         if ($value === 'now') {
-            $datetime     = new \DateTime($value);
-            $this->value  = $datetime->format(MYSQL_YEAR_FORMAT);
+            $value = new \DateTime();
+        }
+
+        if ($value instanceof \DateTime) {
+            $this->value = $value->format(MYSQL_YEAR_FORMAT);
         } else {
-            $this->value = $value;
+            $this->value = (string) $value;
         }
     }
 

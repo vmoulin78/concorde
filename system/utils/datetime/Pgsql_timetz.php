@@ -54,10 +54,13 @@ class Pgsql_timetz extends Dbms_datetime_pgsql
 {
     public function __construct($value = 'now') {
         if ($value === 'now') {
-            $datetime     = new \DateTime($value);
-            $this->value  = $datetime->format(PGSQL_TIMETZ_FORMAT);
+            $value = new \DateTime();
+        }
+
+        if ($value instanceof \DateTime) {
+            $this->value = $value->format(PGSQL_TIMETZ_FORMAT);
         } else {
-            $this->value = $value;
+            $this->value = (string) $value;
         }
     }
 

@@ -53,7 +53,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Mysql_interval extends Dbms_datetime_mysql
 {
     public function __construct($value) {
-        $this->value = $value;
+        if ($value instanceof \DateInterval) {
+            $this->value = $value->format(MYSQL_INTERVAL_FORMAT);
+        } else {
+            $this->value = (string) $value;
+        }
     }
 
     /**

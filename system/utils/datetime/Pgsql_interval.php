@@ -53,7 +53,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Pgsql_interval extends Dbms_datetime_pgsql
 {
     public function __construct($value) {
-        $this->value = $value;
+        if ($value instanceof \DateInterval) {
+            $this->value = $value->format(PGSQL_INTERVAL_FORMAT);
+        } else {
+            $this->value = (string) $value;
+        }
     }
 
     /**
