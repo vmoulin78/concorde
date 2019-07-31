@@ -74,6 +74,10 @@ if ( ! function_exists('php_data_to_mysql_data'))
             return 'NULL';
         }
 
+        if ($data_type === 'binary') {
+            return $php_data;
+        }
+
         $data_type_array = explode(':', $data_type, 2);
 
         $data_type_part1 = array_shift($data_type_array);
@@ -127,10 +131,6 @@ if ( ! function_exists('php_data_to_mysql_data'))
                 }
                 break;
 
-            case 'binary':
-                $retour = $php_data;
-                break;
-
             default:
                 trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
@@ -154,6 +154,10 @@ if ( ! function_exists('mysql_data_to_php_data'))
 
         if (is_null($mysql_data)) {
             return null;
+        }
+
+        if ($data_type === 'binary') {
+            return $mysql_data;
         }
 
         $data_type_array = explode(':', $data_type, 2);
@@ -215,7 +219,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 break;
 
             case 'enum_model_id':
-                if (count($data_type_array) == 0) {
+                if (count($data_type_array) === 0) {
                     trigger_error("LightORM error: Error in data type '" . $data_type . "'", E_USER_ERROR);
                 }
 
@@ -223,10 +227,6 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 $table_metadata   = $business_tables_metadata->tables[$data_type_part2];
                 $model_full_name  = $table_metadata['business_full_name'];
                 $retour           = $model_full_name::find($mysql_data);
-                break;
-
-            case 'binary':
-                $retour = $mysql_data;
                 break;
 
             default:

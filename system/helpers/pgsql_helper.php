@@ -72,6 +72,10 @@ if ( ! function_exists('php_element_to_pgsql_element'))
     function php_element_to_pgsql_element($php_element, $element_type) {
         $CI =& get_instance();
 
+        if ($element_type === 'binary') {
+            return $php_element;
+        }
+
         $element_type_array = explode(':', $element_type, 2);
 
         $element_type_part1 = array_shift($element_type_array);
@@ -107,6 +111,16 @@ if ( ! function_exists('php_element_to_pgsql_element'))
                 }
                 break;
 
+            case 'enum_type':
+                if (count($element_type_array) === 0) {
+                    trigger_error("LightORM error: Error in element type '" . $element_type . "'", E_USER_ERROR);
+                }
+
+                $element_type_part2 = array_shift($element_type_array);
+
+                $retour = pg_escape_literal($CI->db->conn_id, $php_element) . '::' . $element_type_part2;
+                break;
+
             case 'fk':
             case 'pk_fk':
             case 'enum_model_id':
@@ -115,10 +129,6 @@ if ( ! function_exists('php_element_to_pgsql_element'))
                 } else {
                     $retour = (int) $php_element;
                 }
-                break;
-
-            case 'binary':
-                $retour = $php_element;
                 break;
 
             default:
@@ -187,15 +197,26 @@ if ( ! function_exists('pgsql_element_to_php_element'))
      * Return the PHP element corresponding to the PostgreSQL element $pgsql_element
      *
      * @internal
-     * @param   string  $pgsql_element  A string containing a PostgreSQL element
-     * @param   string  $element_type   The type of the element
+     * @param   string  $pgsql_element       A string containing a PostgreSQL element
+     * @param   string  $element_type        The type of the element
+     * @param   bool    $data_type_is_array  Whether the data type is an array or not
      * @return  mixed
      */
-    function pgsql_element_to_php_element($pgsql_element, $element_type) {
+    function pgsql_element_to_php_element($pgsql_element, $element_type, $data_type_is_array) {
         $business_tables_metadata = Business_tables_metadata::get_singleton();
 
         if ($pgsql_element === 'NULL') {
             return null;
+        }
+
+        if ($element_type === 'binary') {
+            return $pgsql_element;
+        }
+
+        if ($data_type_is_array
+            && (db_substr($pgsql_element, 0, 1) === '"')
+        ) {
+            $pgsql_element = str_replace('\\"', '"', db_substr($pgsql_element, 1, -1));
         }
 
         $element_type_array = explode(':', $element_type, 2);
@@ -214,14 +235,8 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 break;
 
             case 'string':
-                if (db_substr($pgsql_element, 0, 1) === '"') {
-                    $retour = str_replace('\\"', '"', db_substr($pgsql_element, 1, -1));
-                } else {
-                    $retour = $pgsql_element;
-                }
-                break;
-
             case 'json':
+            case 'enum_type':
                 $retour = $pgsql_element;
                 break;
 
@@ -260,7 +275,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 break;
 
             case 'enum_model_id':
-                if (count($element_type_array) == 0) {
+                if (count($element_type_array) === 0) {
                     trigger_error("LightORM error: Error in element type '" . $element_type . "'", E_USER_ERROR);
                 }
 
@@ -268,10 +283,6 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 $table_metadata      = $business_tables_metadata->tables[$element_type_part2];
                 $model_full_name     = $table_metadata['business_full_name'];
                 $retour              = $model_full_name::find($pgsql_element);
-                break;
-
-            case 'binary':
-                $retour = $pgsql_element;
                 break;
 
             default:
@@ -333,7 +344,7 @@ if ( ! function_exists('pgsql_array_to_php_array_rec'))
                     }
                 }
 
-                $element = pgsql_element_to_php_element($element, $element_type);
+                $element = pgsql_element_to_php_element($element, $element_type, true);
             }
 
             $retour[] = $element;
@@ -367,7 +378,7 @@ if ( ! function_exists('pgsql_data_to_php_data'))
         if (substr($data_type, -2) === '[]') {
             return pgsql_array_to_php_array_rec($pgsql_data, strstr($data_type, '[', true));
         } else {
-            return pgsql_element_to_php_element($pgsql_data, $data_type);
+            return pgsql_element_to_php_element($pgsql_data, $data_type, false);
         }
     }
 }

@@ -63,7 +63,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CONCORDE_VERSION = '1.0.0-rc.7';
+	const CONCORDE_VERSION = '1.0.0-rc.8';
 
 /*
  * ------------------------------------------------------
