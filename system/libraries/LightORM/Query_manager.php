@@ -307,20 +307,24 @@ class Query_manager
             $exploded_var = explode(':', $var);
 
             if (count($exploded_var) !== 2) {
-                trigger_error('LightORM error: Invalid format for ' . $var, E_USER_ERROR);
+                trigger_error("LightORM error: Invalid format for '" . $var . "'", E_USER_ERROR);
             }
 
-            if ( ! is_null($row->{$var})) {
-                list($alias, $field) = $exploded_var;
+            list($alias, $field) = $exploded_var;
 
-                $field_object = $data_conv->get_table_field_object($this->aliases[$alias], $field);
-
-                if ($field_object === false) {
-                    trigger_error('LightORM error: Unknown field', E_USER_ERROR);
-                }
-
-                $row->{$var} = $data_conv->convert_value_for_php($row->{$var}, $field_object);
+            if (($alias === '')
+                || is_null($row->{$var})
+            ) {
+                continue;
             }
+
+            $field_object = $data_conv->get_table_field_object($this->aliases[$alias], $field);
+
+            if ($field_object === false) {
+                trigger_error('LightORM error: Unknown field', E_USER_ERROR);
+            }
+
+            $row->{$var} = $data_conv->convert_value_for_php($row->{$var}, $field_object);
         }
     }
 }
