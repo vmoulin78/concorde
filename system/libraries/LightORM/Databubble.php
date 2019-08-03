@@ -403,58 +403,64 @@ class Databubble
 
                     foreach ($opposite_associates_arrays as $opposite_associate_array) {
                         if ($opposite_associate_array['dimension'] === 'one') {
-                            foreach ($this->models[$opposite_associate_array['model']] as $item) {
-                                $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
-                                if (( ! is_undefined($opposite_associate_property_value))
-                                    && ($opposite_associate_property_value === $model_instance)
-                                ) {
-                                    $item->{'set_' . $opposite_associate_array['property']}(null);
+                            if (isset($this->models[$opposite_associate_array['model']])) {
+                                foreach ($this->models[$opposite_associate_array['model']] as $item) {
+                                    $opposite_associate_property_value = $item->{'get_' . $opposite_associate_array['property']}();
+                                    if (( ! is_undefined($opposite_associate_property_value))
+                                        && ($opposite_associate_property_value === $model_instance)
+                                    ) {
+                                        $item->{'set_' . $opposite_associate_array['property']}(null);
+                                    }
                                 }
                             }
                         } elseif ($association_array['type'] === 'one_to_many') {
-                            foreach ($this->models[$opposite_associate_array['model']] as $item1) {
-                                $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
-                                if ( ! is_undefined($opposite_associate_property_value)) {
-                                    $new_opposite_associate_property_value = array();
-                                    foreach ($opposite_associate_property_value as $item2) {
-                                        if ($item2 !== $model_instance) {
-                                            $new_opposite_associate_property_value[] = $item2;
+                            if (isset($this->models[$opposite_associate_array['model']])) {
+                                foreach ($this->models[$opposite_associate_array['model']] as $item1) {
+                                    $opposite_associate_property_value = $item1->{'get_' . $opposite_associate_array['property']}();
+                                    if ( ! is_undefined($opposite_associate_property_value)) {
+                                        $new_opposite_associate_property_value = array();
+                                        foreach ($opposite_associate_property_value as $item2) {
+                                            if ($item2 !== $model_instance) {
+                                                $new_opposite_associate_property_value[] = $item2;
+                                            }
                                         }
+                                        $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
                                     }
-                                    $item1->{'set_' . $opposite_associate_array['property']}($new_opposite_associate_property_value);
                                 }
                             }
                         } elseif ($association_array['type'] === 'many_to_many') {
-                            $association_primary_key_scalars_to_remove = array();
+                            if (isset($this->associations[$association_array['class']])) {
+                                $association_primary_key_scalars_to_remove = array();
 
-                            foreach ($this->associations[$association_array['class']] as $key1 => $item1) {
-                                if ($item1->{'get_' . $associate['reverse_property']}() === $model_instance) {
-                                    foreach ($association_array['associates'] as $item2) {
-                                        $item2_instance = $item1->{'get_' . $item2['reverse_property']}();
-                                        $item2_instance_property_value = $item2_instance->{'get_' . $item2['property']}();
-                                        if ( ! is_undefined($item2_instance_property_value)) {
-                                            $new_item2_instance_property_value = array();
-                                            foreach ($item2_instance_property_value as $item3) {
-                                                if ($item3 !== $item1) {
-                                                    $new_item2_instance_property_value[] = $item3;
+                                foreach ($this->associations[$association_array['class']] as $key1 => $item1) {
+                                    if ($item1->{'get_' . $associate['reverse_property']}() === $model_instance) {
+                                        foreach ($association_array['associates'] as $item2) {
+                                            $item2_instance = $item1->{'get_' . $item2['reverse_property']}();
+                                            $item2_instance_property_value = $item2_instance->{'get_' . $item2['property']}();
+                                            if ( ! is_undefined($item2_instance_property_value)) {
+                                                $new_item2_instance_property_value = array();
+                                                foreach ($item2_instance_property_value as $item3) {
+                                                    if ($item3 !== $item1) {
+                                                        $new_item2_instance_property_value[] = $item3;
+                                                    }
                                                 }
+                                                $item2_instance->{'set_' . $item2['property']}($new_item2_instance_property_value);
                                             }
-                                            $item2_instance->{'set_' . $item2['property']}($new_item2_instance_property_value);
+
+                                            $item1->{'set_' . $item2['reverse_property']}(null);
                                         }
 
-                                        $item1->{'set_' . $item2['reverse_property']}(null);
+                                        $association_primary_key_scalars_to_remove[] = $key1;
                                     }
-
-                                    $association_primary_key_scalars_to_remove[] = $key1;
                                 }
-                            }
 
-                            foreach ($association_primary_key_scalars_to_remove as $item) {
-                                unset($this->associations[$association_array['class']][$item]->databubble);
+                                foreach ($association_primary_key_scalars_to_remove as $item) {
+                                    unset($this->associations[$association_array['class']][$item]->databubble);
 
-                                unset($this->update_managers['associations'][$association_array['class']][$item]);
+                                    unset($this->update_managers['associations'][$association_array['class']][$item]);
 
-                                unset($this->associations[$association_array['class']][$item]);
+                                    unset($this->associations[$association_array['class']][$item]);
+                                }
                             }
                         } else {
                             exit(1);
