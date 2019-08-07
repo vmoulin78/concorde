@@ -41,9 +41,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Finder Class
  *
- * Manage the data conversion for the database
- * This class is a factory of singletons
- *
  * @package     Concorde
  * @subpackage  Libraries
  * @category    Libraries
@@ -61,17 +58,20 @@ class Finder
     private $databubble;
     private $dimension;
     private $associations;
+    private $with;
     private $user_aliases;
     private $stack;
+    private $offset;
+    private $limit;
 
     //------------------------------------------------------//
 
     /**
      * The constructor
      *
-     * @access public
-     * @param $model      The model
-     * @param $dimension  The dimension
+     * @param  string      $model       The model
+     * @param  Databubble  $databubble  The databubble
+     * @param  int         $dimension   The dimension
      */
     public function __construct($model, $databubble = null, $dimension = self::DIMENSION_AUTO) {
         $model = trim($model);
@@ -104,8 +104,11 @@ class Finder
         $this->databubble        = $databubble;
         $this->dimension         = $dimension;
         $this->associations      = $associate;
+        $this->with              = array();
         $this->user_aliases      = array();
         $this->stack             = array();
+        $this->offset            = null;
+        $this->limit             = null;
 
         //------------------------------------------------------//
 
@@ -142,13 +145,67 @@ class Finder
 
     //------------------------------------------------------//
 
+    /**
+     * Set the associations that must be retrieved
+     *
+     * @param   array|string|null  $associations
+     * @return  Finder
+     */
+    public function with($associations) {
+        $this->with = $associations;
+        return $this;
+    }
+
+    /**
+     * Set the offset
+     *
+     * @param   int  $offset
+     * @return  Finder
+     */
+    public function offset($offset) {
+        $this->offset = $offset;
+        return $this;
+    }
+
+    /**
+     * Set the limit
+     *
+     * @param   int  $limit
+     * @return  Finder
+     */
+    public function limit($limit) {
+        $this->limit = $limit;
+        return $this;
+    }
+
+    /**
+     * The magic method __call()
+     *
+     * @param   string  $method
+     * @param   array   $args
+     * @return  Finder
+     */
     public function __call($method, $args) {
+        if (in_array(
+            $method,
+            array(
+                'get_where',
+                'group_by',
+                'having',
+                'or_having',
+            )
+        )) {
+            trigger_error("LightORM error: The method '" . $method . "()' cannot be used on a Finder instance", E_USER_ERROR);
+        }
+
         $this->stack[] = array(
             'method'  => $method,
             'args'    => $args
         );
         return $this;
     }
+
+    //------------------------------------------------------//
 
     /**
      * This function is the recursive part of the function format_with()
@@ -368,13 +425,13 @@ class Finder
     }
 
     /**
-     * This function is the recursive part of the function with()
+     * This function is the recursive part of the function process_with()
      *
      * @param   array  $associations
      * @param   array  $associatounds  an array of Business_associations_associate
-     * @return  array
+     * @return  void
      */
-    private function with_rec(array $associations, array $associatounds) {
+    private function process_with_rec(array $associations, array $associatounds) {
         $associations_metadata = Associations_metadata::get_singleton();
 
         if (count($associatounds) == 1) {
@@ -497,20 +554,19 @@ class Finder
                 }
 
                 if ( ! is_null($item)) {
-                    $this->with_rec($item, $business_associations_associatonents_group->associatonents);
+                    $this->process_with_rec($item, $business_associations_associatonents_group->associatonents);
                 }
             }
         }
     }
 
     /**
-     * Define the associations that must be retrieved
+     * Process the property $with
      *
-     * @param   array|string|null  $associations
-     * @return  Finder
+     * @return  void
      */
-    public function with($associations) {
-        $associations = $this->format_with($associations);
+    private function process_with() {
+        $associations = $this->format_with($this->with);
 
         if ( ! is_null($this->constructor_reflexive_part)) {
             $associations[$this->constructor_reflexive_part]  = $associations;
@@ -521,9 +577,7 @@ class Finder
 
         $associations = $this->format_reflexive_associations($associations);
 
-        $this->with_rec($associations, [$this->associations]);
-
-        return $this;
+        $this->process_with_rec($associations, [$this->associations]);
     }
 
     /**
@@ -695,9 +749,7 @@ class Finder
     public function get($filter = null) {
         $associations_metadata = Associations_metadata::get_singleton();
 
-        if ( ! is_null($this->constructor_reflexive_part)) {
-            $this->with(array());
-        }
+        $this->process_with();
 
         $qm = new Query_manager();
 
@@ -711,6 +763,37 @@ class Finder
             }
         }
         $this->complete_query($qm);
+
+        //------------------------------------------------------//
+
+        if (( ! is_null($this->offset))
+            || ( ! is_null($this->limit))
+        ) {
+            $qm_subquery = clone $qm;
+
+            $qm_subquery->stack = array();
+            foreach ($qm->stack as $item) {
+                if ($item['method'] !== 'select') {
+                    $qm_subquery->stack[] = $item;
+                }
+            }
+
+            $qm_subquery->select('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+
+            $qm_subquery->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+
+            if ( ! is_null($this->offset)) {
+                $qm_subquery->offset($this->offset);
+            }
+
+            if ( ! is_null($this->limit)) {
+                $qm_subquery->limit($this->limit);
+            }
+
+            $qm->simple_where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $qm_subquery->get_compiled_select(), false);
+        }
+
+        //------------------------------------------------------//
 
         $query = $qm->get();
 

@@ -41,9 +41,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Enum_model_loader Class
  *
- * Manage the data conversion for the database
- * This class is a factory of singletons
- *
  * @package     Concorde
  * @subpackage  Libraries
  * @category    Libraries

@@ -41,9 +41,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Query_manager Class
  *
- * Manage the data conversion for the database
- * This class is a factory of singletons
- *
  * @package     Concorde
  * @subpackage  Libraries
  * @category    Libraries
@@ -56,19 +53,30 @@ class Query_manager
         'query',
         'simple_query',
         'get',
+        'get_where',
         'count_all',
         'count_all_results',
-        'get_where',
         'insert_id',
         'insert',
+        'insert_batch',
         'update',
+        'update_batch',
+        'replace',
         'delete',
+        'truncate',
+        'empty_table',
+        'get_compiled_select',
+        'get_compiled_insert',
+        'get_compiled_update',
+        'get_compiled_delete',
         'platform',
         'version',
     );
 
     const CONV_METHODS = array(
         'set',
+        'set_insert_batch',
+        'set_update_batch',
         'where',
         'where_in',
         'where_not_in',
@@ -84,14 +92,17 @@ class Query_manager
     );
 
     private $CI;
-    private $stack;
+    public $stack;
     public $table; // The reference table
     public $aliases;
     public $models;
 
+    /**
+     * The constructor
+     */
     public function __construct() {
         $this->CI =& get_instance();
-        $this->reset_query();
+        $this->reset();
     }
 
     /**
@@ -188,11 +199,11 @@ class Query_manager
     }
 
     /**
-     * Reset the query
+     * Reset the current query_manager
      *
      * @return  void
      */
-    public function reset_query() {
+    public function reset() {
         $this->table    = null;
         $this->aliases  = array();
         $this->models   = array();
@@ -285,7 +296,7 @@ class Query_manager
 
             $this->stack[] = array(
                 'method'  => $method,
-                'args'    => $args
+                'args'    => $args,
             );
 
             return $this;
