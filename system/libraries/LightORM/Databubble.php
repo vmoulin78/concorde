@@ -173,39 +173,39 @@ class Databubble
     }
 
     /**
-     * Add the model instance given the data $qm_model_item, $row and $qm_aliases
+     * Add the model instance given the data $finder_model_item, $row and $qm_aliases
      *
-     * @param   array   $qm_model_item
+     * @param   array   $finder_model_item
      * @param   object  $row
      * @param   array   $qm_aliases
      * @return  object
      */
-    public function add_model_row($qm_model_item, $row, $qm_aliases) {
+    public function add_model_row($finder_model_item, $row, $qm_aliases) {
         $models_metadata = Models_metadata::get_singleton();
 
-        $model_full_name = $models_metadata->models[$qm_model_item['name']]['model_full_name'];
+        $model_full_name = $models_metadata->models[$finder_model_item['name']]['model_full_name'];
 
-        switch ($qm_model_item['model_info']['type']) {
+        switch ($finder_model_item['model_info']['type']) {
             case 'simple_model':
-                $alias = $qm_model_item['model_info']['alias'];
+                $alias = $finder_model_item['model_info']['alias'];
                 break;
             case 'concrete_model':
-                $alias = $qm_model_item['model_info']['abstract_alias'];
+                $alias = $finder_model_item['model_info']['abstract_alias'];
                 break;
             case 'abstract_model':
-                $alias = $qm_model_item['model_info']['abstract_alias'];
+                $alias = $finder_model_item['model_info']['abstract_alias'];
                 break;
             default:
                 exit(1);
                 break;
         }
 
-        $created_model_instance = $model_full_name::business_creation($qm_model_item, $row, $qm_aliases);
+        $created_model_instance = $model_full_name::business_creation($finder_model_item, $row, $qm_aliases);
 
-        if ($this->has_model_instance($qm_model_item['name'], $row->{$alias . ':id'})) {
-            $model_instance = $this->get_model_instance($qm_model_item['name'], $row->{$alias . ':id'});
+        if ($this->has_model_instance($finder_model_item['name'], $row->{$alias . ':id'})) {
+            $model_instance = $this->get_model_instance($finder_model_item['name'], $row->{$alias . ':id'});
 
-            foreach ($models_metadata->get_basic_properties($qm_model_item['name']) as $basic_property) {
+            foreach ($models_metadata->get_basic_properties($finder_model_item['name']) as $basic_property) {
                 $model_instance->{'set_' . $basic_property}($created_model_instance->{'get_' . $basic_property}());
             }
 

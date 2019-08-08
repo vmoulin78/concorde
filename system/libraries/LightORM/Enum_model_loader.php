@@ -77,7 +77,8 @@ class Enum_model_loader
      * @return  void
      */
     private function load_enum_model($model_short_name) {
-        $models_metadata = Models_metadata::get_singleton();
+        $models_metadata  = Models_metadata::get_singleton();
+        $data_conv        = Data_conv::factory();
 
         if (isset($this->enum_models[$model_short_name])) {
             return;
@@ -85,16 +86,24 @@ class Enum_model_loader
 
         $model_full_name = $models_metadata->models[$model_short_name]['model_full_name'];
 
-        $qm         = new Query_manager();
-        $associate  = new Business_associations_associate($model_short_name);
-        $model_full_name::business_initialization($qm, $associate);
+        $qm = new Query_manager();
+
+        $table_object = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
+        $table_object->business_selection($qm);
+
+        $qm->from($table_object->name);
 
         $query = $qm->get();
 
         $enum_model_items = array();
         foreach ($query->result() as $row) {
             $qm->convert_row($row);
-            $enum_model_items[$row->{'alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . ':id'}] = $model_full_name::business_creation($qm->models['model_' . LIGHTORM_START_MODEL_NUMBER], $row, $qm->aliases);
+
+            $args = $table_object->business_creation_args($row);
+
+            $instance = new $model_full_name(...$args);
+
+            $enum_model_items[$instance->get_id()] = $instance;
         }
 
         $this->enum_models[$model_short_name] = $enum_model_items;

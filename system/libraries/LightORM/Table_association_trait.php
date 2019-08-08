@@ -134,12 +134,12 @@ trait Table_association_trait
     /**
      * Manage the SELECT and JOIN parts of the query for the current Table_association_trait
      *
-     * @param   Query_manager                               $query_manager
+     * @param   Finder                                      $finder
      * @param   int                                         $table_alias_number
      * @param   Business_associations_associatonents_group  $associatonents_group
      * @return  int
      */
-    public static function business_initialization(Query_manager $query_manager, $table_alias_number, Business_associations_associatonents_group $associatonents_group) {
+    public static function business_initialization(Finder $finder, $table_alias_number, Business_associations_associatonents_group $associatonents_group) {
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
@@ -148,10 +148,13 @@ trait Table_association_trait
         $association_array         = $associations_metadata->get_association_array(['association' => self::get_business_short_name()]);
         $association_table_object  = $data_conv->schema[$association_array['table']];
 
-        $association_table_object->business_selection($query_manager, $association_table_alias);
+        $association_table_object->business_selection($finder->qm_main, $association_table_alias);
 
         // This is a "LEFT JOIN" because there could be no matching row
-        $query_manager->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+        $finder->qm_main->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+        if ($finder->has_offsetlimit_subquery) {
+            $finder->qm_offsetlimit_subquery->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+        }
 
         $table_alias_number++;
 
@@ -161,17 +164,17 @@ trait Table_association_trait
     /**
      * Create the Business object
      *
-     * @param   array   $qm_model_item
+     * @param   array   $finder_model_item
      * @param   object  $row
      * @param   array   $qm_aliases
      * @return  object
      */
-    public static function business_creation($qm_model_item, $row, $qm_aliases) {
+    public static function business_creation($finder_model_item, $row, $qm_aliases) {
         $data_conv = Data_conv::factory();
 
-        $association_table_alias = $qm_model_item['associate']->associatound_associatonents_group->joining_alias;
+        $association_table_alias = $finder_model_item['associate']->associatound_associatonents_group->joining_alias;
 
-        if (is_null($row->{$association_table_alias . ':' . $qm_model_item['associate']->joining_field})) {
+        if (is_null($row->{$association_table_alias . ':' . $finder_model_item['associate']->joining_field})) {
             return null;
         }
 

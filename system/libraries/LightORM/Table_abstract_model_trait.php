@@ -88,14 +88,14 @@ trait Table_abstract_model_trait
     /**
      * Manage the SELECT, FROM and JOIN parts of the query for the current Table_abstract_model_trait
      *
-     * @param   Query_manager                    $query_manager
+     * @param   Finder                           $finder
      * @param   Business_associations_associate  $associate
      * @param   int                              $table_alias_number
      * @param   int                              $model_number
      * @param   array                            $associatonents_properties
      * @return  array
      */
-    public static function business_initialization(Query_manager $query_manager, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $associatonents_properties = []) {
+    public static function business_initialization(Finder $finder, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $associatonents_properties = []) {
         $models_metadata  = Models_metadata::get_singleton();
         $data_conv        = Data_conv::factory();
 
@@ -107,13 +107,20 @@ trait Table_abstract_model_trait
         $table_alias          = 'alias_' . $table_alias_number;
         $model_numbered_name  = 'model_' . $model_number;
         $table_object         = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
-        $table_object->business_selection($query_manager, $table_alias);
+
+        $table_object->business_selection($finder->qm_main, $table_alias);
 
         if (is_null($associate->associatound_associatonents_group)) {
-            $query_manager->from($table_object->name . ' AS ' . $table_alias);
+            $finder->qm_main->from($table_object->name . ' AS ' . $table_alias);
+            if ($finder->has_offsetlimit_subquery) {
+                $finder->qm_offsetlimit_subquery->from($table_object->name . ' AS ' . $table_alias);
+            }
         } else {
             // This is a "LEFT JOIN" because there could be no matching row
-            $query_manager->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
+            $finder->qm_main->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
+            if ($finder->has_offsetlimit_subquery) {
+                $finder->qm_offsetlimit_subquery->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
+            }
         }
 
         $table_alias_number++;
@@ -129,9 +136,15 @@ trait Table_abstract_model_trait
 
             $table_concrete_model_alias   = 'alias_' . $table_alias_number;
             $table_concrete_model_object  = $data_conv->schema[$models_metadata->models[$table_concrete_model]['table']];
-            $table_concrete_model_object->business_selection($query_manager, $table_concrete_model_alias);
+
+            $table_concrete_model_object->business_selection($finder->qm_main, $table_concrete_model_alias);
+
             // This is a "LEFT JOIN" because there could be no matching row
-            $query_manager->join($table_concrete_model_object->name . ' AS ' . $table_concrete_model_alias, $table_concrete_model_alias . '.id = ' . $table_alias . '.id', 'left');
+            $finder->qm_main->join($table_concrete_model_object->name . ' AS ' . $table_concrete_model_alias, $table_concrete_model_alias . '.id = ' . $table_alias . '.id', 'left');
+            if ($finder->has_offsetlimit_subquery) {
+                $finder->qm_offsetlimit_subquery->join($table_concrete_model_object->name . ' AS ' . $table_concrete_model_alias, $table_concrete_model_alias . '.id = ' . $table_alias . '.id', 'left');
+            }
+
             $abstract_model_concrete_aliases[] = $table_concrete_model_alias;
             $table_alias_number++;
 
@@ -145,7 +158,7 @@ trait Table_abstract_model_trait
 
         $abstract_model_associatonents_properties = isset($associatonents_properties[$atom_path]) ? $associatonents_properties[$atom_path] : array();
 
-        $query_manager->models[$model_numbered_name] = array(
+        $finder->models[$model_numbered_name] = array(
             'name'        => $model_short_name,
             'associate'   => $associate,
             'model_info'  => array(
@@ -170,24 +183,24 @@ trait Table_abstract_model_trait
     /**
      * Create the Business object
      *
-     * @param   array   $qm_model_item
+     * @param   array   $finder_model_item
      * @param   object  $row
      * @param   array   $qm_aliases
      * @return  object
      */
-    public static function business_creation($qm_model_item, $row, $qm_aliases) {
+    public static function business_creation($finder_model_item, $row, $qm_aliases) {
         $models_metadata  = Models_metadata::get_singleton();
         $data_conv        = Data_conv::factory();
 
-        if ($qm_model_item['model_info']['type'] === 'abstract_model') {
-            if (is_null($row->{$qm_model_item['model_info']['abstract_alias'] . ':id'})) {
+        if ($finder_model_item['model_info']['type'] === 'abstract_model') {
+            if (is_null($row->{$finder_model_item['model_info']['abstract_alias'] . ':id'})) {
                 return null;
             }
 
-            $abstract_table_object  = $data_conv->schema[$models_metadata->models[$qm_model_item['name']]['table']];
-            $args                   = $abstract_table_object->business_creation_args($row, $qm_model_item['model_info']['abstract_alias']);
+            $abstract_table_object  = $data_conv->schema[$models_metadata->models[$finder_model_item['name']]['table']];
+            $args                   = $abstract_table_object->business_creation_args($row, $finder_model_item['model_info']['abstract_alias']);
 
-            foreach ($qm_model_item['model_info']['concrete_aliases'] as $abstract_model_concrete_alias) {
+            foreach ($finder_model_item['model_info']['concrete_aliases'] as $abstract_model_concrete_alias) {
                 if ( ! is_null($row->{$abstract_model_concrete_alias . ':id'})) {
                     $abstract_model_concrete_table = $qm_aliases[$abstract_model_concrete_alias];
                     foreach (self::get_table_concrete_models() as $table_concrete_model) {

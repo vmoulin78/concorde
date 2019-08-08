@@ -92,10 +92,10 @@ class Query_manager
     );
 
     private $CI;
-    public $stack;
+
     public $table; // The reference table
     public $aliases;
-    public $models;
+    public $stack;
 
     /**
      * The constructor
@@ -206,7 +206,6 @@ class Query_manager
     public function reset() {
         $this->table    = null;
         $this->aliases  = array();
-        $this->models   = array();
         $this->stack    = array();
     }
 

@@ -64,6 +64,11 @@ class Finder
     private $offset;
     private $limit;
 
+    public $qm_main;
+    public $qm_offsetlimit_subquery;
+    public $has_offsetlimit_subquery;
+    public $models;
+
     //------------------------------------------------------//
 
     /**
@@ -109,6 +114,8 @@ class Finder
         $this->stack             = array();
         $this->offset            = null;
         $this->limit             = null;
+
+        $this->soft_reset();
 
         //------------------------------------------------------//
 
@@ -189,6 +196,9 @@ class Finder
         if (in_array(
             $method,
             array(
+                'from',
+                'table',
+                'join',
                 'get_where',
                 'group_by',
                 'having',
@@ -206,6 +216,18 @@ class Finder
     }
 
     //------------------------------------------------------//
+
+    /**
+     * Process a soft reset
+     *
+     * @return  void
+     */
+    private function soft_reset() {
+        $this->qm_main                   = new Query_manager();
+        $this->qm_offsetlimit_subquery   = null;
+        $this->has_offsetlimit_subquery  = null;
+        $this->models                    = array();
+    }
 
     /**
      * This function is the recursive part of the function format_with()
@@ -673,13 +695,12 @@ class Finder
     /**
      * Manage the business initialization for the associations
      *
-     * @param   Query_manager                    $query_manager
      * @param   Business_associations_associate  $associate
      * @param   int                              $table_alias_number
      * @param   int                              $model_number
      * @return  array
      */
-    private function associations_business_initialization(Query_manager $query_manager, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER) {
+    private function associations_business_initialization(Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER) {
         $models_metadata        = Models_metadata::get_singleton();
         $associations_metadata  = Associations_metadata::get_singleton();
 
@@ -691,7 +712,7 @@ class Finder
         }
 
         $associate_table_alias = 'alias_' . $table_alias_number;
-        list($table_alias_number, $model_number) = $associate_full_name::business_initialization($query_manager, $associate, $table_alias_number, $model_number, $associatonents_properties);
+        list($table_alias_number, $model_number) = $associate_full_name::business_initialization($this, $associate, $table_alias_number, $model_number, $associatonents_properties);
 
         foreach ($associate->associatonents_groups as $associatonents_group) {
             $associatonents_group->associatound_atom_numbered_name  = $associate->atoms_numbered_names[$associatonents_group->associatound_atom_path];
@@ -703,7 +724,7 @@ class Finder
                 $association_table_alias = 'alias_' . $table_alias_number;
 
                 $association_full_name  = $association_array['class_full_name'];
-                $table_alias_number     = $association_full_name::business_initialization($query_manager, $table_alias_number, $associatonents_group);
+                $table_alias_number     = $association_full_name::business_initialization($this, $table_alias_number, $associatonents_group);
 
                 $associatonents_group->joining_alias = $association_table_alias;
             } else {
@@ -733,7 +754,7 @@ class Finder
                     $associatonent_instance->associatonent_field  = $associatonent_array['field'];
                 }
 
-                list($table_alias_number, $model_number) = $this->associations_business_initialization($query_manager, $associatonent_instance, $table_alias_number, $model_number);
+                list($table_alias_number, $model_number) = $this->associations_business_initialization($associatonent_instance, $table_alias_number, $model_number);
             }
         }
 
@@ -749,53 +770,50 @@ class Finder
     public function get($filter = null) {
         $associations_metadata = Associations_metadata::get_singleton();
 
-        $this->process_with();
-
-        $qm = new Query_manager();
-
-        $this->associations_business_initialization($qm, $this->associations);
-
         if ( ! is_null($filter)) {
             if (is_array($filter)) {
-                $qm->where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $filter);
+                $this->where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $filter);
             } else {
-                $qm->where('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $filter);
+                $this->where('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $filter);
             }
         }
-        $this->complete_query($qm);
 
-        //------------------------------------------------------//
+        $this->process_with();
 
-        if (( ! is_null($this->offset))
-            || ( ! is_null($this->limit))
+        if (is_null($this->offset)
+            && is_null($this->limit)
         ) {
-            $qm_subquery = clone $qm;
+            $this->has_offsetlimit_subquery = false;
+        } else {
+            $this->has_offsetlimit_subquery  = true;
+            $this->qm_offsetlimit_subquery   = new Query_manager();
+        }
 
-            $qm_subquery->stack = array();
-            foreach ($qm->stack as $item) {
-                if ($item['method'] !== 'select') {
-                    $qm_subquery->stack[] = $item;
-                }
-            }
+        $this->associations_business_initialization($this->associations);
 
-            $qm_subquery->select('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+        $this->complete_query($this->qm_main);
 
-            $qm_subquery->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+        if ($this->has_offsetlimit_subquery) {
+            $this->qm_offsetlimit_subquery->select('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+
+            $this->complete_query($this->qm_offsetlimit_subquery);
+
+            $this->qm_offsetlimit_subquery->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
 
             if ( ! is_null($this->offset)) {
-                $qm_subquery->offset($this->offset);
+                $this->qm_offsetlimit_subquery->offset($this->offset);
             }
 
             if ( ! is_null($this->limit)) {
-                $qm_subquery->limit($this->limit);
+                $this->qm_offsetlimit_subquery->limit($this->limit);
             }
 
-            $qm->simple_where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $qm_subquery->get_compiled_select(), false);
+            $this->qm_main->simple_where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $this->qm_offsetlimit_subquery->get_compiled_select(), false);
         }
 
         //------------------------------------------------------//
 
-        $query = $qm->get();
+        $query = $this->qm_main->get();
 
         $retour                            = array();
         $already_reinitialized_properties  = array();
@@ -804,13 +822,13 @@ class Finder
         $associations_instances            = array();
 
         foreach ($query->result() as $row) {
-            $qm->convert_row($row);
+            $this->qm_main->convert_row($row);
 
             $models_pool        = array();
             $associations_pool  = array();
 
-            foreach ($qm->models as $qm_model_key => $qm_model_item) {
-                $model_instance = $this->databubble->add_model_row($qm_model_item, $row, $qm->aliases);
+            foreach ($this->models as $finder_model_key => $finder_model_item) {
+                $model_instance = $this->databubble->add_model_row($finder_model_item, $row, $this->qm_main->aliases);
 
                 if ( ! is_null($model_instance)) {
                     $concrete_model_full_name  = get_class($model_instance);
@@ -819,17 +837,17 @@ class Finder
 
                     // We set to null or array() the associatonents properties that should not be undefined anymore
                     $associatonents_properties = array();
-                    switch ($qm_model_item['model_info']['type']) {
+                    switch ($finder_model_item['model_info']['type']) {
                         case 'simple_model':
-                            $associatonents_properties['concrete_model']  = $qm_model_item['model_info']['associatonents_properties'];
+                            $associatonents_properties['concrete_model']  = $finder_model_item['model_info']['associatonents_properties'];
                             break;
                         case 'concrete_model':
-                            $associatonents_properties['concrete_model']  = $qm_model_item['model_info']['associatonents_properties']['concrete_model'];
-                            $associatonents_properties['abstract_model']  = $qm_model_item['model_info']['associatonents_properties']['abstract_model'];
+                            $associatonents_properties['concrete_model']  = $finder_model_item['model_info']['associatonents_properties']['concrete_model'];
+                            $associatonents_properties['abstract_model']  = $finder_model_item['model_info']['associatonents_properties']['abstract_model'];
                             break;
                         case 'abstract_model':
-                            $associatonents_properties['abstract_model']  = $qm_model_item['model_info']['associatonents_properties']['abstract_model'];
-                            $associatonents_properties['concrete_model']  = $qm_model_item['model_info']['associatonents_properties']['concrete_models'][$concrete_model];
+                            $associatonents_properties['abstract_model']  = $finder_model_item['model_info']['associatonents_properties']['abstract_model'];
+                            $associatonents_properties['concrete_model']  = $finder_model_item['model_info']['associatonents_properties']['concrete_models'][$concrete_model];
                             break;
                         default:
                             exit(1);
@@ -865,17 +883,17 @@ class Finder
                     }
                 }
 
-                $models_pool[$qm_model_key] = $model_instance;
+                $models_pool[$finder_model_key] = $model_instance;
             }
 
-            foreach ($qm->models as $qm_model_key => $qm_model_item) {
-                $current_model = $models_pool[$qm_model_key];
+            foreach ($this->models as $finder_model_key => $finder_model_item) {
+                $current_model = $models_pool[$finder_model_key];
 
                 if (is_null($current_model)) {
                     continue;
                 }
 
-                if (is_null($qm_model_item['associate']->associatound_associatonents_group)) {
+                if (is_null($finder_model_item['associate']->associatound_associatonents_group)) {
                     if (in_array($current_model->get_id(), $already_managed_retour_ids)) {
                         // To avoid having duplicate models in the variable $retour
                         continue;
@@ -884,13 +902,13 @@ class Finder
                     $retour[]                      = $current_model;
                     $already_managed_retour_ids[]  = $current_model->get_id();
                 } else {
-                    $association_numbered_name        = $qm_model_item['associate']->associatound_associatonents_group->association_numbered_name;
-                    $associatound_atom_numbered_name  = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_numbered_name;
-                    $associatound_atom_model          = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_model;
-                    $associatound_atom_property       = $qm_model_item['associate']->associatound_associatonents_group->associatound_atom_property;
+                    $association_numbered_name        = $finder_model_item['associate']->associatound_associatonents_group->association_numbered_name;
+                    $associatound_atom_numbered_name  = $finder_model_item['associate']->associatound_associatonents_group->associatound_atom_numbered_name;
+                    $associatound_atom_model          = $finder_model_item['associate']->associatound_associatonents_group->associatound_atom_model;
+                    $associatound_atom_property       = $finder_model_item['associate']->associatound_associatonents_group->associatound_atom_property;
 
-                    if (isset($already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
-                        && in_array($associatound_atom_property, $already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
+                    if (isset($already_managed_associations[$finder_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
+                        && in_array($associatound_atom_property, $already_managed_associations[$finder_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()])
                     ) {
                         // To avoid having duplicate models in the associations
                         continue;
@@ -926,7 +944,7 @@ class Finder
                         case 'many_to_many':
                             $association_short_name   = $association_array['class'];
                             $association_full_name    = $association_array['class_full_name'];
-                            $association_table_alias  = $qm_model_item['associate']->associatound_associatonents_group->joining_alias;
+                            $association_table_alias  = $finder_model_item['associate']->associatound_associatonents_group->joining_alias;
 
                             if ( ! isset($associations_pool[$associatound_atom_numbered_name][$associatound_atom_property])) {
                                 $association_primary_key_ids = array();
@@ -936,7 +954,7 @@ class Finder
                                 $association_primary_key_scalar = implode(':', $association_primary_key_ids);
 
                                 if ( ! isset($associations_instances[$association_short_name][$association_primary_key_scalar])) {
-                                    $associations_instances[$association_short_name][$association_primary_key_scalar] = $association_full_name::business_creation($qm_model_item, $row, $qm->aliases);
+                                    $associations_instances[$association_short_name][$association_primary_key_scalar] = $association_full_name::business_creation($finder_model_item, $row, $this->qm_main->aliases);
                                 }
 
                                 $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $associations_instances[$association_short_name][$association_primary_key_scalar];
@@ -958,8 +976,8 @@ class Finder
 
                             $associate_array = $associations_metadata->get_associate_array(
                                 array(
-                                    'model'     => $qm_model_item['name'],
-                                    'property'  => $qm_model_item['associate']->property,
+                                    'model'     => $finder_model_item['name'],
+                                    'property'  => $finder_model_item['associate']->property,
                                 )
                             );
                             $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property]->{'set_' . $associate_array['reverse_property']}($current_model);
@@ -969,7 +987,7 @@ class Finder
                             break;
                     }
 
-                    $already_managed_associations[$qm_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()][] = $associatound_atom_property;
+                    $already_managed_associations[$finder_model_key][$current_model->get_id()][$associatound_atom_numbered_name][$models_pool[$associatound_atom_numbered_name]->get_id()][] = $associatound_atom_property;
                 }
             }
         }
@@ -992,6 +1010,10 @@ class Finder
             $dimension = $this->dimension;
         }
 
-        return $this->format_return($retour, $dimension);
+        $retour = $this->format_return($retour, $dimension);
+
+        $this->soft_reset();
+
+        return $retour;
     }
 }
