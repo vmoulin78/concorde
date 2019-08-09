@@ -64,8 +64,8 @@ class Finder
     private $offset;
     private $limit;
 
-    public $qm_main;
-    public $qm_offsetlimit_subquery;
+    public $main_qm;
+    public $offsetlimit_subquery_qm;
     public $has_offsetlimit_subquery;
     public $models;
 
@@ -223,8 +223,8 @@ class Finder
      * @return  void
      */
     private function soft_reset() {
-        $this->qm_main                   = new Query_manager();
-        $this->qm_offsetlimit_subquery   = null;
+        $this->main_qm                   = new Query_manager();
+        $this->offsetlimit_subquery_qm   = null;
         $this->has_offsetlimit_subquery  = null;
         $this->models                    = array();
     }
@@ -786,34 +786,34 @@ class Finder
             $this->has_offsetlimit_subquery = false;
         } else {
             $this->has_offsetlimit_subquery  = true;
-            $this->qm_offsetlimit_subquery   = new Query_manager();
+            $this->offsetlimit_subquery_qm   = new Query_manager();
         }
 
         $this->associations_business_initialization($this->associations);
 
-        $this->complete_query($this->qm_main);
+        $this->complete_query($this->main_qm);
 
         if ($this->has_offsetlimit_subquery) {
-            $this->qm_offsetlimit_subquery->select('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+            $this->offsetlimit_subquery_qm->select('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
 
-            $this->complete_query($this->qm_offsetlimit_subquery);
+            $this->complete_query($this->offsetlimit_subquery_qm);
 
-            $this->qm_offsetlimit_subquery->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
+            $this->offsetlimit_subquery_qm->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
 
             if ( ! is_null($this->offset)) {
-                $this->qm_offsetlimit_subquery->offset($this->offset);
+                $this->offsetlimit_subquery_qm->offset($this->offset);
             }
 
             if ( ! is_null($this->limit)) {
-                $this->qm_offsetlimit_subquery->limit($this->limit);
+                $this->offsetlimit_subquery_qm->limit($this->limit);
             }
 
-            $this->qm_main->simple_where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $this->qm_offsetlimit_subquery->get_compiled_select(), false);
+            $this->main_qm->simple_where_in('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id', $this->offsetlimit_subquery_qm->get_compiled_select(), false);
         }
 
         //------------------------------------------------------//
 
-        $query = $this->qm_main->get();
+        $query = $this->main_qm->get();
 
         $retour                            = array();
         $already_reinitialized_properties  = array();
@@ -822,13 +822,13 @@ class Finder
         $associations_instances            = array();
 
         foreach ($query->result() as $row) {
-            $this->qm_main->convert_row($row);
+            $this->main_qm->convert_row($row);
 
             $models_pool        = array();
             $associations_pool  = array();
 
             foreach ($this->models as $finder_model_key => $finder_model_item) {
-                $model_instance = $this->databubble->add_model_row($finder_model_item, $row, $this->qm_main->aliases);
+                $model_instance = $this->databubble->add_model_row($finder_model_item, $row, $this->main_qm->aliases);
 
                 if ( ! is_null($model_instance)) {
                     $concrete_model_full_name  = get_class($model_instance);
@@ -954,7 +954,7 @@ class Finder
                                 $association_primary_key_scalar = implode(':', $association_primary_key_ids);
 
                                 if ( ! isset($associations_instances[$association_short_name][$association_primary_key_scalar])) {
-                                    $associations_instances[$association_short_name][$association_primary_key_scalar] = $association_full_name::business_creation($finder_model_item, $row, $this->qm_main->aliases);
+                                    $associations_instances[$association_short_name][$association_primary_key_scalar] = $association_full_name::business_creation($finder_model_item, $row, $this->main_qm->aliases);
                                 }
 
                                 $associations_pool[$associatound_atom_numbered_name][$associatound_atom_property] = $associations_instances[$association_short_name][$association_primary_key_scalar];

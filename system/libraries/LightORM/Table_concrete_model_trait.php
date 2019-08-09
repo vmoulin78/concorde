@@ -129,18 +129,18 @@ trait Table_concrete_model_trait
         $model_numbered_name  = 'model_' . $model_number;
         $table_object         = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
 
-        $table_object->business_selection($finder->qm_main, $table_alias);
+        $table_object->business_selection($finder->main_qm, $table_alias);
 
         if (is_null($associate->associatound_associatonents_group)) {
-            $finder->qm_main->from($table_object->name . ' AS ' . $table_alias);
+            $finder->main_qm->from($table_object->name . ' AS ' . $table_alias);
             if ($finder->has_offsetlimit_subquery) {
-                $finder->qm_offsetlimit_subquery->from($table_object->name . ' AS ' . $table_alias);
+                $finder->offsetlimit_subquery_qm->from($table_object->name . ' AS ' . $table_alias);
             }
         } else {
             // This is a "LEFT JOIN" because there could be no matching row
-            $finder->qm_main->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
+            $finder->main_qm->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
             if ($finder->has_offsetlimit_subquery) {
-                $finder->qm_offsetlimit_subquery->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
+                $finder->offsetlimit_subquery_qm->join($table_object->name . ' AS ' . $table_alias, $table_alias . '.' . $associate->associatonent_field . ' = ' . $associate->associatound_associatonents_group->joining_alias . '.' . $associate->joining_field, 'left');
             }
         }
 
@@ -159,12 +159,12 @@ trait Table_concrete_model_trait
 
             $abstract_table_object = $data_conv->schema[$abstract_table];
 
-            $abstract_table_object->business_selection($finder->qm_main, $abstract_table_alias);
+            $abstract_table_object->business_selection($finder->main_qm, $abstract_table_alias);
 
             // This is a "LEFT JOIN" because there could be no matching row
-            $finder->qm_main->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
+            $finder->main_qm->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
             if ($finder->has_offsetlimit_subquery) {
-                $finder->qm_offsetlimit_subquery->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
+                $finder->offsetlimit_subquery_qm->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
             }
 
             $table_alias_number++;

@@ -148,12 +148,12 @@ trait Table_association_trait
         $association_array         = $associations_metadata->get_association_array(['association' => self::get_business_short_name()]);
         $association_table_object  = $data_conv->schema[$association_array['table']];
 
-        $association_table_object->business_selection($finder->qm_main, $association_table_alias);
+        $association_table_object->business_selection($finder->main_qm, $association_table_alias);
 
         // This is a "LEFT JOIN" because there could be no matching row
-        $finder->qm_main->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+        $finder->main_qm->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
         if ($finder->has_offsetlimit_subquery) {
-            $finder->qm_offsetlimit_subquery->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
+            $finder->offsetlimit_subquery_qm->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
         }
 
         $table_alias_number++;
