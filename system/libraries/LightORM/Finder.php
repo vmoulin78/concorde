@@ -798,8 +798,6 @@ class Finder
 
             $this->complete_query($this->offsetlimit_subquery_qm);
 
-            $this->offsetlimit_subquery_qm->group_by('alias_' . LIGHTORM_START_TABLE_ALIAS_NUMBER . '.id');
-
             if ( ! is_null($this->offset)) {
                 $this->offsetlimit_subquery_qm->offset($this->offset);
             }

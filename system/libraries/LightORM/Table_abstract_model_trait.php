@@ -114,6 +114,7 @@ trait Table_abstract_model_trait
             $finder->main_qm->from($table_object->name . ' AS ' . $table_alias);
             if ($finder->has_offsetlimit_subquery) {
                 $finder->offsetlimit_subquery_qm->from($table_object->name . ' AS ' . $table_alias);
+                $finder->offsetlimit_subquery_qm->group_by($table_alias . '.id');
             }
         } else {
             // This is a "LEFT JOIN" because there could be no matching row
@@ -143,6 +144,9 @@ trait Table_abstract_model_trait
             $finder->main_qm->join($table_concrete_model_object->name . ' AS ' . $table_concrete_model_alias, $table_concrete_model_alias . '.id = ' . $table_alias . '.id', 'left');
             if ($finder->has_offsetlimit_subquery) {
                 $finder->offsetlimit_subquery_qm->join($table_concrete_model_object->name . ' AS ' . $table_concrete_model_alias, $table_concrete_model_alias . '.id = ' . $table_alias . '.id', 'left');
+                if (is_null($associate->associatound_associatonents_group)) {
+                    $finder->offsetlimit_subquery_qm->group_by($table_concrete_model_alias . '.id');
+                }
             }
 
             $abstract_model_concrete_aliases[] = $table_concrete_model_alias;
