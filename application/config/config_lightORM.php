@@ -6,7 +6,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | The Data Conversion for LightORM
 |--------------------------------------------------------------------------
 |
-| Define the type of each field of the database
+| List all the database tables and define the type of each field
 |
 | Example:
 |
@@ -89,12 +89,14 @@ $config['lightORM_data_conv'] = array();
 
 /*
 |--------------------------------------------------------------------------
-| The Business Models for LightORM
+| The Mapping Models for LightORM
 |--------------------------------------------------------------------------
+|
+| List the models present in the folder ./application/business/models and related to a database table
 |
 | Example:
 |
-| $config['lightORM_business_models'] = array(
+| $config['lightORM_mapping_models'] = array(
 |     'Article'      => [],
 |     'Author'       => [],
 |     'Comment'      => [],
@@ -109,16 +111,16 @@ $config['lightORM_data_conv'] = array();
 | );
 |
 */
-$config['lightORM_business_models'] = array();
+$config['lightORM_mapping_models'] = array();
 
 /*
 |--------------------------------------------------------------------------
-| The Business Associations for LightORM
+| The Mapping Associations for LightORM
 |--------------------------------------------------------------------------
 |
 | Example:
 |
-| $config['lightORM_business_associations'] = array(
+| $config['lightORM_mapping_associations'] = array(
 |     array(
 |         'associates' => array(
 |             array(
@@ -272,4 +274,4 @@ $config['lightORM_business_models'] = array();
 | );
 |
 */
-$config['lightORM_business_associations'] = array();
+$config['lightORM_mapping_associations'] = array();

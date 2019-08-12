@@ -59,7 +59,7 @@ class Associations_metadata
         $this->CI =& get_instance();
 
         $association_number = 1;
-        foreach ($this->CI->config->item('lightORM_business_associations') as $config_association) {
+        foreach ($this->CI->config->item('lightORM_mapping_associations') as $config_association) {
             $association_array = array();
 
             $there_is_one   = false;

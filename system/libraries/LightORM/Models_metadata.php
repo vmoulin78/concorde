@@ -61,7 +61,7 @@ class Models_metadata
         $this->CI =& get_instance();
 
         $this->models = array();
-        foreach ($this->CI->config->item('lightORM_business_models') as $model => $config_model) {
+        foreach ($this->CI->config->item('lightORM_mapping_models') as $model => $config_model) {
             if (isset($config_model['table'])) {
                 $table = $config_model['table'];
             } else {
@@ -122,7 +122,6 @@ class Models_metadata
      * @return  string
      */
     public function get_table_abstract_model($table_concrete_model) {
-        $CI =& get_instance();
         $models_metadata = Models_metadata::get_singleton();
 
         if (isset($this->table_concrete_models[$table_concrete_model])) {
@@ -131,26 +130,20 @@ class Models_metadata
 
         $table_concrete_model_full_name = $models_metadata->models[$table_concrete_model]['model_full_name'];
 
-        $parent_class_full_name   = get_parent_class($table_concrete_model_full_name);
-        $parent_class_short_name  = $parent_class_full_name::get_business_short_name();
+        $retour = null;
 
-        if ($parent_class_full_name === false) {
-            return ($this->table_concrete_models[$table_concrete_model] = null);
+        foreach ($models_metadata->models as $key => $item) {
+            $item_model_full_name = $item['model_full_name'];
+
+            if (is_subclass_of($table_concrete_model_full_name, $item_model_full_name)
+                && is_table_abstract_model($item_model_full_name)
+            ) {
+                $retour = $key;
+                break;
+            }
         }
 
-        $parent_class_reflection = new \ReflectionClass($parent_class_full_name);
-        $parent_class_namespace_name = $parent_class_reflection->getNamespaceName();
-
-        if ($parent_class_namespace_name != ($CI->config->item('application_namespace') . '\\business\\models')) {
-            return ($this->table_concrete_models[$table_concrete_model] = null);
-        }
-
-        $parent_class_trait_names = $parent_class_reflection->getTraitNames();
-        if (in_array('LightORM\\Table_abstract_model_trait', $parent_class_trait_names)) {
-            return ($this->table_concrete_models[$table_concrete_model] = $parent_class_short_name);
-        }
-
-        return ($this->table_concrete_models[$table_concrete_model] = $this->get_table_abstract_model($parent_class_short_name));
+        return ($this->table_concrete_models[$table_concrete_model] = $retour);
     }
 
     /**
@@ -166,27 +159,17 @@ class Models_metadata
             return $this->table_abstract_models[$table_abstract_model];
         }
 
+        $table_abstract_model_full_name = $models_metadata->models[$table_abstract_model]['model_full_name'];
+
         $retour = array();
 
-        foreach (scandir(APPPATH . 'business' . DIRECTORY_SEPARATOR . 'models') as $item) {
-            $item_array = explode('.', $item);
+        foreach ($models_metadata->models as $key => $item) {
+            $item_model_full_name = $item['model_full_name'];
 
-            if (count($item_array) != 2) {
-                continue;
-            }
-
-            list($item_main, $item_ext) = $item_array;
-
-            if ($item_ext != 'php') {
-                continue;
-            }
-
-            $item_main_full_name = $models_metadata->models[$item_main]['model_full_name'];
-
-            if (is_subclass_of($item_main_full_name, $models_metadata->models[$table_abstract_model]['model_full_name'])
-                && is_table_concrete_model($item_main_full_name)
+            if (is_subclass_of($item_model_full_name, $table_abstract_model_full_name)
+                && is_table_concrete_model($item_model_full_name)
             ) {
-                $retour[] = $item_main;
+                $retour[] = $key;
             }
         }
 
