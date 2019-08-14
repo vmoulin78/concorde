@@ -54,6 +54,7 @@ class Models_metadata
     private $CI;
     public $models;
     private $basic_properties;
+    private $association_properties;
     private $table_concrete_models;
     private $table_abstract_models;
     
@@ -74,9 +75,10 @@ class Models_metadata
             );
         }
 
-        $this->basic_properties       = array();
-        $this->table_concrete_models  = array();
-        $this->table_abstract_models  = array();
+        $this->basic_properties        = array();
+        $this->association_properties  = array();
+        $this->table_concrete_models   = array();
+        $this->table_abstract_models   = array();
     }
 
     /**
@@ -113,6 +115,32 @@ class Models_metadata
         }
 
         return $this->basic_properties[$model];
+    }
+
+    /**
+     * Get the association properties of the model $model
+     *
+     * @param   string  $model
+     * @return  array
+     */
+    public function get_association_properties($model) {
+        $associations_metadata = Associations_metadata::get_singleton();
+
+        if (isset($this->association_properties[$model])) {
+            return $this->association_properties[$model];
+        }
+
+        $this->association_properties[$model] = array();
+
+        foreach ($associations_metadata->associations as $association_array) {
+            foreach ($association_array['associates'] as $associate) {
+                if ($associate['model'] === $model) {
+                    $this->association_properties[$model][] = $associate['property'];
+                }
+            }
+        }
+
+        return $this->association_properties[$model];
     }
 
     /**

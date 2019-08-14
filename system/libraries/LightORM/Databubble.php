@@ -233,19 +233,20 @@ class Databubble
 
         $model_full_name = $models_metadata->models[$model_short_name]['model_full_name'];
 
-        $basic_properties = $models_metadata->get_basic_properties($model_short_name);
+        $basic_properties        = $models_metadata->get_basic_properties($model_short_name);
+        $association_properties  = $models_metadata->get_association_properties($model_short_name);
 
         $data_for_insert_query  = array();
         $associations_data      = array();
         foreach ($data as $property => $value) {
             if (in_array($property, $basic_properties)) {
                 $data_for_insert_query[$property] = $value;
-            } else {
+            } elseif (in_array($property, $association_properties)) {
                 if (( ! is_null($value))
                     && ( ! is_object($value))
                     && ( ! is_array($value))
                 ) {
-                    trigger_error('LightORM error: Property value error', E_USER_ERROR);
+                    trigger_error("LightORM error: Invalid value for the property '" . $property . "'", E_USER_ERROR);
                 }
 
                 if (is_object($value)
@@ -253,22 +254,24 @@ class Databubble
                 ) {
                     $associations_data[$property] = $value;
                 }
+            } else {
+                trigger_error("LightORM error: Unknown property name '" . $property . "' for the model '" . $model_short_name . "'", E_USER_ERROR);
             }
         }
 
-        $association_properties        = array();
-        $opposite_instances_to_manage  = array();
-        $remaining_associations_data   = array();
+        $association_properties_values  = array();
+        $opposite_instances_to_manage   = array();
+        $remaining_associations_data    = array();
         foreach ($associations_metadata->associations as $association_array) {
             foreach ($association_array['associates'] as $associate) {
-                if ($associate['model'] == $model_short_name) {
+                if ($associate['model'] === $model_short_name) {
                     switch ($associate['dimension']) {
                         case 'one':
-                            $association_properties[$associate['property']] = null;
+                            $association_properties_values[$associate['property']] = null;
                             break;
 
                         case 'many':
-                            $association_properties[$associate['property']] = array();
+                            $association_properties_values[$associate['property']] = array();
                             break;
 
                         default:
@@ -276,14 +279,18 @@ class Databubble
                             break;
                     }
 
-                    if ($associate['field'] !== 'id') {
+                    if ($associate['field'] === 'id') {
+                        if (isset($associations_data[$associate['property']])) {
+                            $remaining_associations_data[$association_array['type']][$associate['property']] = $associations_data[$associate['property']];
+                        }
+                    } else {
                         if (isset($associations_data[$associate['property']])) {
                             if ($associations_data[$associate['property']]->databubble !== $this) {
                                 trigger_error('LightORM error: The databubble of the associate must be the current one', E_USER_ERROR);
                             }
 
-                            $association_properties[$associate['property']]  = $associations_data[$associate['property']];
-                            $data_for_insert_query[$associate['field']]      = $associations_data[$associate['property']]->get_id();
+                            $association_properties_values[$associate['property']]  = $associations_data[$associate['property']];
+                            $data_for_insert_query[$associate['field']]             = $associations_data[$associate['property']]->get_id();
 
                             list($opposite_associate_array) = $associations_metadata->get_opposite_associates_arrays(
                                 array(
@@ -299,10 +306,6 @@ class Databubble
                         } else {
                             $data_for_insert_query[$associate['field']] = null;
                         }
-                    } else {
-                        if (isset($associations_data[$associate['property']])) {
-                            $remaining_associations_data[$association_array['type']][$associate['property']] = $associations_data[$associate['property']];
-                        }
                     }
                 }
             }
@@ -317,7 +320,7 @@ class Databubble
         $finder = new Finder($model_short_name, $this);
         $inserted_instance = $finder->get($insert_id);
 
-        foreach ($association_properties as $property => $value) {
+        foreach ($association_properties_values as $property => $value) {
             $inserted_instance->{'set_' . $property}($value);
         }
 
