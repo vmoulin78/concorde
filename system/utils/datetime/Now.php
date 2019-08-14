@@ -53,6 +53,11 @@ class Now
 
     private $value;
 
+    //------------------------------------------------------//
+
+    /**
+     * The constructor
+     */
     private function __construct() {
         $this->reset();
     }

@@ -53,7 +53,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Mysql_time extends Dbms_datetime_mysql
 {
+    /**
+     * The constructor
+     */
     public function __construct($value = 'now') {
+        parent::__construct();
+
         if ($value === 'now') {
             $value = new \DateTime();
         }

@@ -51,6 +51,13 @@ abstract class Dbms_datetime
 {
     protected $value;
 
+    //------------------------------------------------------//
+
+    /**
+     * The constructor
+     */
+    public function __construct() {}
+
     /**
      * Get the value
      *

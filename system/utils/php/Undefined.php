@@ -48,4 +48,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @link        
  */
 class Undefined
-{}
+{
+    /**
+     * The constructor
+     */
+    public function __construct() {}
+}

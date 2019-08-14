@@ -52,7 +52,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Pgsql_timestamptz extends Dbms_datetime_pgsql
 {
+    /**
+     * The constructor
+     */
     public function __construct($value = 'now') {
+        parent::__construct();
+
         if ($value === 'now') {
             $value = new \DateTime();
         }
