@@ -58,14 +58,14 @@ trait Table_enum_model_trait
      * @return  mixed
      */
     public static function find($filter = null) {
-        $enum_model_loader = Enum_model_loader::get_singleton();
+        $enum_models_loader = Enum_models_loader::get_singleton();
 
         $model_short_name = self::get_business_short_name();
 
         if (is_null($filter)) {
-            return $enum_model_loader->get_all($model_short_name);
+            return $enum_models_loader->get_all($model_short_name);
         } else {
-            return $enum_model_loader->get_by_id($model_short_name, $filter);
+            return $enum_models_loader->get_by_id($model_short_name, $filter);
         }
     }
 
@@ -76,10 +76,10 @@ trait Table_enum_model_trait
      * @return  mixed
      */
     public static function find_by_name($filter) {
-        $enum_model_loader = Enum_model_loader::get_singleton();
+        $enum_models_loader = Enum_models_loader::get_singleton();
 
         $model_short_name = self::get_business_short_name();
 
-        return $enum_model_loader->get_by_name($model_short_name, $filter);
+        return $enum_models_loader->get_by_name($model_short_name, $filter);
     }
 }

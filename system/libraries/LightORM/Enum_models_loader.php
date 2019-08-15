@@ -39,7 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Enum_model_loader Class
+ * Enum_models_loader Class
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -47,7 +47,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-class Enum_model_loader
+class Enum_models_loader
 {
     private static $singleton = null;
 
