@@ -33,7 +33,7 @@ namespace Concorde\utils\datetime;
  * @copyright   Copyright (c) 2019, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
- * @since       Version 0.0.0
+ * @since       Version 1.0.0
  * @filesource
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
@@ -92,11 +92,11 @@ abstract class Dbms_datetime
     }
 
     /**
-     * Compare the current dbms_datetime to the dbms_datetime $arg1
+     * Compare the current Dbms_datetime to the Dbms_datetime $arg1
      * Return :
-     *     0   if the current dbms_datetime is equal to the dbms_datetime $arg1
-     *     1   if the current dbms_datetime is greater than the dbms_datetime $arg1
-     *     -1  if the current dbms_datetime is less than the dbms_datetime $arg1
+     *     0   if the current Dbms_datetime is equal to the Dbms_datetime $arg1
+     *     1   if the current Dbms_datetime is greater than the Dbms_datetime $arg1
+     *     -1  if the current Dbms_datetime is less than the Dbms_datetime $arg1
      *
      * @param   Dbms_datetime  $arg1
      * @return  int
@@ -115,7 +115,7 @@ abstract class Dbms_datetime
     }
 
     /**
-     * Return true if the current dbms_datetime equals the dbms_datetime $arg1 and false otherwise
+     * Return true if the current Dbms_datetime equals the Dbms_datetime $arg1 and false otherwise
      *
      * @param   Dbms_datetime  $arg1
      * @return  bool

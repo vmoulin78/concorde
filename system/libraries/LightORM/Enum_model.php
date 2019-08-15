@@ -33,7 +33,7 @@ namespace LightORM;
  * @copyright   Copyright (c) 2019, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
- * @since       Version 0.0.0
+ * @since       Version 1.0.0
  * @filesource
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
@@ -91,5 +91,19 @@ abstract class Enum_model extends Model
      */
     public static function find_name($id) {
         return (self::find($id))->get_name();
+    }
+
+    /**
+     * Return true if the current Enum_model equals the Enum_model $arg1 and false otherwise
+     *
+     * @param   Enum_model  $arg1
+     * @return  bool
+     */
+    public function equals(Enum_model $arg1) {
+        if ($this->get_id() === $arg1->get_id()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
