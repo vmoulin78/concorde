@@ -90,12 +90,10 @@ trait Table_abstract_model_trait
      *
      * @param   Finder                           $finder
      * @param   Business_associations_associate  $associate
-     * @param   int                              $table_alias_number
-     * @param   int                              $model_number
      * @param   array                            $associatonents_properties
-     * @return  array
+     * @return  void
      */
-    public static function business_initialization(Finder $finder, Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER, array $associatonents_properties = []) {
+    public static function business_initialization(Finder $finder, Business_associations_associate $associate, array $associatonents_properties = []) {
         $models_metadata  = Models_metadata::get_singleton();
         $data_conv        = Data_conv::factory();
 
@@ -104,8 +102,8 @@ trait Table_abstract_model_trait
 
         //----------------------------------------------------------------------------//
 
-        $table_alias          = 'alias_' . $table_alias_number;
-        $model_numbered_name  = 'model_' . $model_number;
+        $table_alias          = $finder->get_next_table_alias_numbered_name();
+        $model_numbered_name  = $finder->get_next_model_numbered_name();
         $table_object         = $data_conv->schema[$models_metadata->models[$model_short_name]['table']];
 
         $table_object->business_selection($finder->main_qm, $table_alias);
@@ -124,9 +122,6 @@ trait Table_abstract_model_trait
             }
         }
 
-        $table_alias_number++;
-        $model_number++;
-
         //----------------------------------------------------------------------------//
 
         $table_concrete_models                      = self::get_table_concrete_models();
@@ -135,7 +130,7 @@ trait Table_abstract_model_trait
         foreach ($table_concrete_models as $table_concrete_model) {
             $table_concrete_model_atom_path = $atom_path . '>' . $table_concrete_model;
 
-            $table_concrete_model_alias   = 'alias_' . $table_alias_number;
+            $table_concrete_model_alias   = $finder->get_next_table_alias_numbered_name();
             $table_concrete_model_object  = $data_conv->schema[$models_metadata->models[$table_concrete_model]['table']];
 
             $table_concrete_model_object->business_selection($finder->main_qm, $table_concrete_model_alias);
@@ -150,7 +145,6 @@ trait Table_abstract_model_trait
             }
 
             $abstract_model_concrete_aliases[] = $table_concrete_model_alias;
-            $table_alias_number++;
 
             $associate->atoms_numbered_names[$table_concrete_model_atom_path]  = $model_numbered_name;
             $associate->atoms_aliases[$table_concrete_model_atom_path]         = $table_concrete_model_alias;
@@ -178,10 +172,6 @@ trait Table_abstract_model_trait
 
         $associate->atoms_numbered_names[$atom_path]  = $model_numbered_name;
         $associate->atoms_aliases[$atom_path]         = $table_alias;
-
-        //----------------------------------------------------------------------------//
-
-        return [$table_alias_number, $model_number];
     }
 
     /**

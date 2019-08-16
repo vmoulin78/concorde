@@ -135,15 +135,14 @@ trait Table_association_trait
      * Manage the SELECT and JOIN parts of the query for the current Table_association_trait
      *
      * @param   Finder                                      $finder
-     * @param   int                                         $table_alias_number
      * @param   Business_associations_associatonents_group  $associatonents_group
-     * @return  int
+     * @return  void
      */
-    public static function business_initialization(Finder $finder, $table_alias_number, Business_associations_associatonents_group $associatonents_group) {
+    public static function business_initialization(Finder $finder, Business_associations_associatonents_group $associatonents_group) {
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
-        $association_table_alias = 'alias_' . $table_alias_number;
+        $association_table_alias = $finder->get_next_table_alias_numbered_name();
 
         $association_array         = $associations_metadata->get_association_array(['association' => self::get_business_short_name()]);
         $association_table_object  = $data_conv->schema[$association_array['table']];
@@ -156,9 +155,7 @@ trait Table_association_trait
             $finder->offsetlimit_subquery_qm->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
         }
 
-        $table_alias_number++;
-
-        return $table_alias_number;
+        $associatonents_group->joining_alias = $association_table_alias;
     }
 
     /**

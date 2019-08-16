@@ -64,6 +64,8 @@ class Finder
     private $offset;
     private $limit;
 
+    public $table_alias_number;
+    public $model_number;
     public $main_qm;
     public $offsetlimit_subquery_qm;
     public $has_offsetlimit_subquery;
@@ -223,10 +225,34 @@ class Finder
      * @return  void
      */
     private function soft_reset() {
+        $this->table_alias_number        = LIGHTORM_START_TABLE_ALIAS_NUMBER;
+        $this->model_number              = LIGHTORM_START_MODEL_NUMBER;
         $this->main_qm                   = new Query_manager();
         $this->offsetlimit_subquery_qm   = null;
         $this->has_offsetlimit_subquery  = null;
         $this->models                    = array();
+    }
+
+    /**
+     * Get the next table alias numbered name and increment the property $table_alias_number
+     *
+     * @return  string
+     */
+    public function get_next_table_alias_numbered_name() {
+        $retour = 'alias_' . $this->table_alias_number;
+        $this->table_alias_number += 1;
+        return $retour;
+    }
+
+    /**
+     * Get the next model numbered name and increment the property $model_number
+     *
+     * @return  string
+     */
+    public function get_next_model_numbered_name() {
+        $retour = 'alias_' . $this->model_number;
+        $this->model_number += 1;
+        return $retour;
     }
 
     /**
@@ -696,11 +722,9 @@ class Finder
      * Manage the business initialization for the associations
      *
      * @param   Business_associations_associate  $associate
-     * @param   int                              $table_alias_number
-     * @param   int                              $model_number
-     * @return  array
+     * @return  void
      */
-    private function associations_business_initialization(Business_associations_associate $associate, $table_alias_number = LIGHTORM_START_TABLE_ALIAS_NUMBER, $model_number = LIGHTORM_START_MODEL_NUMBER) {
+    private function associations_business_initialization(Business_associations_associate $associate) {
         $models_metadata        = Models_metadata::get_singleton();
         $associations_metadata  = Associations_metadata::get_singleton();
 
@@ -711,8 +735,7 @@ class Finder
             $associatonents_properties[$associatonents_group->associatound_atom_path][] = $associatonents_group->associatound_atom_property;
         }
 
-        $associate_table_alias = 'alias_' . $table_alias_number;
-        list($table_alias_number, $model_number) = $associate_full_name::business_initialization($this, $associate, $table_alias_number, $model_number, $associatonents_properties);
+        $associate_full_name::business_initialization($this, $associate, $associatonents_properties);
 
         foreach ($associate->associatonents_groups as $associatonents_group) {
             $associatonents_group->associatound_atom_numbered_name  = $associate->atoms_numbered_names[$associatonents_group->associatound_atom_path];
@@ -721,12 +744,8 @@ class Finder
             $association_array = $associations_metadata->associations[$associatonents_group->association_numbered_name];
 
             if ($association_array['type'] === 'many_to_many') {
-                $association_table_alias = 'alias_' . $table_alias_number;
-
-                $association_full_name  = $association_array['class_full_name'];
-                $table_alias_number     = $association_full_name::business_initialization($this, $table_alias_number, $associatonents_group);
-
-                $associatonents_group->joining_alias = $association_table_alias;
+                $association_full_name = $association_array['class_full_name'];
+                $association_full_name::business_initialization($this, $associatonents_group);
             } else {
                 $associatonents_group->joining_alias = $associatonents_group->associatound_atom_alias;
             }
@@ -754,11 +773,9 @@ class Finder
                     $associatonent_instance->associatonent_field  = $associatonent_array['field'];
                 }
 
-                list($table_alias_number, $model_number) = $this->associations_business_initialization($associatonent_instance, $table_alias_number, $model_number);
+                $this->associations_business_initialization($associatonent_instance);
             }
         }
-
-        return [$table_alias_number, $model_number];
     }
 
     /**
