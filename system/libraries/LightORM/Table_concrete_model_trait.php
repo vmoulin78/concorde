@@ -161,6 +161,7 @@ trait Table_concrete_model_trait
             $finder->main_qm->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
             if ($finder->has_offsetlimit_subquery) {
                 $finder->offsetlimit_subquery_qm->join($abstract_table_object->name . ' AS ' . $abstract_table_alias, $abstract_table_alias . '.id = ' . $table_alias . '.id', 'left');
+
                 if (is_null($associate->associatound_associatonents_group)) {
                     $finder->offsetlimit_subquery_qm->group_by($abstract_table_alias . '.id');
                 }

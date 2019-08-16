@@ -142,9 +142,11 @@ trait Table_association_trait
         $associations_metadata  = Associations_metadata::get_singleton();
         $data_conv              = Data_conv::factory();
 
+        $association_short_name = self::get_business_short_name();
+
         $association_table_alias = $finder->get_next_table_alias_numbered_name();
 
-        $association_array         = $associations_metadata->get_association_array(['association' => self::get_business_short_name()]);
+        $association_array         = $associations_metadata->get_association_array(['association' => $association_short_name]);
         $association_table_object  = $data_conv->schema[$association_array['table']];
 
         $association_table_object->business_selection($finder->main_qm, $association_table_alias);
@@ -155,7 +157,8 @@ trait Table_association_trait
             $finder->offsetlimit_subquery_qm->join($association_table_object->name . ' AS ' . $association_table_alias, $association_table_alias . '.' . $associatonents_group->associatound_atom_joining_field . ' = ' . $associatonents_group->associatound_atom_alias . '.' . $associatonents_group->associatound_atom_field, 'left');
         }
 
-        $associatonents_group->joining_alias = $association_table_alias;
+        $associatonents_group->joining_alias                           = $association_table_alias;
+        $associatonents_group->atoms_aliases[$association_short_name]  = $association_table_alias;
     }
 
     /**

@@ -635,6 +635,10 @@ class Finder
      * @return  void
      */
     private function complete_query(Query_manager $query_manager) {
+        $models_metadata        = Models_metadata::get_singleton();
+        $associations_metadata  = Associations_metadata::get_singleton();
+        $data_conv              = Data_conv::factory();
+
         foreach ($this->stack as $item) {
             $formatted_args = $item['args'];
             if ( ! empty($formatted_args)) {
@@ -643,12 +647,8 @@ class Finder
                 $arg1_ext_field = array_shift($arg1_array);
                 $arg1_ext_field_array = explode(':', $arg1_ext_field);
 
-                if (count($arg1_ext_field_array) > 2) {
-                    trigger_error('LightORM error: Syntax error', E_USER_ERROR);
-                }
-
                 $formatted_arg1_ext_field = array_pop($arg1_ext_field_array);
-                if (count($arg1_ext_field_array) > 0) {
+                if ( ! empty($arg1_ext_field_array)) {
                     $arg1_ext_field_first_segment = array_shift($arg1_ext_field_array);
                     if (in_string('>', $arg1_ext_field_first_segment)) {
                         $arg1_ext_field_first_segment_separator = '>';
@@ -658,32 +658,79 @@ class Finder
                         $arg1_ext_field_first_segment_separator = null;
                     }
                     if (is_null($arg1_ext_field_first_segment_separator)) {
-                        $arg1_ext_field_user_alias = $arg1_ext_field_first_segment;
-                        $arg1_ext_field_first_segment_end = '';
+                        $arg1_ext_field_user_alias         = $arg1_ext_field_first_segment;
+                        $arg1_ext_field_first_segment_end  = null;
                     } else {
                         $arg1_ext_field_first_segment_array = explode($arg1_ext_field_first_segment_separator, $arg1_ext_field_first_segment, 2);
                         list($arg1_ext_field_user_alias, $arg1_ext_field_first_segment_end) = $arg1_ext_field_first_segment_array;
-                        $arg1_ext_field_first_segment_end = $arg1_ext_field_first_segment_separator . $arg1_ext_field_first_segment_end;
                     }
 
                     if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
                         trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
                     }
                     $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
+
                     switch ($user_alias['type']) {
                         case 'model':
-                            $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$user_alias['object']->model . $arg1_ext_field_first_segment_end] . '.' . $formatted_arg1_ext_field;
+                            if (is_null($arg1_ext_field_first_segment_separator)) {
+                                $arg1_ext_field_first_segment_table  = $models_metadata->models[$user_alias['object']->model]['table'];
+                                $atom_path_first_segment             = $user_alias['object']->model;
+                            } else {
+                                $arg1_ext_field_first_segment_table  = $models_metadata->models[$arg1_ext_field_first_segment_end]['table'];
+                                $atom_path_first_segment             = $user_alias['object']->model . $arg1_ext_field_first_segment_separator . $arg1_ext_field_first_segment_end;
+                            }
                             break;
                         case 'association':
-                            if ( ! is_null($arg1_ext_field_first_segment_separator)) {
-                                trigger_error('LightORM error: Syntax error', E_USER_ERROR);
-                            }
-                            $formatted_arg1_ext_field = $user_alias['object']->joining_alias . '.' . $formatted_arg1_ext_field;
+                            $association_array = $associations_metadata->associations[$user_alias['object']->association_numbered_name];
+
+                            $arg1_ext_field_first_segment_table  = $association_array['table'];
+                            $atom_path_first_segment             = $association_array['class'];
                             break;
                         default:
                             exit(1);
                             break;
                     }
+
+                    if (empty($arg1_ext_field_array)) {
+                        $atom_path = $atom_path_first_segment;
+                    } else {
+                        $arg1_ext_field_second_segment = array_shift($arg1_ext_field_array);
+
+                        if ( ! empty($arg1_ext_field_array)) {
+                            trigger_error('LightORM error: Syntax error', E_USER_ERROR);
+                        }
+
+                        $atom_path = $atom_path_first_segment . ':' . $arg1_ext_field_second_segment;
+
+                        if ( ! isset($user_alias['object']->atoms_aliases[$atom_path])) {
+                            $arg1_ext_field_first_segment_table_object = $data_conv->schema[$arg1_ext_field_first_segment_table];
+
+                            $arg1_ext_field_second_segment_field_object = $arg1_ext_field_first_segment_table_object->fields[$arg1_ext_field_second_segment];
+
+                            if ( ! $arg1_ext_field_second_segment_field_object->is_enum_model_id) {
+                                trigger_error('LightORM error: Syntax error', E_USER_ERROR);
+                            }
+
+                            $arg1_ext_field_first_segment_table_alias = $user_alias['object']->atoms_aliases[$atom_path_first_segment];
+
+                            $arg1_ext_field_second_segment_table_alias = $this->get_next_table_alias_numbered_name();
+
+                            $this->main_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
+                            if ($this->has_offsetlimit_subquery) {
+                                $this->offsetlimit_subquery_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
+
+                                if (($user_alias['type'] === 'model')
+                                    && is_null($user_alias['object']->associatound_associatonents_group)
+                                ) {
+                                    $this->offsetlimit_subquery_qm->group_by($arg1_ext_field_second_segment_table_alias . '.id');
+                                }
+                            }
+
+                            $user_alias['object']->atoms_aliases[$atom_path] = $arg1_ext_field_second_segment_table_alias;
+                        }
+                    }
+
+                    $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$atom_path] . '.' . $formatted_arg1_ext_field;
                 }
 
                 array_unshift($arg1_array, $formatted_arg1_ext_field);

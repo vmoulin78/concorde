@@ -62,6 +62,7 @@ class Business_associations_associatonents_group
     public $associatound_atom_field; //used only for the many_to_many associations
     public $associatound_atom_joining_field; //used only for the many_to_many associations
     public $joining_alias;
+    public $atoms_aliases; //used only for the many_to_many associations
     public $associatonents;
 
     public function __construct($association_numbered_name) {
@@ -77,6 +78,7 @@ class Business_associations_associatonents_group
         $this->associatound_atom_field          = null;
         $this->associatound_atom_joining_field  = null;
         $this->joining_alias                    = null;
+        $this->atoms_aliases                    = array();
         $this->associatonents                   = array();
     }
 
