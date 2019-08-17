@@ -91,7 +91,7 @@ class Dbms_manager_postgresql extends Dbms_manager
                 if (($value instanceof Enum_model)
                     || ($value instanceof Dbms_datetime_pgsql)
                 ) {
-                    if ($value.equals($item)) {
+                    if ($value->equals($item)) {
                         $found = true;
                     }
                 } else {
