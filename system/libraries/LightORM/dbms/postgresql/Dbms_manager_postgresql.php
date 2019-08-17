@@ -39,6 +39,7 @@ namespace LightORM\dbms\postgresql;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 use LightORM\Dbms_manager;
+use LightORM\Enum_model;
 use Concorde\utils\datetime\Dbms_datetime_pgsql;
 
 /**
@@ -87,7 +88,9 @@ class Dbms_manager_postgresql extends Dbms_manager
                     continue;
                 }
 
-                if ($value instanceof Dbms_datetime_pgsql) {
+                if (($value instanceof Enum_model)
+                    || ($value instanceof Dbms_datetime_pgsql)
+                ) {
                     if ($value.equals($item)) {
                         $found = true;
                     }
