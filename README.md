@@ -1,5 +1,5 @@
 # The Concorde Project
-* **Version** : 1.0.0-rc.22
+* **Version** : 1.0.0-rc.23
 * Based on the CodeIgniter Framework
 * Comes with an integrated ORM named LightORM (compatible with PostgreSQL and MySQL)
 * Demo with PostgreSQL [https://github.com/vmoulin78/demo-concorde-postgresql](https://github.com/vmoulin78/demo-concorde-postgresql)

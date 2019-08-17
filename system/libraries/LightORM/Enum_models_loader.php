@@ -73,7 +73,7 @@ class Enum_models_loader
     /**
      * Load the instances of the Enum_model $model_short_name
      *
-     * @param   string  $model_short_name
+     * @param   string  $model_short_name  The Enum_model short name
      * @return  void
      */
     private function load_enum_model($model_short_name) {
@@ -113,8 +113,8 @@ class Enum_models_loader
      * Get an array of Enum_model given the model short name $model_short_name and the filter $filter
      * This function is the recursive part of the function get_by_id()
      *
-     * @param   string  $model_short_name
-     * @param   array   $filter  An array of ids
+     * @param   string  $model_short_name  The Enum_model short name
+     * @param   array   $filter            An array of ids
      * @return  array
      */
     private function get_by_id_rec($model_short_name, $filter) {
@@ -126,11 +126,11 @@ class Enum_models_loader
 
         $retour = $this->get_by_id_rec($model_short_name, $filter);
 
-        if (isset($this->enum_models[$model_short_name][$last_item])) {
-            array_push($retour, $this->enum_models[$model_short_name][$last_item]);
-        } else {
-            array_push($retour, null);
+        if ( ! isset($this->enum_models[$model_short_name][$last_item])) {
+            trigger_error("LightORM error: Unknown id '" . $last_item . "' for the Enum_model '" . $model_short_name . "'", E_USER_ERROR);
         }
+
+        array_push($retour, $this->enum_models[$model_short_name][$last_item]);
 
         return $retour;
     }
@@ -138,8 +138,8 @@ class Enum_models_loader
     /**
      * Get one or many Enum_model given the model short name $model_short_name and the filter $filter
      *
-     * @param   string  $model_short_name
-     * @param   mixed   $filter  An id or an array of ids
+     * @param   string  $model_short_name  The Enum_model short name
+     * @param   mixed   $filter            An id or an array of ids
      * @return  mixed
      */
     public function get_by_id($model_short_name, $filter) {
@@ -165,8 +165,8 @@ class Enum_models_loader
      * Get an array of Enum_model given the model short name $model_short_name and the filter $filter
      * This function is the recursive part of the function get_by_name()
      *
-     * @param   string  $model_short_name
-     * @param   array   $filter  An array of names
+     * @param   string  $model_short_name  The Enum_model short name
+     * @param   array   $filter            An array of names
      * @return  array
      */
     private function get_by_name_rec($model_short_name, $filter) {
@@ -188,7 +188,7 @@ class Enum_models_loader
         }
 
         if ( ! $last_item_is_found) {
-            array_push($retour, null);
+            trigger_error("LightORM error: Unknown name '" . $last_item . "' for the Enum_model '" . $model_short_name . "'", E_USER_ERROR);
         }
 
         return $retour;
@@ -197,8 +197,8 @@ class Enum_models_loader
     /**
      * Get one or many Enum_model given the model short name $model_short_name and the filter $filter
      *
-     * @param   string  $model_short_name
-     * @param   mixed   $filter  A name or an array of names
+     * @param   string  $model_short_name  The Enum_model short name
+     * @param   mixed   $filter            A name or an array of names
      * @return  mixed
      */
     public function get_by_name($model_short_name, $filter) {
@@ -223,7 +223,7 @@ class Enum_models_loader
     /**
      * Get all the instances of the Enum_model $model_short_name
      *
-     * @param   string  $model_short_name
+     * @param   string  $model_short_name  The Enum_model short name
      * @return  array
      */
     public function get_all($model_short_name) {
