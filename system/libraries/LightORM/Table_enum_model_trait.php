@@ -52,10 +52,7 @@ trait Table_enum_model_trait
     use Table_concrete_model_trait;
 
     /**
-     * Find one or many Table_enum_model given the filter $filter
-     *
-     * @param   mixed  $filter  An id or an array of ids
-     * @return  mixed
+     * (See the Enum_model class)
      */
     public static function find($filter = null) {
         $enum_models_loader = Enum_models_loader::get_singleton();
@@ -70,10 +67,7 @@ trait Table_enum_model_trait
     }
 
     /**
-     * Find one or many Table_enum_model given the filter $filter
-     *
-     * @param   mixed  $filter  A name or an array of names
-     * @return  mixed
+     * (See the Enum_model class)
      */
     public static function find_by_name($filter) {
         $enum_models_loader = Enum_models_loader::get_singleton();
