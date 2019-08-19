@@ -68,4 +68,12 @@ abstract class Business
     public static function get_business_short_name() {
         return get_class_short_name(get_called_class());
     }
+
+    /**
+     * Return true if the current Business equals the Business $business and false otherwise
+     *
+     * @param   Business  $business
+     * @return  bool
+     */
+    abstract public function equals(Business $business);
 }

@@ -114,20 +114,6 @@ abstract class Enum_model extends Model
     }
 
     /**
-     * Return true if the current Enum_model equals the Enum_model $arg1 and false otherwise
-     *
-     * @param   Enum_model  $arg1
-     * @return  bool
-     */
-    public function equals(Enum_model $arg1) {
-        if ($this->get_id() === $arg1->get_id()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Return true if the name of the current Enum_model is in the array of names $enum_models_names and false otherwise
      * Trigger an error if a name in the array of names $enum_models_names doesn't exist
      *

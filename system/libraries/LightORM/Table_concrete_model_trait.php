@@ -107,6 +107,19 @@ trait Table_concrete_model_trait
     }
 
     /**
+     * (See the Business class)
+     */
+    public function equals(Business $business) {
+        if ((get_class($this) === get_class($business))
+            && ($this->get_id() === $business->get_id())
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Manage the SELECT, FROM and JOIN parts of the query for the current table concrete model
      *
      * @param   Finder                           $finder

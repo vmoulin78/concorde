@@ -132,6 +132,19 @@ trait Table_association_trait
     }
 
     /**
+     * (See the Business class)
+     */
+    public function equals(Business $business) {
+        if ((get_class($this) === get_class($business))
+            && empty(array_diff_assoc($this->get_primary_key(), $business->get_primary_key()))
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Manage the SELECT and JOIN parts of the query for the current Table_association_trait
      *
      * @param   Finder                                      $finder
