@@ -132,11 +132,14 @@ trait Table_association_trait
     }
 
     /**
-     * (See the Business class)
+     * Return true if the current Association equals the Association $association and false otherwise
+     *
+     * @param   Association  $association
+     * @return  bool
      */
-    public function equals(Business $business) {
-        if ((get_class($this) === get_class($business))
-            && empty(array_diff_assoc($this->get_primary_key(), $business->get_primary_key()))
+    public function equals(Association $association) {
+        if ((get_class($this) === get_class($association))
+            && empty(array_diff_assoc($this->get_primary_key(), $association->get_primary_key()))
         ) {
             return true;
         } else {

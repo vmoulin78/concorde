@@ -49,6 +49,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 abstract class Enum_model extends Model
 {
+    use Elemental_concrete_model_trait;
+
     private $id;
     private $name;
 

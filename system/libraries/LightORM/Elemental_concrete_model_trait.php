@@ -39,7 +39,7 @@ namespace LightORM;
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Table_enum_model_trait Trait
+ * Elemental_concrete_model_trait Trait
  *
  * @package     Concorde
  * @subpackage  Libraries
@@ -47,31 +47,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @author      Vincent MOULIN
  * @link        
  */
-trait Table_enum_model_trait
+trait Elemental_concrete_model_trait
 {
     /**
-     * (See the Enum_model class)
+     * Return true if the current Model equals the Model $model and false otherwise
+     *
+     * @param   Model  $model
+     * @return  bool
      */
-    public static function find($filter = null) {
-        $enum_models_loader = Enum_models_loader::get_singleton();
-
-        $model_short_name = self::get_business_short_name();
-
-        if (is_null($filter)) {
-            return $enum_models_loader->get_all($model_short_name);
+    public function equals(Model $model) {
+        if ((get_class($this) === get_class($model))
+            && ($this->get_id() === $model->get_id())
+        ) {
+            return true;
         } else {
-            return $enum_models_loader->get_by_id($model_short_name, $filter);
+            return false;
         }
-    }
-
-    /**
-     * (See the Enum_model class)
-     */
-    public static function find_by_name($filter) {
-        $enum_models_loader = Enum_models_loader::get_singleton();
-
-        $model_short_name = self::get_business_short_name();
-
-        return $enum_models_loader->get_by_name($model_short_name, $filter);
     }
 }

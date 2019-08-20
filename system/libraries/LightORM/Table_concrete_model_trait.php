@@ -51,6 +51,7 @@ trait Table_concrete_model_trait
 {
     use Table_model_trait;
     use Table_concrete_business_trait;
+    use Elemental_concrete_model_trait;
 
     /**
      * Get the name of the table abstract model
@@ -104,19 +105,6 @@ trait Table_concrete_model_trait
         }
 
         return false;
-    }
-
-    /**
-     * (See the Business class)
-     */
-    public function equals(Business $business) {
-        if ((get_class($this) === get_class($business))
-            && ($this->get_id() === $business->get_id())
-        ) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
