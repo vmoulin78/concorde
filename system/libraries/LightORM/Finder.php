@@ -283,7 +283,11 @@ class Finder
                     $trimmed_item1 = trim($item1);
                     $retour[$trimmed_item1] = null;
                 } elseif (is_array($item1)) {
-                    foreach ($item1 as $item2) {
+                    foreach ($item1 as $key2 => $item2) {
+                        if (is_string($key2)) {
+                            trigger_error('LightORM error: Error in the tree of associations', E_USER_ERROR);
+                        }
+
                         if (is_string($item2)) {
                             $trimmed_item2 = trim($item2);
                             $retour[$trimmed_item2] = null;
