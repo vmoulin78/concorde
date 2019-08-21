@@ -666,7 +666,7 @@ class Finder
                     }
 
                     if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
-                        trigger_error('LightORM error: Unknown alias', E_USER_ERROR);
+                        trigger_error("LightORM error: Unknown alias '" . $arg1_ext_field_user_alias . "'", E_USER_ERROR);
                     }
                     $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
 
