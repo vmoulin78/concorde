@@ -118,6 +118,8 @@ $config['lightORM_mapping_models'] = array();
 | The Mapping Associations for LightORM
 |--------------------------------------------------------------------------
 |
+| List the associations between the mapping models
+|
 | Example:
 |
 | $config['lightORM_mapping_associations'] = array(
