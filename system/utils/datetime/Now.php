@@ -76,16 +76,16 @@ class Now
     }
 
     /**
-     * Get the value
+     * Get the value of the current Now instance
      *
-     * @return  string
+     * @return  DateTime
      */
     public function get_value() {
         return $this->value;
     }
 
     /**
-     * Reset
+     * Reset the current Now instance
      *
      * @return  void
      */
