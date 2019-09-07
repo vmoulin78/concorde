@@ -194,10 +194,13 @@ trait Table_association_trait
             return null;
         }
 
+        $association_full_name = self::get_business_full_name();
+
         $table_object  = $data_conv->schema[$qm_aliases[$association_table_alias]];
         $args          = $table_object->business_creation_args($row, $association_table_alias);
 
-        $association_full_name = self::get_business_full_name();
+        $args = $association_full_name::sort_business_creation_args($args);
+
         $retour = new $association_full_name(...$args);
 
         return $retour;

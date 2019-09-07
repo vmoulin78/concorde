@@ -101,6 +101,8 @@ class Enum_models_loader
 
             $args = $table_object->business_creation_args($row);
 
+            $args = $model_full_name::sort_business_creation_args($args);
+
             $instance = new $model_full_name(...$args);
 
             $enum_model_items[$instance->get_id()] = $instance;

@@ -91,12 +91,12 @@ class Data_conv_table
     }
 
     /**
-     * Get the business fields
+     * Get the basic fields
      *
      * @param   bool  $with_pk_fk  If true, the fields that are both primary key and foreign key are also returned
      * @return  array
      */
-    public function get_business_fields($with_pk_fk = true) {
+    public function get_basic_fields($with_pk_fk = true) {
         $retour = array();
 
         foreach ($this->fields as $field) {
@@ -122,8 +122,8 @@ class Data_conv_table
             $prefix = $this->name;
         }
 
-        foreach ($this->get_business_fields() as $business_field) {
-            $query_manager->select($prefix . '.' . $business_field . ' AS ' . $prefix . ':' . $business_field);
+        foreach ($this->get_basic_fields() as $basic_field) {
+            $query_manager->select($prefix . '.' . $basic_field . ' AS ' . $prefix . ':' . $basic_field);
         }
     }
 
@@ -136,14 +136,14 @@ class Data_conv_table
      * @return  array
      */
     public function business_creation_args($row, $prefix = null) {
-        $retour = array();
-
         if (is_null($prefix)) {
             $prefix = $this->name;
         }
 
-        foreach ($this->get_business_fields(false) as $business_field) {
-            $retour[] = $row->{$prefix . ':' . $business_field};
+        $retour = array();
+
+        foreach ($this->get_basic_fields(false) as $basic_field) {
+            $retour[$basic_field] = $row->{$prefix . ':' . $basic_field};
         }
 
         return $retour;

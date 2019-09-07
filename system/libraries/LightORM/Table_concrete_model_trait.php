@@ -213,6 +213,8 @@ trait Table_concrete_model_trait
     public static function business_creation($finder_model_item, $row, $qm_aliases) {
         $data_conv = Data_conv::factory();
 
+        $model_full_name = self::get_business_full_name();
+
         switch ($finder_model_item['model_info']['type']) {
             case 'simple_model':
                 if (is_null($row->{$finder_model_item['model_info']['alias'] . ':id'})) {
@@ -237,7 +239,8 @@ trait Table_concrete_model_trait
                 break;
         }
 
-        $model_full_name = self::get_business_full_name();
+        $args = $model_full_name::sort_business_creation_args($args);
+
         $retour = new $model_full_name(...$args);
 
         return $retour;
@@ -737,6 +740,7 @@ trait Table_concrete_model_trait
                     $query = $qm->get();
                     $row = $query->row();
                     $args = $association_table_object->business_creation_args($row);
+                    $args = $association_full_name::sort_business_creation_args($args);
                     $association_instance = new $association_full_name(...$args);
 
                     $association_instance->{'set_' . $associate_array['reverse_property']}($this);

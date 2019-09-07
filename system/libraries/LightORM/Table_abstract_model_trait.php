@@ -213,6 +213,8 @@ trait Table_abstract_model_trait
             exit(1);
         }
 
+        $args = $concrete_model_full_name::sort_business_creation_args($args);
+
         $retour = new $concrete_model_full_name(...$args);
 
         return $retour;
