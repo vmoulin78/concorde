@@ -48,21 +48,4 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @link        
  */
 abstract class Model extends Business
-{
-    /**
-     * {@inheritDoc}
-     */
-    public static function sort_business_creation_args($business_creation_args) {
-        $models_metadata = Models_metadata::get_singleton();
-
-        $model_short_name = self::get_business_short_name();
-
-        $retour = array();
-
-        foreach ($models_metadata->get_basic_properties($model_short_name) as $basic_property) {
-            $retour[] = $business_creation_args[$basic_property];
-        }
-
-        return $retour;
-    }
-}
+{}

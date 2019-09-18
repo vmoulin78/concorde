@@ -1348,6 +1348,7 @@ class CI_Loader {
 		// --------------------------------------------------------------------
 
 		$default_added_helpers = array(
+			'function_handling',
 			'utils',
 			'mbstring',
 			'string',

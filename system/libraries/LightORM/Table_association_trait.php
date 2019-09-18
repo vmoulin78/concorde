@@ -199,9 +199,7 @@ trait Table_association_trait
         $table_object  = $data_conv->schema[$qm_aliases[$association_table_alias]];
         $args          = $table_object->business_creation_args($row, $association_table_alias);
 
-        $args = $association_full_name::sort_business_creation_args($args);
-
-        $retour = new $association_full_name(...$args);
+        $retour = call_user_constructor_array_assoc($association_full_name, $args);
 
         return $retour;
     }

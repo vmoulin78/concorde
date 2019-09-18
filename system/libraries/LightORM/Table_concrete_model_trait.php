@@ -239,9 +239,7 @@ trait Table_concrete_model_trait
                 break;
         }
 
-        $args = $model_full_name::sort_business_creation_args($args);
-
-        $retour = new $model_full_name(...$args);
+        $retour = call_user_constructor_array_assoc($model_full_name, $args);
 
         return $retour;
     }
@@ -740,8 +738,7 @@ trait Table_concrete_model_trait
                     $query = $qm->get();
                     $row = $query->row();
                     $args = $association_table_object->business_creation_args($row);
-                    $args = $association_full_name::sort_business_creation_args($args);
-                    $association_instance = new $association_full_name(...$args);
+                    $association_instance = call_user_constructor_array_assoc($association_full_name, $args);
 
                     $association_instance->{'set_' . $associate_array['reverse_property']}($this);
 

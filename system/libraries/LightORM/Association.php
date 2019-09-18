@@ -48,21 +48,4 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @link        
  */
 abstract class Association extends Business
-{
-    /**
-     * {@inheritDoc}
-     */
-    public static function sort_business_creation_args($business_creation_args) {
-        $associations_metadata = Associations_metadata::get_singleton();
-
-        $association_short_name = self::get_business_short_name();
-
-        $retour = array();
-
-        foreach ($associations_metadata->get_basic_properties($association_short_name) as $basic_property) {
-            $retour[] = $business_creation_args[$basic_property];
-        }
-
-        return $retour;
-    }
-}
+{}

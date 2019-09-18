@@ -68,12 +68,4 @@ abstract class Business
     public static function get_business_short_name() {
         return get_class_short_name(get_called_class());
     }
-
-    /**
-     * Sort the array $business_creation_args in order to match the parameters of the business constructor
-     *
-     * @param   array  $business_creation_args
-     * @return  array
-     */
-    abstract public static function sort_business_creation_args($business_creation_args);
 }

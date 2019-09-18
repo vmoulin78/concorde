@@ -57,10 +57,6 @@ if ( ! function_exists('get_callback_type'))
      * @return  string ['function'|'method']
      */
     function get_callback_type($callback) {
-        if ( ! is_callable($callback)) {
-            trigger_error('The given callback is not callable.', E_USER_ERROR);
-        }
-
         if ((is_string($callback) && function_exists($callback))
             || (is_object($callback) && (get_class($callback) === 'Closure'))
         ) {
@@ -90,8 +86,8 @@ if ( ! function_exists('sort_callback_parameters'))
                 if (is_object($callback)) {
                     $reflection_callback = new ReflectionMethod($callback, '__invoke');
                 } elseif (is_array($callback)) {
-                    $class   = array_shift($callback);
-                    $method  = array_shift($callback);
+                    list($class, $method) = $callback;
+
                     $reflection_callback = new ReflectionMethod($class, $method);
                 } elseif (is_string($callback)) {
                     $reflection_callback = new ReflectionMethod($callback);
@@ -109,14 +105,13 @@ if ( ! function_exists('sort_callback_parameters'))
         $retour = array();
         foreach ($reflection_parameters as $reflection_parameter) {
             $reflection_parameter_name = $reflection_parameter->getName();
-            if (isset($parameters[$reflection_parameter_name])) {
+
+            if (array_key_exists($reflection_parameter_name, $parameters)) {
                 $retour[] = $parameters[$reflection_parameter_name];
+            } elseif ($reflection_parameter->isDefaultValueAvailable()) {
+                $retour[] = $reflection_parameter->getDefaultValue();
             } else {
-                if ($reflection_parameter->isDefaultValueAvailable) {
-                    $retour[] = $reflection_parameter->getDefaultValue();
-                } else {
-                    return false;
-                }
+                return false;
             }
         }
 
@@ -141,5 +136,25 @@ if ( ! function_exists('call_user_func_array_assoc'))
         }
 
         return call_user_func_array($callback, $sorted_parameters);
+    }
+}
+
+if ( ! function_exists('call_user_constructor_array_assoc'))
+{
+    /**
+     * Call a constructor with an associative array of parameters
+     *
+     * @param   string  $class       The class full name
+     * @param   array   $parameters  An associative array whose each key matches a parameter of the constructor
+     * @return  object
+     */
+    function call_user_constructor_array_assoc($class, $parameters) {
+        $sorted_parameters = sort_callback_parameters(array($class, '__construct'), $parameters);
+
+        if ($sorted_parameters === false) {
+            trigger_error('Missing parameter', E_USER_ERROR);
+        }
+
+        return new $class(...$sorted_parameters);
     }
 }
