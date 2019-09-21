@@ -55,7 +55,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CI_VERSION = '3.1.10';
+	const CI_VERSION = '3.1.11';
 
 /**
  * Concorde Version
@@ -63,7 +63,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CONCORDE_VERSION = '1.1.1';
+	const CONCORDE_VERSION = '1.1.2';
 
 /*
  * ------------------------------------------------------
