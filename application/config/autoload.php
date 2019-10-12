@@ -98,7 +98,7 @@ $autoload['helper'] = array();
 |
 | NOTE: This item is intended for use ONLY if you have created custom
 | config files. Otherwise, leave it blank.
-| The config.php and config_lightORM.php files are automatically
+| The config.php and config_artefact.php files are automatically
 | loaded, so you don't need to add them in $autoload['config'].
 |
 */

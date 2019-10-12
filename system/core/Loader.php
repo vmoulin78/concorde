@@ -1326,7 +1326,7 @@ class CI_Loader {
 		// --------------------------------------------------------------------
 
 		$default_added_configurations = array(
-			'config_lightORM',
+			'config_artefact',
 		);
 
 		foreach ($default_added_configurations as $val)
@@ -1353,7 +1353,7 @@ class CI_Loader {
 			'mbstring',
 			'string',
 			'reflection',
-			'lightorm',
+			'artefact',
 		);
 
 		$this->helper($default_added_helpers);

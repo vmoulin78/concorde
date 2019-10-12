@@ -63,7 +63,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CONCORDE_VERSION = '1.1.2';
+	const CONCORDE_VERSION = '1.2.0';
 
 /*
  * ------------------------------------------------------
@@ -304,8 +304,6 @@ if ( ! is_php('5.4'))
 	spl_autoload_register(function ($class) {
 		if (substr($class, 0, 9) === 'Concorde\\') {
 			require BASEPATH . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 9)) . '.php';
-		} elseif (substr($class, 0, 9) === 'LightORM\\') {
-			require BASEPATH . 'libraries' . DIRECTORY_SEPARATOR . 'LightORM' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, 9)) . '.php';
 		}
 	});
 

@@ -54,7 +54,7 @@ use Concorde\utils\datetime\Mysql_interval;
 use Concorde\utils\datetime\Mysql_time;
 use Concorde\utils\datetime\Mysql_timestamp;
 use Concorde\utils\datetime\Mysql_year;
-use LightORM\Business_tables_metadata;
+use Concorde\artefact\Business_tables_metadata;
 
 // ------------------------------------------------------------------------
 
@@ -132,7 +132,7 @@ if ( ! function_exists('php_data_to_mysql_data'))
                 break;
 
             default:
-                trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
+                trigger_error("Artefact error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
         }
 
@@ -186,7 +186,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 } elseif ($mysql_data === MYSQL_BOOL_FALSE_FROM_SERVER) {
                     $retour = false;
                 } else {
-                    trigger_error("LightORM error: Unknown MySQL boolean", E_USER_ERROR);
+                    trigger_error("Artefact error: Unknown MySQL boolean", E_USER_ERROR);
                 }
                 break;
 
@@ -220,7 +220,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
 
             case 'enum_model_id':
                 if (count($data_type_array) === 0) {
-                    trigger_error("LightORM error: Error in data type '" . $data_type . "'", E_USER_ERROR);
+                    trigger_error("Artefact error: Error in data type '" . $data_type . "'", E_USER_ERROR);
                 }
 
                 $data_type_part2  = array_shift($data_type_array);
@@ -230,7 +230,7 @@ if ( ! function_exists('mysql_data_to_php_data'))
                 break;
 
             default:
-                trigger_error("LightORM error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
+                trigger_error("Artefact error: Unknown data type '" . $data_type . "'", E_USER_ERROR);
                 break;
         }
 

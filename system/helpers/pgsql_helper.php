@@ -54,7 +54,7 @@ use Concorde\utils\datetime\Pgsql_time;
 use Concorde\utils\datetime\Pgsql_timestamp;
 use Concorde\utils\datetime\Pgsql_timestamptz;
 use Concorde\utils\datetime\Pgsql_timetz;
-use LightORM\Business_tables_metadata;
+use Concorde\artefact\Business_tables_metadata;
 
 // ------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ if ( ! function_exists('php_element_to_pgsql_element'))
 
             case 'enum_type':
                 if (count($element_type_array) === 0) {
-                    trigger_error("LightORM error: Error in element type '" . $element_type . "'", E_USER_ERROR);
+                    trigger_error("Artefact error: Error in element type '" . $element_type . "'", E_USER_ERROR);
                 }
 
                 $element_type_part2 = array_shift($element_type_array);
@@ -132,7 +132,7 @@ if ( ! function_exists('php_element_to_pgsql_element'))
                 break;
 
             default:
-                trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
+                trigger_error("Artefact error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 break;
         }
 
@@ -246,7 +246,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 } elseif ($pgsql_element === PGSQL_BOOL_FALSE_FROM_SERVER) {
                     $retour = false;
                 } else {
-                    trigger_error("LightORM error: Unknown PostgreSQL boolean", E_USER_ERROR);
+                    trigger_error("Artefact error: Unknown PostgreSQL boolean", E_USER_ERROR);
                 }
                 break;
 
@@ -276,7 +276,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
 
             case 'enum_model_id':
                 if (count($element_type_array) === 0) {
-                    trigger_error("LightORM error: Error in element type '" . $element_type . "'", E_USER_ERROR);
+                    trigger_error("Artefact error: Error in element type '" . $element_type . "'", E_USER_ERROR);
                 }
 
                 $element_type_part2  = array_shift($element_type_array);
@@ -286,7 +286,7 @@ if ( ! function_exists('pgsql_element_to_php_element'))
                 break;
 
             default:
-                trigger_error("LightORM error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
+                trigger_error("Artefact error: Unknown element type '" . $element_type . "'", E_USER_ERROR);
                 break;
         }
 

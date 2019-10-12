@@ -38,7 +38,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 // --------------------------------------------------------------------
 
-use LightORM\Databubble;
+use Concorde\artefact\Databubble;
 
 // --------------------------------------------------------------------
 

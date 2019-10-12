@@ -114,9 +114,9 @@ defined('MYSQL_INTERVAL_FORMAT')         OR define('MYSQL_INTERVAL_FORMAT', '%h:
 
 /*
 |--------------------------------------------------------------------------
-| LightORM Constants
+| Artefact Constants
 |--------------------------------------------------------------------------
 |
 */
-defined('LIGHTORM_START_TABLE_ALIAS_NUMBER')  OR define('LIGHTORM_START_TABLE_ALIAS_NUMBER', 1);
-defined('LIGHTORM_START_MODEL_NUMBER')        OR define('LIGHTORM_START_MODEL_NUMBER', 1);
+defined('ARTEFACT_START_TABLE_ALIAS_NUMBER')  OR define('ARTEFACT_START_TABLE_ALIAS_NUMBER', 1);
+defined('ARTEFACT_START_MODEL_NUMBER')        OR define('ARTEFACT_START_MODEL_NUMBER', 1);
