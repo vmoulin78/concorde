@@ -58,8 +58,24 @@ trait Table_model_trait
      * @return  mixed
      */
     public static function find($filter = null) {
-        $finder = new Finder(self::get_business_short_name());
-        return $finder->get($filter);
+        $model_short_name = self::get_business_short_name();
+
+        if (is_null($filter)) {
+            $finder = new Finder($model_short_name);
+            return $finder->get();
+        } else {
+            $alias_name = 'alias_model';
+
+            $finder = new Finder($model_short_name . ' AS[' . $alias_name . ']');
+
+            if (is_array($filter)) {
+                $finder->where_in($alias_name . ':id', $filter);
+                return $finder->get();
+            } else {
+                $finder->where($alias_name . ':id', $filter);
+                return $finder->first();
+            }
+        }
     }
 
     /**

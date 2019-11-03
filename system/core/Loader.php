@@ -1325,16 +1325,16 @@ class CI_Loader {
 
 		// --------------------------------------------------------------------
 
-		$default_added_configurations = array(
+		$default_added_config_files = array(
 			'config_artefact',
 		);
 
-		foreach ($default_added_configurations as $val)
+		foreach ($default_added_config_files as $val)
 		{
 			$this->config($val);
 		}
 
-		$autoload['config'] = array_diff($autoload['config'], $default_added_configurations);
+		$autoload['config'] = array_diff($autoload['config'], $default_added_config_files);
 
 		// Load any custom config file
 		if (count($autoload['config']) > 0)

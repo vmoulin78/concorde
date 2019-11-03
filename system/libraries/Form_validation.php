@@ -426,7 +426,7 @@ class CI_Form_validation {
 			// No validation rules?  We're done...
 			if (count($this->_config_rules) === 0)
 			{
-				return FALSE;
+				return TRUE;
 			}
 
 			if (empty($group))
@@ -438,11 +438,9 @@ class CI_Form_validation {
 
 			$this->set_rules(isset($this->_config_rules[$group]) ? $this->_config_rules[$group] : $this->_config_rules);
 
-			// Were we able to set the rules correctly?
 			if (count($this->_field_data) === 0)
 			{
-				log_message('debug', 'Unable to find validation rules');
-				return FALSE;
+				return TRUE;
 			}
 		}
 

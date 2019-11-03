@@ -317,8 +317,9 @@ class Databubble
             return false;
         }
 
-        $finder = new Finder($model_short_name, $this);
-        $inserted_instance = $finder->get($insert_id);
+        $finder = new Finder($model_short_name . ' AS[alias_model]');
+        $finder->where('alias_model:id', $insert_id);
+        $inserted_instance = $finder->first($this);
 
         foreach ($association_properties_values as $property => $value) {
             $inserted_instance->{'set_' . $property}($value);

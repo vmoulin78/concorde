@@ -49,14 +49,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Finder
 {
-    const DIMENSION_ONE   = 0;
-    const DIMENSION_MANY  = 1;
-    const DIMENSION_AUTO  = 2;
-
     private $model_short_name;
     private $constructor_reflexive_part;
-    private $databubble;
-    private $dimension;
     private $associations;
     private $with;
     private $user_aliases;
@@ -76,16 +70,10 @@ class Finder
     /**
      * The constructor
      *
-     * @param  string      $model       The model
-     * @param  Databubble  $databubble  The databubble
-     * @param  int         $dimension   The dimension
+     * @param  string  $model  The model
      */
-    public function __construct($model, $databubble = null, $dimension = self::DIMENSION_AUTO) {
+    public function __construct($model) {
         $model = trim($model);
-
-        if (is_null($databubble)) {
-            $databubble = new Databubble();
-        }
 
         //------------------------------------------------------//
 
@@ -108,8 +96,6 @@ class Finder
         $associate = new Business_associations_associate($model_short_name);
 
         $this->model_short_name  = $model_short_name;
-        $this->databubble        = $databubble;
-        $this->dimension         = $dimension;
         $this->associations      = $associate;
         $this->with              = array();
         $this->user_aliases      = array();
@@ -134,22 +120,6 @@ class Finder
                 'object'  => $associate,
             );
         }
-    }
-
-    //------------------------------------------------------//
-
-    public function get_databubble() {
-        return $this->databubble;
-    }
-    public function set_databubble($databubble) {
-        $this->databubble = $databubble;
-    }
-
-    public function get_dimension() {
-        return $this->dimension;
-    }
-    public function set_dimension($dimension) {
-        $this->dimension = $dimension;
     }
 
     //------------------------------------------------------//
@@ -748,41 +718,6 @@ class Finder
     }
 
     /**
-     * Format the retour $unformatted_retour given the dimension $dimension
-     *
-     * @param   array                                       $unformatted_retour
-     * @param   self::DIMENSION_ONE | self::DIMENSION_MANY  $dimension
-     * @return  mixed
-     */
-    private function format_retour($unformatted_retour, $dimension) {
-        switch ($dimension) {
-            case self::DIMENSION_ONE:
-                switch (count($unformatted_retour)) {
-                    case 0:
-                        $retour = null;
-                        break;
-                    case 1:
-                        list($retour) = $unformatted_retour;
-                        break;
-                    default:
-                        $retour = false;
-                        break;
-                }
-                break;
-
-            case self::DIMENSION_MANY:
-                $retour = $unformatted_retour;
-                break;
-
-            default:
-                exit(1);
-                break;
-        }
-
-        return $retour;
-    }
-
-    /**
      * Manage the business initialization for the associations
      *
      * @param   Business_associations_associate  $associate
@@ -845,18 +780,14 @@ class Finder
     /**
      * Get the data
      *
-     * @param   mixed  $filter  An id or an array of ids
-     * @return  mixed
+     * @param   Databubble  $databubble  The databubble where the data will be put or updated (if it is null, a new Databubble will be created)
+     * @return  array
      */
-    public function get($filter = null) {
+    public function get(Databubble $databubble = null) {
         $associations_metadata = Associations_metadata::get_singleton();
 
-        if ( ! is_null($filter)) {
-            if (is_array($filter)) {
-                $this->where_in('alias_' . ARTEFACT_START_TABLE_ALIAS_NUMBER . '.id', $filter);
-            } else {
-                $this->where('alias_' . ARTEFACT_START_TABLE_ALIAS_NUMBER . '.id', $filter);
-            }
+        if (is_null($databubble)) {
+            $databubble = new Databubble();
         }
 
         $this->process_with();
@@ -907,7 +838,7 @@ class Finder
             $associations_pool  = array();
 
             foreach ($this->models as $finder_model_key => $finder_model_item) {
-                $model_instance = $this->databubble->add_model_row($finder_model_item, $row, $this->main_qm->aliases);
+                $model_instance = $databubble->add_model_row($finder_model_item, $row, $this->main_qm->aliases);
 
                 if ( ! is_null($model_instance)) {
                     $concrete_model_full_name  = get_class($model_instance);
@@ -1073,26 +1004,28 @@ class Finder
 
         foreach ($associations_instances as $associations_instances_bunch) {
             foreach ($associations_instances_bunch as $associations_instances_bunch_item) {
-                $this->databubble->add_association_instance($associations_instances_bunch_item);
+                $databubble->add_association_instance($associations_instances_bunch_item);
             }
         }
-
-        if ($this->dimension === self::DIMENSION_AUTO) {
-            if (is_null($filter)
-                || is_array($filter)
-            ) {
-                $dimension = self::DIMENSION_MANY;
-            } else {
-                $dimension = self::DIMENSION_ONE;
-            }
-        } else {
-            $dimension = $this->dimension;
-        }
-
-        $retour = $this->format_retour($retour, $dimension);
 
         $this->soft_reset();
 
         return $retour;
+    }
+
+    /**
+     * Get the first instance
+     *
+     * @param   Databubble  $databubble  The databubble where the data will be put or updated (if it is null, a new Databubble will be created)
+     * @return  Model
+     */
+    public function first(Databubble $databubble = null) {
+        $data = $this->get($databubble);
+
+        if (count($data) === 0) {
+            return null;
+        }
+
+        return array_shift($data);
     }
 }
