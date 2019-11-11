@@ -621,91 +621,90 @@ class Finder
                 $arg1_ext_field = array_shift($arg1_array);
                 $arg1_ext_field_array = explode(':', $arg1_ext_field);
 
-                $formatted_arg1_ext_field = array_pop($arg1_ext_field_array);
-                if ( ! empty($arg1_ext_field_array)) {
-                    $arg1_ext_field_first_segment = array_shift($arg1_ext_field_array);
-                    if (in_string('>', $arg1_ext_field_first_segment)) {
-                        $arg1_ext_field_first_segment_separator = '>';
-                    } elseif (in_string('<', $arg1_ext_field_first_segment)) {
-                        $arg1_ext_field_first_segment_separator = '<';
-                    } else {
-                        $arg1_ext_field_first_segment_separator = null;
-                    }
-                    if (is_null($arg1_ext_field_first_segment_separator)) {
-                        $arg1_ext_field_user_alias         = $arg1_ext_field_first_segment;
-                        $arg1_ext_field_first_segment_end  = null;
-                    } else {
-                        $arg1_ext_field_first_segment_array = explode($arg1_ext_field_first_segment_separator, $arg1_ext_field_first_segment, 2);
-                        list($arg1_ext_field_user_alias, $arg1_ext_field_first_segment_end) = $arg1_ext_field_first_segment_array;
-                    }
+                if ( ! in_array(count($arg1_ext_field_array), [2, 3])) {
+                    trigger_error('Artefact error: Syntax error', E_USER_ERROR);
+                }
 
-                    if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
-                        trigger_error("Artefact error: Unknown alias '" . $arg1_ext_field_user_alias . "'", E_USER_ERROR);
-                    }
-                    $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
+                $arg1_ext_field_first_segment  = array_shift($arg1_ext_field_array);
+                $arg1_field                    = array_pop($arg1_ext_field_array);
 
-                    switch ($user_alias['type']) {
-                        case 'model':
-                            if (is_null($arg1_ext_field_first_segment_separator)) {
-                                $arg1_ext_field_first_segment_table  = $models_metadata->models[$user_alias['object']->model]['table'];
-                                $atom_path_first_segment             = $user_alias['object']->model;
-                            } else {
-                                $arg1_ext_field_first_segment_table  = $models_metadata->models[$arg1_ext_field_first_segment_end]['table'];
-                                $atom_path_first_segment             = $user_alias['object']->model . $arg1_ext_field_first_segment_separator . $arg1_ext_field_first_segment_end;
-                            }
-                            break;
-                        case 'association':
-                            $association_array = $associations_metadata->associations[$user_alias['object']->association_numbered_name];
+                if (in_string('>', $arg1_ext_field_first_segment)) {
+                    $arg1_ext_field_first_segment_separator = '>';
+                } elseif (in_string('<', $arg1_ext_field_first_segment)) {
+                    $arg1_ext_field_first_segment_separator = '<';
+                } else {
+                    $arg1_ext_field_first_segment_separator = null;
+                }
+                if (is_null($arg1_ext_field_first_segment_separator)) {
+                    $arg1_ext_field_user_alias         = $arg1_ext_field_first_segment;
+                    $arg1_ext_field_first_segment_end  = null;
+                } else {
+                    $arg1_ext_field_first_segment_array = explode($arg1_ext_field_first_segment_separator, $arg1_ext_field_first_segment, 2);
+                    list($arg1_ext_field_user_alias, $arg1_ext_field_first_segment_end) = $arg1_ext_field_first_segment_array;
+                }
 
-                            $arg1_ext_field_first_segment_table  = $association_array['table'];
-                            $atom_path_first_segment             = $association_array['class'];
-                            break;
-                        default:
-                            exit(1);
-                            break;
-                    }
+                if ( ! isset($this->user_aliases[$arg1_ext_field_user_alias])) {
+                    trigger_error("Artefact error: Unknown alias '" . $arg1_ext_field_user_alias . "'", E_USER_ERROR);
+                }
+                $user_alias = $this->user_aliases[$arg1_ext_field_user_alias];
 
-                    if (empty($arg1_ext_field_array)) {
-                        $atom_path = $atom_path_first_segment;
-                    } else {
-                        $arg1_ext_field_second_segment = array_shift($arg1_ext_field_array);
+                switch ($user_alias['type']) {
+                    case 'model':
+                        if (is_null($arg1_ext_field_first_segment_separator)) {
+                            $arg1_ext_field_first_segment_table  = $models_metadata->models[$user_alias['object']->model]['table'];
+                            $atom_path_first_segment             = $user_alias['object']->model;
+                        } else {
+                            $arg1_ext_field_first_segment_table  = $models_metadata->models[$arg1_ext_field_first_segment_end]['table'];
+                            $atom_path_first_segment             = $user_alias['object']->model . $arg1_ext_field_first_segment_separator . $arg1_ext_field_first_segment_end;
+                        }
+                        break;
+                    case 'association':
+                        $association_array = $associations_metadata->associations[$user_alias['object']->association_numbered_name];
 
-                        if ( ! empty($arg1_ext_field_array)) {
+                        $arg1_ext_field_first_segment_table  = $association_array['table'];
+                        $atom_path_first_segment             = $association_array['class'];
+                        break;
+                    default:
+                        exit(1);
+                        break;
+                }
+
+                if (empty($arg1_ext_field_array)) {
+                    $atom_path = $atom_path_first_segment;
+                } else {
+                    $arg1_ext_field_second_segment = array_shift($arg1_ext_field_array);
+
+                    $atom_path = $atom_path_first_segment . ':' . $arg1_ext_field_second_segment;
+
+                    if ( ! isset($user_alias['object']->atoms_aliases[$atom_path])) {
+                        $arg1_ext_field_first_segment_table_object = $data_conv->schema[$arg1_ext_field_first_segment_table];
+
+                        $arg1_ext_field_second_segment_field_object = $arg1_ext_field_first_segment_table_object->fields[$arg1_ext_field_second_segment];
+
+                        if ( ! $arg1_ext_field_second_segment_field_object->is_enum_model_id) {
                             trigger_error('Artefact error: Syntax error', E_USER_ERROR);
                         }
 
-                        $atom_path = $atom_path_first_segment . ':' . $arg1_ext_field_second_segment;
+                        $arg1_ext_field_first_segment_table_alias = $user_alias['object']->atoms_aliases[$atom_path_first_segment];
 
-                        if ( ! isset($user_alias['object']->atoms_aliases[$atom_path])) {
-                            $arg1_ext_field_first_segment_table_object = $data_conv->schema[$arg1_ext_field_first_segment_table];
+                        $arg1_ext_field_second_segment_table_alias = $this->get_next_table_alias_numbered_name();
 
-                            $arg1_ext_field_second_segment_field_object = $arg1_ext_field_first_segment_table_object->fields[$arg1_ext_field_second_segment];
+                        $this->main_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
+                        if ($this->has_offsetlimit_subquery) {
+                            $this->offsetlimit_subquery_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
 
-                            if ( ! $arg1_ext_field_second_segment_field_object->is_enum_model_id) {
-                                trigger_error('Artefact error: Syntax error', E_USER_ERROR);
+                            if (($user_alias['type'] === 'model')
+                                && is_null($user_alias['object']->associatound_associatonents_group)
+                            ) {
+                                $this->offsetlimit_subquery_qm->group_by($arg1_ext_field_second_segment_table_alias . '.id');
                             }
-
-                            $arg1_ext_field_first_segment_table_alias = $user_alias['object']->atoms_aliases[$atom_path_first_segment];
-
-                            $arg1_ext_field_second_segment_table_alias = $this->get_next_table_alias_numbered_name();
-
-                            $this->main_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
-                            if ($this->has_offsetlimit_subquery) {
-                                $this->offsetlimit_subquery_qm->join($arg1_ext_field_second_segment_field_object->enum_model_table_name . ' AS ' . $arg1_ext_field_second_segment_table_alias, $arg1_ext_field_second_segment_table_alias . '.id = ' . $arg1_ext_field_first_segment_table_alias . '.' . $arg1_ext_field_second_segment, 'left');
-
-                                if (($user_alias['type'] === 'model')
-                                    && is_null($user_alias['object']->associatound_associatonents_group)
-                                ) {
-                                    $this->offsetlimit_subquery_qm->group_by($arg1_ext_field_second_segment_table_alias . '.id');
-                                }
-                            }
-
-                            $user_alias['object']->atoms_aliases[$atom_path] = $arg1_ext_field_second_segment_table_alias;
                         }
-                    }
 
-                    $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$atom_path] . '.' . $formatted_arg1_ext_field;
+                        $user_alias['object']->atoms_aliases[$atom_path] = $arg1_ext_field_second_segment_table_alias;
+                    }
                 }
+
+                $formatted_arg1_ext_field = $user_alias['object']->atoms_aliases[$atom_path] . '.' . $arg1_field;
 
                 array_unshift($arg1_array, $formatted_arg1_ext_field);
                 $formatted_arg1 = implode(' ', $arg1_array);
