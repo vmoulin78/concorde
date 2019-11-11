@@ -3,6 +3,61 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /*
 |--------------------------------------------------------------------------
+| The output type for the SQL query errors
+|--------------------------------------------------------------------------
+|
+| Set the output type in case of an SQL query error
+|
+| Valid options are:
+|   'bool'       Return false
+|   'exit'       Exit the application
+|   'exception'  Throw an exception
+|   'trigger'    Call the function trigger_error()
+|   'show'       Call the function show_error()
+|
+*/
+$config['artefact_query_error_output_type'] = 'show';
+
+/*
+|--------------------------------------------------------------------------
+| The message type for the SQL query errors
+|--------------------------------------------------------------------------
+|
+| Set the message type in case of an SQL query error
+|
+| Valid options are:
+|   'debug'   A message with technical information about the error
+|   'custom'  A custom message (See $config['artefact_query_error_message_content'])
+|
+*/
+$config['artefact_query_error_message_type'] = 'custom';
+
+/*
+|--------------------------------------------------------------------------
+| The message content for the SQL query errors
+|--------------------------------------------------------------------------
+|
+| Set the message content in case of an SQL query error
+|
+| Only used if $config['artefact_query_error_message_type'] is set to 'custom'
+|
+*/
+$config['artefact_query_error_message_content'] = 'An error occurred, please try again later.';
+
+/*
+|--------------------------------------------------------------------------
+| Query error log
+|--------------------------------------------------------------------------
+|
+| 'artefact_query_error_log_is_enabled'  = Enable/Disable the SQL query error log
+| 'artefact_query_error_log_level'       = Set the SQL query error log level (Valid options are: 'error' | 'debug' | 'info')
+|
+*/
+$config['artefact_query_error_log_is_enabled']  = true;
+$config['artefact_query_error_log_level']       = 'error';
+
+/*
+|--------------------------------------------------------------------------
 | The Data Conversion for Artefact
 |--------------------------------------------------------------------------
 |

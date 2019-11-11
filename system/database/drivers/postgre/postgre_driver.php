@@ -350,7 +350,7 @@ class CI_DB_postgre_driver extends CI_DB {
 	/**
 	 * Insert ID
 	 *
-	 * @return	string
+	 * @return	string or FALSE on failure
 	 */
 	public function insert_id()
 	{
@@ -368,9 +368,16 @@ class CI_DB_postgre_driver extends CI_DB {
 			if ($column !== NULL && $v >= '8.0')
 			{
 				$sql = 'SELECT pg_get_serial_sequence(\''.$table."', '".$column."') AS seq";
-				$query = $this->query($sql);
-				$query = $query->row();
-				$seq = $query->seq;
+
+				$result = $this->query($sql);
+
+				if ($result === FALSE) {
+					return FALSE;
+				}
+
+				$row = $result->row();
+
+				$seq = $row->seq;
 			}
 			else
 			{
@@ -385,9 +392,16 @@ class CI_DB_postgre_driver extends CI_DB {
 			return pg_last_oid($this->result_id);
 		}
 
-		$query = $this->query($sql);
-		$query = $query->row();
-		return (int) $query->ins_id;
+		$result = $this->query($sql);
+
+		if ($result === FALSE)
+		{
+			return FALSE;
+		}
+
+		$row = $result->row();
+
+		return (int) $row->ins_id;
 	}
 
 	// --------------------------------------------------------------------

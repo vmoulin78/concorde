@@ -136,9 +136,16 @@ class CI_DB_pdo_pgsql_driver extends CI_DB_pdo_driver {
 	{
 		if ($name === NULL && version_compare($this->version(), '8.1', '>='))
 		{
-			$query = $this->query('SELECT LASTVAL() AS ins_id');
-			$query = $query->row();
-			return $query->ins_id;
+			$result = $this->query('SELECT LASTVAL() AS ins_id');
+
+			if ($result === FALSE)
+			{
+				return FALSE;
+			}
+
+			$row = $result->row();
+
+			return $row->ins_id;
 		}
 
 		return $this->conn_id->lastInsertId($name);

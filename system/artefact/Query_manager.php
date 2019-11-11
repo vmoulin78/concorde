@@ -244,9 +244,58 @@ class Query_manager
 
             $result = $this->CI->db->{$method}(...$args);
 
-            $this->CI->db->reset_query();
+            if ($result === false) {
+                $db_error = $this->CI->db->error();
 
-            return $result;
+                $this->CI->db->reset_query();
+
+                if ($this->CI->config->item('artefact_query_error_log_is_enabled')) {
+                    log_message($this->CI->config->item('artefact_query_error_log_level'), $db_error['message']);
+                }
+
+                switch ($this->CI->config->item('artefact_query_error_message_type')) {
+                    case 'debug':
+                        $message_content = $db_error['message'];
+                        break;
+
+                    case 'custom':
+                        $message_content = $this->CI->config->item('artefact_query_error_message_content');
+                        break;
+
+                    default:
+                        exit(1);
+                        break;
+                }
+
+                switch ($this->CI->config->item('artefact_query_error_output_type')) {
+                    case 'bool':
+                        return false;
+
+                    case 'exit':
+                        exit($message_content);
+                        break;
+
+                    case 'exception':
+                        throw new \Exception($message_content);
+                        break;
+
+                    case 'trigger':
+                        trigger_error($message_content);
+                        break;
+
+                    case 'show':
+                        show_error($message_content);
+                        break;
+
+                    default:
+                        exit(1);
+                        break;
+                }
+            } else {
+                $this->CI->db->reset_query();
+
+                return $result;
+            }
         } else {
             if (in_array($method, ['table', 'from', 'join'])) {
                 if (count($args) === 0) {

@@ -1233,7 +1233,7 @@ abstract class CI_DB_driver {
 	 * the specified database
 	 *
 	 * @param	string
-	 * @return	int
+	 * @return	int or FALSE on failure
 	 */
 	public function count_all($table = '')
 	{
@@ -1243,14 +1243,25 @@ abstract class CI_DB_driver {
 		}
 
 		$query = $this->query($this->_count_string.$this->escape_identifiers('numrows').' FROM '.$this->protect_identifiers($table, TRUE, NULL, FALSE));
-		if ($query->num_rows() === 0)
+
+		if ($query === FALSE)
 		{
-			return 0;
+			$retour = FALSE;
+		}
+		elseif ($query->num_rows() === 0)
+		{
+			$retour = 0;
+		}
+		else
+		{
+			$query = $query->row();
+
+			$retour = (int) $query->numrows;
 		}
 
-		$query = $query->row();
 		$this->_reset_select();
-		return (int) $query->numrows;
+
+		return $retour;
 	}
 
 	// --------------------------------------------------------------------

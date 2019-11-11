@@ -1423,7 +1423,7 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 	 *
 	 * @param	string
 	 * @param	bool	the reset clause
-	 * @return	int
+	 * @return	int or FALSE on failure
 	 */
 	public function count_all_results($table = '', $reset = TRUE)
 	{
@@ -1444,6 +1444,21 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 			? $this->query($this->_count_string.$this->protect_identifiers('numrows')."\nFROM (\n".$this->_compile_select()."\n) CI_count_all_results")
 			: $this->query($this->_compile_select($this->_count_string.$this->protect_identifiers('numrows')));
 
+		if ($result === FALSE)
+		{
+			$retour = FALSE;
+		}
+		elseif ($result->num_rows() === 0)
+		{
+			$retour = 0;
+		}
+		else
+		{
+			$row = $result->row();
+
+			$retour = (int) $row->numrows;
+		}
+
 		if ($reset === TRUE)
 		{
 			$this->_reset_select();
@@ -1454,13 +1469,7 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 			$this->qb_cache_orderby = $qb_cache_orderby;
 		}
 
-		if ($result->num_rows() === 0)
-		{
-			return 0;
-		}
-
-		$row = $result->row();
-		return (int) $row->numrows;
+		return $retour;
 	}
 
 	// --------------------------------------------------------------------
@@ -1540,17 +1549,23 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 		}
 
 		// Batch this baby
-		$affected_rows = 0;
+		$retour = 0;
 		for ($i = 0, $total = count($this->qb_set); $i < $total; $i += $batch_size)
 		{
-			if ($this->query($this->_insert_batch($this->protect_identifiers($table, TRUE, $escape, FALSE), $this->qb_keys, array_slice($this->qb_set, $i, $batch_size))))
+			$result = $this->query($this->_insert_batch($this->protect_identifiers($table, TRUE, $escape, FALSE), $this->qb_keys, array_slice($this->qb_set, $i, $batch_size)));
+
+			if ($result === FALSE)
 			{
-				$affected_rows += $this->affected_rows();
+				$retour = FALSE;
+				break;
 			}
+
+			$retour += $this->affected_rows();
 		}
 
 		$this->_reset_write();
-		return $affected_rows;
+
+		return $retour;
 	}
 
 	// --------------------------------------------------------------------
@@ -1957,19 +1972,25 @@ abstract class CI_DB_query_builder extends CI_DB_driver {
 		}
 
 		// Batch this baby
-		$affected_rows = 0;
+		$retour = 0;
 		for ($i = 0, $total = count($this->qb_set_ub); $i < $total; $i += $batch_size)
 		{
-			if ($this->query($this->_update_batch($this->protect_identifiers($table, TRUE, NULL, FALSE), array_slice($this->qb_set_ub, $i, $batch_size), $index)))
+			$result = $this->query($this->_update_batch($this->protect_identifiers($table, TRUE, NULL, FALSE), array_slice($this->qb_set_ub, $i, $batch_size), $index));
+
+			if ($result === FALSE)
 			{
-				$affected_rows += $this->affected_rows();
+				$retour = FALSE;
+				break;
 			}
+
+			$retour += $this->affected_rows();
 
 			$this->qb_where = array();
 		}
 
 		$this->_reset_write();
-		return $affected_rows;
+
+		return $retour;
 	}
 
 	// --------------------------------------------------------------------

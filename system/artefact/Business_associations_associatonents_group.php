@@ -59,10 +59,10 @@ class Business_associations_associatonents_group
     public $associatound_atom_property;
     public $associatound_atom_numbered_name;
     public $associatound_atom_alias;
-    public $associatound_atom_field; //used only for the many_to_many associations
-    public $associatound_atom_joining_field; //used only for the many_to_many associations
+    public $associatound_atom_field;  // Only used for the many_to_many associations
+    public $associatound_atom_joining_field;  // Only used for the many_to_many associations
     public $joining_alias;
-    public $atoms_aliases; //used only for the many_to_many associations
+    public $atoms_aliases;  // Only used for the many_to_many associations
     public $associatonents;
 
     public function __construct($association_numbered_name) {

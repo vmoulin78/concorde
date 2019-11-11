@@ -241,9 +241,16 @@ class CI_DB_mssql_driver extends CI_DB {
 			? 'SELECT SCOPE_IDENTITY() AS last_id'
 			: 'SELECT @@IDENTITY AS last_id';
 
-		$query = $this->query($query);
-		$query = $query->row();
-		return $query->last_id;
+		$result = $this->query($query);
+
+		if ($result === FALSE)
+		{
+			return FALSE;
+		}
+
+		$row = $result->row();
+
+		return $row->last_id;
 	}
 
 	// --------------------------------------------------------------------
