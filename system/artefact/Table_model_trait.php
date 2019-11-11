@@ -54,28 +54,37 @@ trait Table_model_trait
     /**
      * Find one or many table models given the filter $filter
      *
-     * @param   mixed  $filter  An id or an array of ids
+     * @param   mixed       $filter      An id or an array of ids
+     * @param   Databubble  $databubble  The databubble where the data will be put or updated (if it is null, a new Databubble will be created)
      * @return  mixed
      */
-    public static function find($filter = null) {
+    public static function find($filter, Databubble $databubble = null) {
         $model_short_name = self::get_business_short_name();
 
-        if (is_null($filter)) {
-            $finder = new Finder($model_short_name);
-            return $finder->get();
+        $alias_name = 'alias_model';
+
+        $finder = new Finder($model_short_name . ' AS[' . $alias_name . ']');
+
+        if (is_array($filter)) {
+            $finder->where_in($alias_name . ':id', $filter);
+            return $finder->get($databubble);
         } else {
-            $alias_name = 'alias_model';
-
-            $finder = new Finder($model_short_name . ' AS[' . $alias_name . ']');
-
-            if (is_array($filter)) {
-                $finder->where_in($alias_name . ':id', $filter);
-                return $finder->get();
-            } else {
-                $finder->where($alias_name . ':id', $filter);
-                return $finder->first();
-            }
+            $finder->where($alias_name . ':id', $filter);
+            return $finder->first($databubble);
         }
+    }
+
+    /**
+     * Find all the table models
+     *
+     * @param   Databubble  $databubble  The databubble where the data will be put or updated (if it is null, a new Databubble will be created)
+     * @return  array
+     */
+    public static function all(Databubble $databubble = null) {
+        $model_short_name = self::get_business_short_name();
+
+        $finder = new Finder($model_short_name);
+        return $finder->get($databubble);
     }
 
     /**

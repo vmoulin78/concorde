@@ -76,15 +76,22 @@ abstract class Enum_model extends Model
     //------------------------------------------------------//
 
     /**
-     * Find one or many Enum_model given the filter $filter
+     * Find one or many Enum_model instances given the filter $filter
      *
      * @param   mixed  $filter  An id or an array of ids
      * @return  mixed
      */
-    abstract public static function find($filter = null);
+    abstract public static function find($filter);
 
     /**
-     * Find one or many Enum_model given the filter $filter
+     * Find all the Enum_model instances
+     *
+     * @return  array
+     */
+    abstract public static function all();
+
+    /**
+     * Find one or many Enum_model instances given the filter $filter
      *
      * @param   mixed  $filter  A name or an array of names
      * @return  mixed
@@ -92,9 +99,9 @@ abstract class Enum_model extends Model
     abstract public static function find_by_name($filter);
 
     /**
-     * Find the id of the Enum_model whose name is $name
+     * Find the id of the Enum_model instance whose name is $name
      *
-     * @param   string  $name  The name of the Enum_model
+     * @param   string  $name  The name of the Enum_model instance
      * @return  int
      */
     public static function find_id($name) {
@@ -104,9 +111,9 @@ abstract class Enum_model extends Model
     }
 
     /**
-     * Find the name of the Enum_model whose id is $id
+     * Find the name of the Enum_model instance whose id is $id
      *
-     * @param   int  $id  The id of the Enum_model
+     * @param   int  $id  The id of the Enum_model instance
      * @return  string
      */
     public static function find_name($id) {
@@ -116,7 +123,7 @@ abstract class Enum_model extends Model
     }
 
     /**
-     * Return true if the name of the current Enum_model is in the array of names $enum_models_names and false otherwise
+     * Return true if the name of the current Enum_model instance is in the array of names $enum_models_names and false otherwise
      * Trigger an error if a name in the array of names $enum_models_names doesn't exist
      *
      * @param   array  $enum_models_names
@@ -135,7 +142,7 @@ abstract class Enum_model extends Model
     }
 
     /**
-     * Return true if the name of the current Enum_model is the name $enum_model_name and false otherwise
+     * Return true if the name of the current Enum_model instance is the name $enum_model_name and false otherwise
      * Trigger an error if the name $enum_model_name doesn't exist
      *
      * @param   string  $enum_model_name

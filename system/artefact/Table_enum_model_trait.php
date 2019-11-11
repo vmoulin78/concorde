@@ -52,16 +52,23 @@ trait Table_enum_model_trait
     /**
      * (See the Enum_model class)
      */
-    public static function find($filter = null) {
+    public static function find($filter) {
         $enum_models_loader = Enum_models_loader::get_singleton();
 
         $model_short_name = self::get_business_short_name();
 
-        if (is_null($filter)) {
-            return $enum_models_loader->get_all($model_short_name);
-        } else {
-            return $enum_models_loader->get_by_id($model_short_name, $filter);
-        }
+        return $enum_models_loader->get_by_id($model_short_name, $filter);
+    }
+
+    /**
+     * (See the Enum_model class)
+     */
+    public static function all() {
+        $enum_models_loader = Enum_models_loader::get_singleton();
+
+        $model_short_name = self::get_business_short_name();
+
+        return $enum_models_loader->get_all($model_short_name);
     }
 
     /**
