@@ -989,8 +989,10 @@ abstract class CI_DB_driver {
 
 			return TRUE;
 		}
-
-		return FALSE;
+		else
+		{
+			return FALSE;
+		}
 	}
 
 	// --------------------------------------------------------------------

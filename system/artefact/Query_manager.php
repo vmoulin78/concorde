@@ -249,7 +249,7 @@ class Query_manager
 
                 $this->CI->db->reset_query();
 
-                if ($this->CI->config->item('artefact_query_error_log_is_enabled')) {
+                if ($this->CI->config->item('artefact_query_error_log_enabled')) {
                     log_message($this->CI->config->item('artefact_query_error_log_level'), $db_error['message']);
                 }
 
@@ -280,11 +280,16 @@ class Query_manager
                         break;
 
                     case 'trigger':
-                        trigger_error($message_content);
+                        trigger_error($message_content, E_USER_ERROR);
                         break;
 
                     case 'show':
-                        show_error($message_content);
+                        if ($this->CI->input->is_ajax_request()) {
+                            echo $this->CI->config->item('artefact_query_error_ajax_response');
+                            exit;
+                        } else {
+                            show_error($message_content);
+                        }
                         break;
 
                     default:

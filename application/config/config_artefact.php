@@ -13,7 +13,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |   'exit'       Exit the application
 |   'exception'  Throw an exception
 |   'trigger'    Call the function trigger_error()
-|   'show'       Call the function show_error()
+|   'show'       Call the function show_error() (or output $config['artefact_query_error_ajax_response'] if the HTTP request is an AJAX request)
 |
 */
 $config['artefact_query_error_output_type'] = 'show';
@@ -46,15 +46,25 @@ $config['artefact_query_error_message_content'] = 'An error occurred, please try
 
 /*
 |--------------------------------------------------------------------------
+| The AJAX response for the SQL query errors
+|--------------------------------------------------------------------------
+|
+| Only used if $config['artefact_query_error_output_type'] is set to 'show' and if the HTTP request is an AJAX request
+|
+*/
+$config['artefact_query_error_ajax_response'] = '<message><type>error</type><content>An error occurred, please try again later.</content></message>';
+
+/*
+|--------------------------------------------------------------------------
 | Query error log
 |--------------------------------------------------------------------------
 |
-| 'artefact_query_error_log_is_enabled'  = Enable/Disable the SQL query error log
-| 'artefact_query_error_log_level'       = Set the SQL query error log level (Valid options are: 'error' | 'debug' | 'info')
+| 'artefact_query_error_log_enabled'  = Enable/Disable the SQL query error log
+| 'artefact_query_error_log_level'    = Set the SQL query error log level (Valid options are: 'error' | 'debug' | 'info')
 |
 */
-$config['artefact_query_error_log_is_enabled']  = true;
-$config['artefact_query_error_log_level']       = 'error';
+$config['artefact_query_error_log_enabled']  = true;
+$config['artefact_query_error_log_level']    = 'error';
 
 /*
 |--------------------------------------------------------------------------
