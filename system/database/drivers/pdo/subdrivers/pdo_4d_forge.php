@@ -35,7 +35,7 @@
  * @since	Version 3.0.0
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /**
  * PDO 4D Forge Class

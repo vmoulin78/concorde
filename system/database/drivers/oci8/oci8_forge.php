@@ -35,7 +35,7 @@
  * @since	Version 1.4.1
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /**
  * Oracle Forge Class

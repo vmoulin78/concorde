@@ -36,7 +36,7 @@ namespace Concorde\artefact\dbms\postgresql;
  * @since       Version 1.0.0
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 use Concorde\artefact\Dbms_manager;
 use Concorde\artefact\Enum_model;

@@ -35,7 +35,7 @@
  * @since	Version 1.0.0
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /**
  * Logging Class
@@ -185,13 +185,17 @@ class CI_Log {
 		$filepath = $this->_log_path.'log-'.date('Y-m-d').'.'.$this->_file_ext;
 		$message = '';
 
-		if ( ! file_exists($filepath))
+		if (file_exists($filepath))
+		{
+			$newfile = FALSE;
+		}
+		else
 		{
 			$newfile = TRUE;
 			// Only add protection to php files
 			if ($this->_file_ext === 'php')
 			{
-				$message .= "<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>\n\n";
+				$message .= "<?php defined('APP_ENTRY_PASS') OR exit('No direct script access allowed'); ?>\n\n";
 			}
 		}
 
@@ -228,7 +232,7 @@ class CI_Log {
 		flock($fp, LOCK_UN);
 		fclose($fp);
 
-		if (isset($newfile) && $newfile === TRUE)
+		if ($newfile)
 		{
 			chmod($filepath, $this->_file_permissions);
 		}

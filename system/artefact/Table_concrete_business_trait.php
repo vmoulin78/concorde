@@ -36,7 +36,7 @@ namespace Concorde\artefact;
  * @since       Version 1.0.0
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /**
  * Table_concrete_business_trait Trait

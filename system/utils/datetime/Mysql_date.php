@@ -36,7 +36,7 @@ namespace Concorde\utils\datetime;
  * @since       Version 1.0.0
  * @filesource
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /**
  * Mysql_date Class

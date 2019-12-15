@@ -1,4 +1,4 @@
-<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
+<?php defined('APP_ENTRY_PASS') OR exit('No direct script access allowed'); ?>
 
 An uncaught Exception was encountered
 
