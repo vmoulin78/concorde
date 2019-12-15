@@ -285,8 +285,7 @@ class Query_manager
 
                     case 'show':
                         if ($this->CI->input->is_ajax_request()) {
-                            echo $this->CI->config->item('artefact_query_error_ajax_response');
-                            exit;
+                            send_ajax_error($this->CI->config->item('artefact_query_error_ajax_response'));
                         } else {
                             show_error($message_content);
                         }

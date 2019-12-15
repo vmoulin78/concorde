@@ -384,6 +384,39 @@ if ( ! function_exists('is_cli'))
 
 // ------------------------------------------------------------------------
 
+if ( ! function_exists('manage_error_status_code'))
+{
+	/**
+	 * This function manages the error status code.
+	 *
+	 * @internal
+	 * @param	int
+	 * @return	array
+	 */
+	function manage_error_status_code($status_code)
+	{
+		$status_code = abs($status_code);
+		if ($status_code < 100)
+		{
+			$exit_status = $status_code + 9; // 9 is EXIT__AUTO_MIN
+			$status_code = 500;
+		}
+		else
+		{
+			$exit_status = 1; // EXIT_ERROR
+		}
+
+		$retour = array(
+			'status_code'  => $status_code,
+			'exit_status'  => $exit_status,
+		);
+
+		return $retour;
+	}
+}
+
+// ------------------------------------------------------------------------
+
 if ( ! function_exists('show_error'))
 {
 	/**
@@ -402,20 +435,35 @@ if ( ! function_exists('show_error'))
 	 */
 	function show_error($message, $status_code = 500, $heading = 'An Error Was Encountered')
 	{
-		$status_code = abs($status_code);
-		if ($status_code < 100)
-		{
-			$exit_status = $status_code + 9; // 9 is EXIT__AUTO_MIN
-			$status_code = 500;
-		}
-		else
-		{
-			$exit_status = 1; // EXIT_ERROR
-		}
+		$error_codes = manage_error_status_code($status_code);
 
 		$_error =& load_class('Exceptions', 'core');
-		echo $_error->show_error($heading, $message, 'error_general', $status_code);
-		exit($exit_status);
+		echo $_error->show_error($heading, $message, 'error_general', $error_codes['status_code']);
+		exit($error_codes['exit_status']);
+	}
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('send_ajax_error'))
+{
+	/**
+	 * AJAX Error Handler
+	 *
+	 * This function lets us invoke the exception class and
+	 * will send the AJAX response directly to the browser and exit.
+	 *
+	 * @param	string
+	 * @param	int
+	 * @return	void
+	 */
+	function send_ajax_error($ajax_response, $status_code = 500)
+	{
+		$error_codes = manage_error_status_code($status_code);
+
+		$_error =& load_class('Exceptions', 'core');
+		echo $_error->send_ajax_error($ajax_response, $error_codes['status_code']);
+		exit($error_codes['exit_status']);
 	}
 }
 

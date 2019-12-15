@@ -187,6 +187,28 @@ class CI_Exceptions {
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * AJAX Error Output
+	 *
+	 * @param	string	$ajax_response
+	 * @param 	int		$status_code
+	 *
+	 * @return	string	AJAX error output
+	 */
+	public function send_ajax_error($ajax_response, $status_code = 500)
+	{
+		set_status_header($status_code);
+
+		if (ob_get_level() > $this->ob_level + 1)
+		{
+			ob_end_flush();
+		}
+
+		return $ajax_response;
+	}
+
+	// --------------------------------------------------------------------
+
 	public function show_exception($exception)
 	{
 		$templates_path = config_item('error_views_path');
