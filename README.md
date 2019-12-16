@@ -1,5 +1,5 @@
 # The Concorde Project
-* **Version** : 1.3.6
+* **Version** : 1.3.7
 * Based on the CodeIgniter Framework
 * Comes with an integrated ORM named Artefact (compatible with PostgreSQL and MySQL)
 * Demo with PostgreSQL [https://github.com/vmoulin78/demo-concorde-postgresql](https://github.com/vmoulin78/demo-concorde-postgresql)

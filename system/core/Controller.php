@@ -85,11 +85,11 @@ class CI_Controller {
 		$this->load =& load_class('Loader', 'core');
 		$this->load->initialize();
 
-		if ($this->config->item('enable_global_transaction'))
+		if ($this->config->item('global_transaction_enabled'))
 		{
 			$global_transaction_performed = TRUE;
 
-			foreach ($this->config->item('global_transaction_exclude_uris') as $item)
+			foreach ($this->config->item('global_transaction_excluded_uris') as $item)
 			{
 				if (preg_match('#^'.$item.'$#i'.(UTF8_ENABLED ? 'u' : ''), $this->uri->uri_string()))
 				{

@@ -90,7 +90,7 @@ class CI_Output {
 	 *
 	 * @var	bool
 	 */
-	public $enable_profiler = FALSE;
+	public $profiler_enabled = FALSE;
 
 	/**
 	 * php.ini zlib.output_compression flag
@@ -351,7 +351,7 @@ class CI_Output {
 	 */
 	public function enable_profiler($val = TRUE)
 	{
-		$this->enable_profiler = is_bool($val) ? $val : TRUE;
+		$this->profiler_enabled = is_bool($val) ? $val : TRUE;
 		return $this;
 	}
 
@@ -510,7 +510,7 @@ class CI_Output {
 
 		// Do we need to generate profile data?
 		// If so, load the Profile class and run it.
-		if ($this->enable_profiler === TRUE)
+		if ($this->profiler_enabled === TRUE)
 		{
 			$CI->load->library('profiler');
 			if ( ! empty($this->_profiler_sections))

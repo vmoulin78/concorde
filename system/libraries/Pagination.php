@@ -379,7 +379,7 @@ class CI_Pagination {
 			}
 		}
 
-		if ($this->CI->config->item('enable_query_strings') === TRUE)
+		if ($this->CI->config->item('query_strings_enabled') === TRUE)
 		{
 			$this->page_query_string = TRUE;
 		}

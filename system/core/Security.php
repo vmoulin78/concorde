@@ -214,12 +214,12 @@ class CI_Security {
 		}
 
 		// Check if URI has been whitelisted from CSRF checks
-		if ($exclude_uris = config_item('csrf_exclude_uris'))
+		if ($csrf_excluded_uris = config_item('csrf_excluded_uris'))
 		{
 			$uri = load_class('URI', 'core');
-			foreach ($exclude_uris as $excluded)
+			foreach ($csrf_excluded_uris as $csrf_excluded_uri)
 			{
-				if (preg_match('#^'.$excluded.'$#i'.(UTF8_ENABLED ? 'u' : ''), $uri->uri_string()))
+				if (preg_match('#^'.$csrf_excluded_uri.'$#i'.(UTF8_ENABLED ? 'u' : ''), $uri->uri_string()))
 				{
 					return $this;
 				}

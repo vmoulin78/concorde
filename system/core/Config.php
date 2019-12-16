@@ -263,7 +263,7 @@ class CI_Config {
 
 		$uri = $this->_uri_string($uri);
 
-		if ($this->item('enable_query_strings') === FALSE)
+		if ($this->item('query_strings_enabled') === FALSE)
 		{
 			$suffix = isset($this->config['url_suffix']) ? $this->config['url_suffix'] : '';
 
@@ -335,7 +335,7 @@ class CI_Config {
 	 */
 	protected function _uri_string($uri)
 	{
-		if ($this->item('enable_query_strings') === FALSE)
+		if ($this->item('query_strings_enabled') === FALSE)
 		{
 			is_array($uri) && $uri = implode('/', $uri);
 			return ltrim($uri, '/');

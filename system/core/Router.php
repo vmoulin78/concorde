@@ -109,7 +109,7 @@ class CI_Router {
 	 *
 	 * @var	bool
 	 */
-	public $enable_query_strings = FALSE;
+	public $query_strings_enabled = FALSE;
 
 	// --------------------------------------------------------------------
 
@@ -126,7 +126,7 @@ class CI_Router {
 		$this->config =& load_class('Config', 'core');
 		$this->uri =& load_class('URI', 'core');
 
-		$this->enable_query_strings = ( ! is_cli() && $this->config->item('enable_query_strings') === TRUE);
+		$this->query_strings_enabled = ( ! is_cli() && $this->config->item('query_strings_enabled') === TRUE);
 
 		// If a directory override is configured, it has to be set before any dynamic routing logic
 		is_array($routing) && isset($routing['directory']) && $this->set_directory($routing['directory']);
@@ -155,7 +155,7 @@ class CI_Router {
 	protected function _set_routing()
 	{
 		// Load the routes.php file. It would be great if we could
-		// skip this for enable_query_strings = TRUE, but then
+		// skip this for query_strings_enabled = TRUE, but then
 		// default_controller would be empty ...
 		if (file_exists(APPPATH.'config/routes.php'))
 		{
@@ -179,7 +179,7 @@ class CI_Router {
 		// Are query strings enabled in the config file? Normally CI doesn't utilize query strings
 		// since URI segments are more search-engine friendly, but they can optionally be used.
 		// If this feature is enabled, we will gather the directory/class/method a little differently
-		if ($this->enable_query_strings)
+		if ($this->query_strings_enabled)
 		{
 			// If the directory is set at this time, it means an override exists, so skip the checks
 			if ( ! isset($this->directory))

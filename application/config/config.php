@@ -100,7 +100,7 @@ $config['charset'] = 'UTF-8';
 | setting this variable to TRUE (boolean).  See the user guide for details.
 |
 */
-$config['enable_hooks'] = FALSE;
+$config['hooks_enabled'] = FALSE;
 
 /*
 |--------------------------------------------------------------------------
@@ -182,7 +182,7 @@ $config['permitted_uri_chars'] = 'a-z 0-9~%.:_\-';
 | use segment based URLs.
 |
 */
-$config['enable_query_strings'] = FALSE;
+$config['query_strings_enabled'] = FALSE;
 $config['controller_trigger'] = 'c';
 $config['function_trigger'] = 'm';
 $config['directory_trigger'] = 'd';
@@ -446,14 +446,14 @@ $config['global_xss_filtering'] = FALSE;
 | 'csrf_cookie_name' = The cookie name
 | 'csrf_expire' = The number in seconds the token should expire.
 | 'csrf_regenerate' = Regenerate token on every submission
-| 'csrf_exclude_uris' = Array of URIs which ignore CSRF checks
+| 'csrf_excluded_uris' = Array of URIs which ignore CSRF checks
 */
 $config['csrf_protection'] = FALSE;
 $config['csrf_token_name'] = 'csrf_test_name';
 $config['csrf_cookie_name'] = 'csrf_cookie_name';
 $config['csrf_expire'] = 7200;
 $config['csrf_regenerate'] = TRUE;
-$config['csrf_exclude_uris'] = array();
+$config['csrf_excluded_uris'] = array();
 
 /*
 |--------------------------------------------------------------------------
@@ -554,18 +554,18 @@ $config['classes_autoload'] = array(
 | Global Transaction
 |--------------------------------------------------------------------------
 |
-| 'enable_global_transaction'
+| 'global_transaction_enabled'
 |
 |   Enable/Disable the Global Transaction feature
 |
 |   If you would like to use the Global Transaction feature you must enable it by
 |   setting this variable to TRUE (boolean).
 |
-| 'global_transaction_exclude_uris'
+| 'global_transaction_excluded_uris'
 |
 |   Array of URIs for which the Global Transaction feature will not be performed
-|   (useful only if 'enable_global_transaction' is TRUE)
+|   (useful only if 'global_transaction_enabled' is TRUE)
 |
 */
-$config['enable_global_transaction'] = TRUE;
-$config['global_transaction_exclude_uris'] = array();
+$config['global_transaction_enabled'] = TRUE;
+$config['global_transaction_excluded_uris'] = array();

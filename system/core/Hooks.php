@@ -92,7 +92,7 @@ class CI_Hooks {
 
 		// If hooks are not enabled in the config file
 		// there is nothing else to do
-		if ($CFG->item('enable_hooks') === FALSE)
+		if ($CFG->item('hooks_enabled') === FALSE)
 		{
 			return;
 		}
