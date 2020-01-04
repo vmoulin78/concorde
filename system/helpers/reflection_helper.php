@@ -6,7 +6,7 @@
  *
  * This content is released under the MIT License (MIT)
  *
- * Copyright (c) 2019, Vincent MOULIN
+ * Copyright (c) 2019 - 2020, Vincent MOULIN
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
  *
  * @package     Concorde
  * @author      Vincent MOULIN
- * @copyright   Copyright (c) 2019, Vincent MOULIN
+ * @copyright   Copyright (c) 2019 - 2020, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
  * @since       Version 1.0.0

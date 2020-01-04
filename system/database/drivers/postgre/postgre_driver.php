@@ -350,7 +350,7 @@ class CI_DB_postgre_driver extends CI_DB {
 	/**
 	 * Insert ID
 	 *
-	 * @return	string or FALSE on failure
+	 * @return	int or FALSE on failure
 	 */
 	public function insert_id()
 	{

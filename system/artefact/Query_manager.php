@@ -8,7 +8,7 @@ namespace Concorde\artefact;
  *
  * This content is released under the MIT License (MIT)
  *
- * Copyright (c) 2019, Vincent MOULIN
+ * Copyright (c) 2019 - 2020, Vincent MOULIN
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ namespace Concorde\artefact;
  *
  * @package     Concorde
  * @author      Vincent MOULIN
- * @copyright   Copyright (c) 2019, Vincent MOULIN
+ * @copyright   Copyright (c) 2019 - 2020, Vincent MOULIN
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link       
  * @since       Version 1.0.0
@@ -57,6 +57,7 @@ class Query_manager
         'count_all',
         'count_all_results',
         'insert_id',
+        'affected_rows',
         'insert',
         'insert_batch',
         'update',
@@ -93,7 +94,6 @@ class Query_manager
 
     private $CI;
 
-    public $table; // The reference table
     public $aliases;
     public $stack;
 
@@ -204,9 +204,30 @@ class Query_manager
      * @return  void
      */
     public function reset() {
-        $this->table    = null;
         $this->aliases  = array();
         $this->stack    = array();
+    }
+
+    /**
+     * Insert ID
+     *
+     * This method is private because if it was public, it could return an unexpected result (in case of multiple query managers).
+     *
+     * @return  int or false on failure
+     */
+    private function insert_id() {
+        return $this->__call('insert_id');
+    }
+
+    /**
+     * Affected Rows
+     *
+     * This method is private because if it was public, it could return an unexpected result (in case of multiple query managers).
+     *
+     * @return  int
+     */
+    private function affected_rows() {
+        return $this->__call('affected_rows');
     }
 
     /**
@@ -216,17 +237,67 @@ class Query_manager
      * @return  bool|int
      */
     public function insert($with_insert_id = false) {
-        $insert_result = $this->__call('insert');
+        $result = $this->__call('insert');
 
-        if ($insert_result === false) {
+        if ($result === false) {
             return false;
         }
 
         if ($with_insert_id) {
-            return $this->__call('insert_id');
+            return $this->insert_id();
         } else {
             return true;
         }
+    }
+
+    /**
+     * Query Affected Rows
+     *
+     * @param   bool  $with_affected_rows  If true, the method will return the number of affected rows in case of success and false otherwise
+     * @return  bool|int
+     */
+    private function query_affected_rows($method, $with_affected_rows) {
+        $result = $this->__call($method);
+
+        if ($result === false) {
+            return false;
+        }
+
+        if ($with_affected_rows) {
+            return $this->affected_rows();
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Trigger the update query
+     *
+     * @param   bool  $with_affected_rows  If true, the method will return the number of affected rows in case of success and false otherwise
+     * @return  bool|int
+     */
+    public function update($with_affected_rows = false) {
+        return $this->query_affected_rows('update', $with_affected_rows);
+    }
+
+    /**
+     * Trigger the replace query
+     *
+     * @param   bool  $with_affected_rows  If true, the method will return the number of affected rows in case of success and false otherwise
+     * @return  bool|int
+     */
+    public function replace($with_affected_rows = false) {
+        return $this->query_affected_rows('replace', $with_affected_rows);
+    }
+
+    /**
+     * Trigger the delete query
+     *
+     * @param   bool  $with_affected_rows  If true, the method will return the number of affected rows in case of success and false otherwise
+     * @return  bool|int
+     */
+    public function delete($with_affected_rows = false) {
+        return $this->query_affected_rows('delete', $with_affected_rows);
     }
 
     /**
@@ -336,9 +407,6 @@ class Query_manager
                     $alias = $table;
                 }
 
-                if (in_array($method, ['table', 'from'])) {
-                    $this->table = $table;
-                }
                 $this->aliases[$alias] = $table;
             }
 
