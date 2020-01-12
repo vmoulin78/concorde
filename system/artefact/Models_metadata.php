@@ -62,7 +62,7 @@ class Models_metadata
         $this->CI =& get_instance();
 
         $this->models = array();
-        foreach ($this->CI->config->item('artefact_mapping_models') as $model => $config_model) {
+        foreach ($this->CI->config->item('Artefact.mapping_models') as $model => $config_model) {
             if (isset($config_model['table'])) {
                 $table = $config_model['table'];
             } else {

@@ -697,13 +697,12 @@ class CI_Loader {
 	 *
 	 * @uses	CI_Config::load()
 	 * @param	string	$file			Configuration file name
-	 * @param	bool	$use_sections		Whether configuration values should be loaded into their own section
 	 * @param	bool	$fail_gracefully	Whether to just return FALSE or display an error message
 	 * @return	bool	TRUE if the file was loaded correctly or FALSE on failure
 	 */
-	public function config($file, $use_sections = FALSE, $fail_gracefully = FALSE)
+	public function config($file, $fail_gracefully = FALSE)
 	{
-		return get_instance()->config->load($file, $use_sections, $fail_gracefully);
+		return get_instance()->config->load($file, $fail_gracefully);
 	}
 
 	// --------------------------------------------------------------------

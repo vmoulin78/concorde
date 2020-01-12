@@ -1,6 +1,8 @@
 <?php
 defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
+$section = 'Artefact';
+
 /*
 |--------------------------------------------------------------------------
 | The output type for the SQL query errors
@@ -13,10 +15,10 @@ defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 |   'exit'       Exit the application
 |   'exception'  Throw an exception
 |   'trigger'    Call the function trigger_error()
-|   'show'       Call the function show_error() (or output $config['artefact_query_error_ajax_response'] if the HTTP request is an AJAX request)
+|   'show'       Call the function show_error() (or output $config['query_error_ajax_response'] if the HTTP request is an AJAX request)
 |
 */
-$config['artefact_query_error_output_type'] = 'show';
+$config['query_error_output_type'] = 'show';
 
 /*
 |--------------------------------------------------------------------------
@@ -27,10 +29,10 @@ $config['artefact_query_error_output_type'] = 'show';
 |
 | Valid options are:
 |   'debug'   A message with technical information about the error
-|   'custom'  A custom message (See $config['artefact_query_error_message_content'])
+|   'custom'  A custom message (See $config['query_error_message_content'])
 |
 */
-$config['artefact_query_error_message_type'] = 'custom';
+$config['query_error_message_type'] = 'custom';
 
 /*
 |--------------------------------------------------------------------------
@@ -39,32 +41,32 @@ $config['artefact_query_error_message_type'] = 'custom';
 |
 | Set the message content in case of an SQL query error
 |
-| Only used if $config['artefact_query_error_message_type'] is set to 'custom'
+| Only used if $config['query_error_message_type'] is set to 'custom'
 |
 */
-$config['artefact_query_error_message_content'] = 'An error occurred, please try again later.';
+$config['query_error_message_content'] = 'An error occurred, please try again later.';
 
 /*
 |--------------------------------------------------------------------------
 | The AJAX response for the SQL query errors
 |--------------------------------------------------------------------------
 |
-| Only used if $config['artefact_query_error_output_type'] is set to 'show' and if the HTTP request is an AJAX request
+| Only used if $config['query_error_output_type'] is set to 'show' and if the HTTP request is an AJAX request
 |
 */
-$config['artefact_query_error_ajax_response'] = '<message><type>error</type><content>An error occurred, please try again later.</content></message>';
+$config['query_error_ajax_response'] = '<message><type>error</type><content>An error occurred, please try again later.</content></message>';
 
 /*
 |--------------------------------------------------------------------------
 | Query error log
 |--------------------------------------------------------------------------
 |
-| 'artefact_query_error_log_enabled'  = Enable/Disable the SQL query error log
-| 'artefact_query_error_log_level'    = Set the SQL query error log level (Valid options are: 'error' | 'debug' | 'info')
+| 'query_error_log_enabled'  = Enable/Disable the SQL query error log
+| 'query_error_log_level'    = Set the SQL query error log level (Valid options are: 'error' | 'debug' | 'info')
 |
 */
-$config['artefact_query_error_log_enabled']  = true;
-$config['artefact_query_error_log_level']    = 'error';
+$config['query_error_log_enabled']  = true;
+$config['query_error_log_level']    = 'error';
 
 /*
 |--------------------------------------------------------------------------
@@ -75,7 +77,7 @@ $config['artefact_query_error_log_level']    = 'error';
 |
 | Example:
 |
-| $config['artefact_data_conv'] = array(
+| $config['data_conv'] = array(
 |     'folder' => array(
 |         'id'         => 'pk',
 |         'name'       => 'string',
@@ -150,7 +152,7 @@ $config['artefact_query_error_log_level']    = 'error';
 | );
 |
 */
-$config['artefact_data_conv'] = array();
+$config['data_conv'] = array();
 
 /*
 |--------------------------------------------------------------------------
@@ -161,7 +163,7 @@ $config['artefact_data_conv'] = array();
 |
 | Example:
 |
-| $config['artefact_mapping_models'] = array(
+| $config['mapping_models'] = array(
 |     'Article'      => [],
 |     'Author'       => [],
 |     'Comment'      => [],
@@ -176,7 +178,7 @@ $config['artefact_data_conv'] = array();
 | );
 |
 */
-$config['artefact_mapping_models'] = array();
+$config['mapping_models'] = array();
 
 /*
 |--------------------------------------------------------------------------
@@ -187,7 +189,7 @@ $config['artefact_mapping_models'] = array();
 |
 | Example:
 |
-| $config['artefact_mapping_associations'] = array(
+| $config['mapping_associations'] = array(
 |     array(
 |         'associates' => array(
 |             array(
@@ -341,4 +343,4 @@ $config['artefact_mapping_models'] = array();
 | );
 |
 */
-$config['artefact_mapping_associations'] = array();
+$config['mapping_associations'] = array();

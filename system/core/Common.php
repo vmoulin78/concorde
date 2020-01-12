@@ -268,12 +268,26 @@ if ( ! function_exists('get_config'))
 				echo 'Your config file does not appear to be formatted correctly.';
 				exit(3); // EXIT_CONFIG
 			}
+
+			$formatted_config = array();
+			foreach ($config as $key => $val)
+			{
+				$formatted_config[$key] = array(
+					'initial_value'  => $val,
+					'current_value'  => $val,
+				);
+			}
+
+			$config = $formatted_config;
 		}
 
 		// Are any values being dynamically added or replaced?
 		foreach ($replace as $key => $val)
 		{
-			$config[$key] = $val;
+			$config[$key] = array(
+				'initial_value'  => $val,
+				'current_value'  => $val,
+			);
 		}
 
 		return $config;
@@ -286,6 +300,7 @@ if ( ! function_exists('config_item'))
 {
 	/**
 	 * Returns the specified config item
+	 * Works only with the items of the primary section
 	 *
 	 * @param	string
 	 * @return	mixed
@@ -300,7 +315,14 @@ if ( ! function_exists('config_item'))
 			$_config[0] =& get_config();
 		}
 
-		return isset($_config[0][$item]) ? $_config[0][$item] : NULL;
+		if (isset($_config[0][$item]))
+		{
+			return $_config[0][$item]['current_value'];
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 }
 

@@ -83,10 +83,10 @@ class CI_Config {
 	 */
 	public function __construct()
 	{
-		$this->config =& get_config();
+		$this->config[CONFIG_PRIMARY_SECTION] =& get_config();
 
 		// Set the base_url automatically if none was provided
-		if (empty($this->config['base_url']))
+		if (empty($this->item('base_url')))
 		{
 			if (isset($_SERVER['SERVER_ADDR']))
 			{
@@ -107,7 +107,7 @@ class CI_Config {
 				$base_url = 'http://localhost/';
 			}
 
-			$this->set_item('base_url', $base_url);
+			$this->create_item('base_url', $base_url);
 		}
 
 		log_message('info', 'Config Class Initialized');
@@ -119,11 +119,10 @@ class CI_Config {
 	 * Load Config File
 	 *
 	 * @param	string	$file			Configuration file name
-	 * @param	bool	$use_sections		Whether configuration values should be loaded into their own section
 	 * @param	bool	$fail_gracefully	Whether to just return FALSE or display an error message
 	 * @return	bool	TRUE if the file was loaded correctly or FALSE on failure
 	 */
-	public function load($file = '', $use_sections = FALSE, $fail_gracefully = FALSE)
+	public function load($file = '', $fail_gracefully = FALSE)
 	{
 		$file = ($file === '') ? 'config' : str_replace('.php', '', $file);
 		$loaded = FALSE;
@@ -143,10 +142,20 @@ class CI_Config {
 					continue;
 				}
 
+				$section  = NULL;
+				$config   = NULL;
+
 				include($file_path);
 
-				if ( ! isset($config) OR ! is_array($config))
+				if ( ! isset($section))
 				{
+					$section = CONFIG_PRIMARY_SECTION;
+				}
+
+				if ((($file === 'config') && ($section !== CONFIG_PRIMARY_SECTION))
+					OR ( ! isset($config))
+					OR ( ! is_array($config))
+				) {
 					if ($fail_gracefully === TRUE)
 					{
 						return FALSE;
@@ -155,20 +164,21 @@ class CI_Config {
 					show_error('Your '.$file_path.' file does not appear to contain a valid configuration array.');
 				}
 
-				if ($use_sections === TRUE)
+				foreach ($config as $key => $value)
 				{
-					$this->config[$file] = isset($this->config[$file])
-						? array_merge($this->config[$file], $config)
-						: $config;
-				}
-				else
-				{
-					$this->config = array_merge($this->config, $config);
+					$this->create_item(
+						array(
+							'section'    => $section,
+							'parameter'  => $key,
+						),
+						$value
+					);
 				}
 
 				$this->is_loaded[] = $file_path;
-				$config = NULL;
+
 				$loaded = TRUE;
+
 				log_message('debug', 'Config file loaded: '.$file_path);
 			}
 		}
@@ -181,49 +191,275 @@ class CI_Config {
 		{
 			return FALSE;
 		}
-
-		show_error('The configuration file '.$file.'.php does not exist.');
+		else
+		{
+			show_error('The configuration file '.$file.'.php does not exist.');
+		}
 	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Fetch a config file item
+	 * Format the item $item_array
 	 *
-	 * @param	string	$item	Config item name
-	 * @param	string	$index	Index name
-	 * @return	string|null	The configuration item or NULL if the item doesn't exist
+	 * @param	array	$item_array
+	 * @return	array
 	 */
-	public function item($item, $index = '')
+	protected function _format_item_array($item_array)
 	{
-		if ($index == '')
+		$retour = array();
+
+		$retour['parameter'] = $item_array['parameter'];
+
+		if (isset($item_array['section']))
 		{
-			return isset($this->config[$item]) ? $this->config[$item] : NULL;
+			$retour['section'] = $item_array['section'];
+		}
+		else
+		{
+			$retour['section'] = CONFIG_PRIMARY_SECTION;
 		}
 
-		return isset($this->config[$index], $this->config[$index][$item]) ? $this->config[$index][$item] : NULL;
+		return $retour;
 	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Fetch a config file item with slash appended (if not empty)
+	 * Parse the item $item
 	 *
-	 * @param	string		$item	Config item name
-	 * @return	string|null	The configuration item or NULL if the item doesn't exist
+	 * @param	string	$item
+	 * @return	array
+	 */
+	protected function _parse_item($item)
+	{
+		$item_array = explode('.', $item, 2);
+
+		$parameter = array_pop($item_array);
+
+		if (count($item_array) === 1)
+		{
+			$section = array_shift($item_array);
+		}
+		else
+		{
+			$section = CONFIG_PRIMARY_SECTION;
+		}
+
+		return array(
+			'section'    => $section,
+			'parameter'  => $parameter,
+		);
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Analyze the item $item
+	 *
+	 * @param	string|array	$item
+	 * @return	array
+	 */
+	protected function _analyze_item($item)
+	{
+		if (is_array($item))
+		{
+			return $this->_format_item_array($item);
+		}
+		else
+		{
+			return $this->_parse_item($item);
+		}
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Return TRUE if the config section $section exists and FALSE otherwise
+	 *
+	 * @param	string	$section	Config section
+	 * @return	bool
+	 */
+	public function section_exists($section)
+	{
+		if (isset($this->config[$section]))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Return TRUE if the config item $item exists and FALSE otherwise
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * @param	string|array	$item	Config item
+	 * @return	bool
+	 */
+	public function item_exists($item)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		if ($this->section_exists($item_array['section'])
+			&& isset($this->config[$item_array['section']][$item_array['parameter']])
+		) {
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Fetch a config section
+	 *
+	 * @param	string	$section	Config section
+	 * @return	array	The configuration section
+	 */
+	public function section($section = CONFIG_PRIMARY_SECTION)
+	{
+		if ( ! $this->section_exists($section))
+		{
+			throw new Exception('Undefined configuration section');
+		}
+
+		$retour = array();
+
+		foreach ($this->config[$item_array['section']] as $key => $value)
+		{
+			$retour[$key] = $value['current_value'];
+		}
+
+		return $retour;
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Fetch a config item
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * @param	string|array	$item	Config item
+	 * @return	mixed	The configuration item
+	 */
+	public function item($item)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		if ( ! $this->item_exists($item_array))
+		{
+			throw new Exception('Undefined configuration item');
+		}
+
+		return $this->config[$item_array['section']][$item_array['parameter']]['current_value'];
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Fetch a config item with slash appended (if not empty)
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * @param	string|array	$item	Config item
+	 * @return	string	The configuration item
 	 */
 	public function slash_item($item)
 	{
-		if ( ! isset($this->config[$item]))
-		{
-			return NULL;
-		}
-		elseif (trim($this->config[$item]) === '')
+		$value = $this->item($item);
+
+		if (trim($value) === '')
 		{
 			return '';
 		}
+		else
+		{
+			return rtrim($value, '/').'/';
+		}
+	}
 
-		return rtrim($this->config[$item], '/').'/';
+	// --------------------------------------------------------------------
+
+	/**
+	 * Create a config item
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * If the config item $item already exists, then it is overwritten.
+	 *
+	 * @param	string|array	$item	Config item
+	 * @param	string	$value	The value
+	 * @return	void
+	 */
+	public function create_item($item, $value)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		$this->config[$item_array['section']][$item_array['parameter']] = array(
+			'initial_value'  => $value,
+			'current_value'  => $value,
+		);
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Set a config item
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * @param	string|array	$item	Config item
+	 * @param	string	$value	The value
+	 * @return	void
+	 */
+	public function set_item($item, $value)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		if ( ! $this->item_exists($item_array))
+		{
+			throw new Exception('Undefined configuration item');
+		}
+
+		$this->config[$item_array['section']][$item_array['parameter']]['current_value'] = $value;
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Restore the value of the config item $item to its initial value
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
+	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 *
+	 * @param	string|array	$item	Config item
+	 * @return	void
+	 */
+	public function restore_item($item)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		if ( ! $this->item_exists($item_array))
+		{
+			throw new Exception('Undefined configuration item');
+		}
+
+		$this->config[$item_array['section']][$item_array['parameter']]['current_value'] = $this->config[$item_array['section']][$item_array['parameter']]['initial_value'];
 	}
 
 	// --------------------------------------------------------------------
@@ -265,7 +501,8 @@ class CI_Config {
 
 		if ($this->item('query_strings_enabled') === FALSE)
 		{
-			$suffix = isset($this->config['url_suffix']) ? $this->config['url_suffix'] : '';
+			$url_suffix_item = $this->item('url_suffix');
+			$suffix = isset($url_suffix_item) ? $url_suffix_item : '';
 
 			if ($suffix !== '')
 			{
@@ -360,20 +597,6 @@ class CI_Config {
 	{
 		$x = explode('/', preg_replace('|/*(.+?)/*$|', '\\1', BASEPATH));
 		return $this->slash_item('base_url').end($x).'/';
-	}
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Set a config file item
-	 *
-	 * @param	string	$item	Config item key
-	 * @param	string	$value	Config item value
-	 * @return	void
-	 */
-	public function set_item($item, $value)
-	{
-		$this->config[$item] = $value;
 	}
 
 }

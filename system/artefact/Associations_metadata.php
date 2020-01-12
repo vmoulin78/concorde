@@ -59,7 +59,7 @@ class Associations_metadata
         $this->CI =& get_instance();
 
         $association_number = 1;
-        foreach ($this->CI->config->item('artefact_mapping_associations') as $config_association) {
+        foreach ($this->CI->config->item('Artefact.mapping_associations') as $config_association) {
             $association_array = array();
 
             $there_is_one   = false;

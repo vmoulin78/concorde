@@ -79,7 +79,7 @@ abstract class Data_conv
 
         $this->schema = array();
 
-        foreach ($this->CI->config->item('artefact_data_conv') as $table_name => $table_fields) {
+        foreach ($this->CI->config->item('Artefact.data_conv') as $table_name => $table_fields) {
             $fields = array();
 
             foreach ($table_fields as $table_field_name => $table_field_full_type) {

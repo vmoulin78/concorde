@@ -69,7 +69,6 @@ class CI_Profiler {
 		'queries',
 		'http_headers',
 		'session_data',
-		'config'
 	);
 
 	/**
@@ -460,43 +459,6 @@ class CI_Profiler {
 			$val = isset($_SERVER[$header]) ? htmlspecialchars($_SERVER[$header], ENT_QUOTES, config_item('charset')) : '';
 			$output .= '<tr><td style="vertical-align:top;width:50%;padding:5px;color:#900;background-color:#ddd;">'
 				.$header.'&nbsp;&nbsp;</td><td style="width:50%;padding:5px;color:#000;background-color:#ddd;">'.$val."</td></tr>\n";
-		}
-
-		return $output."</table>\n</fieldset>";
-	}
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Compile config information
-	 *
-	 * Lists developer config variables
-	 *
-	 * @return	string
-	 */
-	protected function _compile_config()
-	{
-		$output = "\n\n"
-			.'<fieldset id="ci_profiler_config" style="border:1px solid #000;padding:6px 10px 10px 10px;margin:20px 0 20px 0;background-color:#eee;">'
-			."\n"
-			.'<legend style="color:#000;">&nbsp;&nbsp;'.$this->CI->lang->line('profiler_config').'&nbsp;&nbsp;(<span style="cursor: pointer;" onclick="var s=document.getElementById(\'ci_profiler_config_table\').style;s.display=s.display==\'none\'?\'\':\'none\';this.innerHTML=this.innerHTML==\''.$this->CI->lang->line('profiler_section_show').'\'?\''.$this->CI->lang->line('profiler_section_hide').'\':\''.$this->CI->lang->line('profiler_section_show').'\';">'.$this->CI->lang->line('profiler_section_show')."</span>)</legend>\n\n\n"
-			.'<table style="width:100%;display:none;" id="ci_profiler_config_table">'."\n";
-
-		foreach ($this->CI->config->config as $config => $val)
-		{
-			$pre       = '';
-			$pre_close = '';
-                        
-			if (is_array($val) OR is_object($val))
-			{
-				$val = print_r($val, TRUE);
-                                
-				$pre       = '<pre>' ;
- 				$pre_close = '</pre>';
-			}
-
-			$output .= '<tr><td style="padding:5px;vertical-align:top;color:#900;background-color:#ddd;">'
-				.$config.'&nbsp;&nbsp;</td><td style="padding:5px;color:#000;background-color:#ddd;">'.$pre.htmlspecialchars($val, ENT_QUOTES, config_item('charset')).$pre_close."</td></tr>\n";
 		}
 
 		return $output."</table>\n</fieldset>";

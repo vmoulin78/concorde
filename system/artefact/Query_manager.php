@@ -320,17 +320,17 @@ class Query_manager
 
                 $this->CI->db->reset_query();
 
-                if ($this->CI->config->item('artefact_query_error_log_enabled')) {
-                    log_message($this->CI->config->item('artefact_query_error_log_level'), $db_error['message']);
+                if ($this->CI->config->item('Artefact.query_error_log_enabled')) {
+                    log_message($this->CI->config->item('Artefact.query_error_log_level'), $db_error['message']);
                 }
 
-                switch ($this->CI->config->item('artefact_query_error_message_type')) {
+                switch ($this->CI->config->item('Artefact.query_error_message_type')) {
                     case 'debug':
                         $message_content = $db_error['message'];
                         break;
 
                     case 'custom':
-                        $message_content = $this->CI->config->item('artefact_query_error_message_content');
+                        $message_content = $this->CI->config->item('Artefact.query_error_message_content');
                         break;
 
                     default:
@@ -338,7 +338,7 @@ class Query_manager
                         break;
                 }
 
-                switch ($this->CI->config->item('artefact_query_error_output_type')) {
+                switch ($this->CI->config->item('Artefact.query_error_output_type')) {
                     case 'bool':
                         return false;
 
@@ -356,7 +356,7 @@ class Query_manager
 
                     case 'show':
                         if ($this->CI->input->is_ajax_request()) {
-                            send_ajax_error($this->CI->config->item('artefact_query_error_ajax_response'));
+                            send_ajax_error($this->CI->config->item('Artefact.query_error_ajax_response'));
                         } else {
                             show_error($message_content);
                         }

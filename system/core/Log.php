@@ -120,13 +120,17 @@ class CI_Log {
 	 */
 	public function __construct()
 	{
-		$config =& get_config();
+		$log_path_item              = config_item('log_path');
+		$log_file_extension_item    = config_item('log_file_extension');
+		$log_threshold_item         = config_item('log_threshold');
+		$log_date_format_item       = config_item('log_date_format');
+		$log_file_permissions_item  = config_item('log_file_permissions');
 
 		isset(self::$func_overload) OR self::$func_overload = (extension_loaded('mbstring') && ini_get('mbstring.func_overload'));
 
-		$this->_log_path = ($config['log_path'] !== '') ? $config['log_path'] : APPPATH.'logs/';
-		$this->_file_ext = (isset($config['log_file_extension']) && $config['log_file_extension'] !== '')
-			? ltrim($config['log_file_extension'], '.') : 'php';
+		$this->_log_path = ($log_path_item !== '') ? $log_path_item : APPPATH.'logs/';
+		$this->_file_ext = (isset($log_file_extension_item) && $log_file_extension_item !== '')
+			? ltrim($log_file_extension_item, '.') : 'php';
 
 		file_exists($this->_log_path) OR mkdir($this->_log_path, 0755, TRUE);
 
@@ -135,24 +139,24 @@ class CI_Log {
 			$this->_enabled = FALSE;
 		}
 
-		if (is_numeric($config['log_threshold']))
+		if (is_numeric($log_threshold_item))
 		{
-			$this->_threshold = (int) $config['log_threshold'];
+			$this->_threshold = (int) $log_threshold_item;
 		}
-		elseif (is_array($config['log_threshold']))
+		elseif (is_array($log_threshold_item))
 		{
 			$this->_threshold = 0;
-			$this->_threshold_array = array_flip($config['log_threshold']);
+			$this->_threshold_array = array_flip($log_threshold_item);
 		}
 
-		if ( ! empty($config['log_date_format']))
+		if ( ! empty($log_date_format_item))
 		{
-			$this->_date_fmt = $config['log_date_format'];
+			$this->_date_fmt = $log_date_format_item;
 		}
 
-		if ( ! empty($config['log_file_permissions']) && is_int($config['log_file_permissions']))
+		if ( ! empty($log_file_permissions_item) && is_int($log_file_permissions_item))
 		{
-			$this->_file_permissions = $config['log_file_permissions'];
+			$this->_file_permissions = $log_file_permissions_item;
 		}
 	}
 

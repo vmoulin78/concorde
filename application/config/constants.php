@@ -3,6 +3,16 @@ defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
 
 /*
 |--------------------------------------------------------------------------
+| Configuration Constants
+|--------------------------------------------------------------------------
+|
+| CONFIG_PRIMARY_SECTION    The name of the primary section related to the file config.php
+|
+*/
+defined('CONFIG_PRIMARY_SECTION') OR define('CONFIG_PRIMARY_SECTION', 'Config');
+
+/*
+|--------------------------------------------------------------------------
 | Display Debug backtrace
 |--------------------------------------------------------------------------
 |

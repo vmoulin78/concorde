@@ -83,9 +83,9 @@ class CI_Cache_memcached extends CI_Driver {
 		$CI =& get_instance();
 		$defaults = $this->_config['default'];
 
-		if ($CI->config->load('memcached', TRUE, TRUE))
+		if ($CI->config->load('memcached', TRUE))
 		{
-			$this->_config = $CI->config->config['memcached'];
+			$this->_config = $CI->config->section('Memcached');
 		}
 
 		if (class_exists('Memcached', FALSE))

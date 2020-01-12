@@ -63,7 +63,7 @@ defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CONCORDE_VERSION = '1.3.8';
+	const CONCORDE_VERSION = '1.3.9';
 
 /*
  * ------------------------------------------------------
@@ -231,7 +231,7 @@ if ( ! is_php('5.4'))
 	{
 		foreach ($assign_to_config as $key => $value)
 		{
-			$CFG->set_item($key, $value);
+			$CFG->create_item($key, $value);
 		}
 	}
 
@@ -392,9 +392,9 @@ if ( ! is_php('5.4'))
 		return CI_Controller::get_instance();
 	}
 
-	if (file_exists(APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php'))
+	if (file_exists(APPPATH.'core/'.$CFG->item('subclass_prefix').'Controller.php'))
 	{
-		require_once APPPATH.'core/'.$CFG->config['subclass_prefix'].'Controller.php';
+		require_once APPPATH.'core/'.$CFG->item('subclass_prefix').'Controller.php';
 	}
 
 	// Set a mark point for benchmarking

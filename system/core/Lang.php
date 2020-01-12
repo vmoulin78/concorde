@@ -108,8 +108,8 @@ class CI_Lang {
 
 		if (empty($idiom) OR ! preg_match('/^[a-z_-]+$/i', $idiom))
 		{
-			$config =& get_config();
-			$idiom = empty($config['language']) ? 'english' : $config['language'];
+			$language_item = config_item('language');
+			$idiom = empty($language_item) ? 'english' : $language_item;
 		}
 
 		if ($return === FALSE && isset($this->is_loaded[$langfile]) && $this->is_loaded[$langfile] === $idiom)
