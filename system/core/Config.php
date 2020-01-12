@@ -297,8 +297,9 @@ class CI_Config {
 	/**
 	 * Return TRUE if the config item $item exists and FALSE otherwise
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * @param	string|array	$item	Config item
 	 * @return	bool
@@ -348,8 +349,9 @@ class CI_Config {
 	/**
 	 * Fetch a config item
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * @param	string|array	$item	Config item
 	 * @return	mixed	The configuration item
@@ -371,8 +373,9 @@ class CI_Config {
 	/**
 	 * Fetch a config item with slash appended (if not empty)
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * @param	string|array	$item	Config item
 	 * @return	string	The configuration item
@@ -396,8 +399,9 @@ class CI_Config {
 	/**
 	 * Create a config item
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * If the config item $item already exists, then it is overwritten.
 	 *
@@ -420,8 +424,9 @@ class CI_Config {
 	/**
 	 * Set a config item
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * @param	string|array	$item	Config item
 	 * @param	string	$value	The value
@@ -444,8 +449,9 @@ class CI_Config {
 	/**
 	 * Restore the value of the config item $item to its initial value
 	 *
-	 * The config item $item can be a string like 'parameter' or 'Section.parameter'
-	 * or it can be an array with two keys : 'section' and 'parameter' (if 'section' is not set or is NULL, then it is set to the main section name)
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
 	 *
 	 * @param	string|array	$item	Config item
 	 * @return	void

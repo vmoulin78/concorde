@@ -63,7 +63,7 @@ defined('APP_ENTRY_PASS') OR exit('No direct script access allowed');
  * @var	string
  *
  */
-	const CONCORDE_VERSION = '1.3.9';
+	const CONCORDE_VERSION = '1.3.10';
 
 /*
  * ------------------------------------------------------
