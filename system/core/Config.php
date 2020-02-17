@@ -164,6 +164,11 @@ class CI_Config {
 					show_error('Your '.$file_path.' file does not appear to contain a valid configuration array.');
 				}
 
+				if ( ! $this->section_exists($section))
+				{
+					$this->create_section($section);
+				}
+
 				foreach ($config as $key => $value)
 				{
 					$this->create_item(
@@ -336,7 +341,7 @@ class CI_Config {
 
 		$retour = array();
 
-		foreach ($this->config[$item_array['section']] as $key => $value)
+		foreach ($this->config[$section] as $key => $value)
 		{
 			$retour[$key] = $value['current_value'];
 		}
@@ -413,6 +418,11 @@ class CI_Config {
 	{
 		$item_array = $this->_analyze_item($item);
 
+		if ( ! $this->section_exists($item_array['section']))
+		{
+			throw new Exception('Undefined configuration section');
+		}
+
 		$this->config[$item_array['section']][$item_array['parameter']] = array(
 			'initial_value'  => $value,
 			'current_value'  => $value,
@@ -466,6 +476,109 @@ class CI_Config {
 		}
 
 		$this->config[$item_array['section']][$item_array['parameter']]['current_value'] = $this->config[$item_array['section']][$item_array['parameter']]['initial_value'];
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Delete a config item
+	 *
+	 * The config item $item can be a string like 'parameter' or 'Section.parameter'.
+	 * It can also be an array with two keys : 'section' and 'parameter'.
+	 * If the section is not defined, then it is set to the primary section name.
+	 *
+	 * @param	string|array	$item	Config item
+	 * @return	void
+	 */
+	public function delete_item($item)
+	{
+		$item_array = $this->_analyze_item($item);
+
+		if ( ! $this->item_exists($item_array))
+		{
+			throw new Exception('Undefined configuration item');
+		}
+
+		unset($this->config[$item_array['section']][$item_array['parameter']]);
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Create a config section
+	 *
+	 * @param	string	$section	Config section
+	 * @return	void
+	 */
+	public function create_section($section = CONFIG_PRIMARY_SECTION)
+	{
+		if ($this->section_exists($section))
+		{
+			throw new Exception('Configuration section already exists');
+		}
+
+		$this->config[$section] = array();
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Restore the config section $section
+	 *
+	 * @param	string	$section	Config section
+	 * @return	void
+	 */
+	public function restore_section($section = CONFIG_PRIMARY_SECTION)
+	{
+		if ( ! $this->section_exists($section))
+		{
+			throw new Exception('Undefined configuration section');
+		}
+
+		$parameters = array_keys($this->config[$section]);
+		foreach ($parameters as $parameter)
+		{
+			$this->restore_item(
+				array(
+					'section'    => $section,
+					'parameter'  => $parameter,
+				)
+			);
+		}
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Delete a config section
+	 *
+	 * @param	string	$section	Config section
+	 * @return	void
+	 */
+	public function delete_section($section = CONFIG_PRIMARY_SECTION)
+	{
+		if ( ! $this->section_exists($section))
+		{
+			throw new Exception('Undefined configuration section');
+		}
+
+		unset($this->config[$section]);
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Restore all the config sections
+	 *
+	 * @return	void
+	 */
+	public function restore()
+	{
+		$sections = array_keys($this->config);
+		foreach ($sections as $section)
+		{
+			$this->restore_section($section);
+		}
 	}
 
 	// --------------------------------------------------------------------
