@@ -205,37 +205,20 @@ trait Table_association_trait
     }
 
     /**
-     * Return true if the concrete update manager exists and false otherwise
-     *
-     * @return  bool
-     */
-    public function concrete_update_manager_exists() {
-        $association_short_name = self::get_business_short_name();
-
-        $primary_key_scalar = $this->get_primary_key_scalar();
-
-        if (isset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar])) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the concrete update manager
+     * Get the update packet
      *
      * @return  array
      */
-    public function get_concrete_update_manager() {
+    public function &get_update_packet() {
         $association_short_name = self::get_business_short_name();
 
         $primary_key_scalar = $this->get_primary_key_scalar();
 
-        if ( ! isset($this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar])) {
-            $this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar] = new Query_manager();
+        if ( ! isset($this->databubble->update_packets['associations'][$association_short_name][$primary_key_scalar])) {
+            $this->databubble->update_packets['associations'][$association_short_name][$primary_key_scalar] = array();
         }
 
-        return $this->databubble->update_managers['associations'][$association_short_name][$primary_key_scalar];
+        return $this->databubble->update_packets['associations'][$association_short_name][$primary_key_scalar];
     }
 
     /**
@@ -263,7 +246,8 @@ trait Table_association_trait
 
         $this->{'set_' . $property}($value);
 
-        $this->get_concrete_update_manager()->set($property, $value);
+        $update_packet =& $this->get_update_packet();
+        $update_packet[$property] = $value;
 
         return $this;
     }
@@ -282,15 +266,20 @@ trait Table_association_trait
 
         $retour = true;
 
-        if ($this->concrete_update_manager_exists()) {
-            $update_manager = $this->get_concrete_update_manager();
-            $update_manager->table($table);
+        $update_packet =& $this->get_update_packet();
+        if ( ! empty($update_packet)) {
+            $qm = new Query_manager();
+            $qm->table($table);
 
             foreach ($this->get_primary_key() as $field_name => $field_value) {
-                $update_manager->where($field_name, $field_value);
+                $qm->where($field_name, $field_value);
             }
 
-            $retour = $update_manager->update();
+            foreach ($update_packet as $field_name => $field_value) {
+                $qm->set($field_name, $field_value);
+            }
+
+            $retour = $qm->update();
         }
 
         $primary_key_scalar = $this->get_primary_key_scalar();

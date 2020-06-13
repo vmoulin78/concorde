@@ -53,12 +53,12 @@ class Databubble
 {
     public $models;
     public $associations;
-    public $update_managers;
+    public $update_packets;
 
     public function __construct() {
-        $this->models           = array();
-        $this->associations     = array();
-        $this->update_managers  = array(
+        $this->models          = array();
+        $this->associations    = array();
+        $this->update_packets  = array(
             'models'        => array(),
             'associations'  => array(),
         );
@@ -126,7 +126,7 @@ class Databubble
         $model_short_name   = $model_full_name::get_business_short_name();
         $model_instance_id  = $model_instance->get_id();
 
-        unset($this->update_managers['models'][$model_short_name][$model_instance_id]);
+        unset($this->update_packets['models'][$model_short_name][$model_instance_id]);
 
         unset($this->models[$model_short_name][$model_instance_id]);
 
@@ -165,7 +165,7 @@ class Databubble
         $association_short_name          = $association_full_name::get_business_short_name();
         $association_primary_key_scalar  = $association_instance->get_primary_key_scalar();
 
-        unset($this->update_managers['associations'][$association_short_name][$association_primary_key_scalar]);
+        unset($this->update_packets['associations'][$association_short_name][$association_primary_key_scalar]);
 
         unset($this->associations[$association_short_name][$association_primary_key_scalar]);
 
@@ -459,7 +459,7 @@ class Databubble
                                 foreach ($association_primary_key_scalars_to_remove as $item) {
                                     unset($this->associations[$association_array['class']][$item]->databubble);
 
-                                    unset($this->update_managers['associations'][$association_array['class']][$item]);
+                                    unset($this->update_packets['associations'][$association_array['class']][$item]);
 
                                     unset($this->associations[$association_array['class']][$item]);
                                 }

@@ -245,81 +245,23 @@ trait Table_concrete_model_trait
     }
 
     /**
-     * Return true if the concrete update manager exists and false otherwise
+     * Get the update packet corresponding to the ref model type $ref_model_type
      *
-     * @return  bool
-     */
-    public function concrete_update_manager_exists() {
-        $model_short_name = self::get_business_short_name();
-
-        if (isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]['concrete'])) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Return true if the abstract update manager exists and false otherwise
-     *
-     * @return  bool
-     */
-    public function abstract_update_manager_exists() {
-        $model_short_name = self::get_business_short_name();
-
-        if (isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]['abstract'])) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the update managers
-     *
+     * @param   'abstract'|'concrete'  $ref_model_type
      * @return  array
      */
-    private function &get_update_managers() {
+    public function &get_update_packet($ref_model_type) {
         $model_short_name = self::get_business_short_name();
 
-        if ( ! isset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()])) {
-            $this->databubble->update_managers['models'][$model_short_name][$this->get_id()] = array(
-                'abstract'  => null,
-                'concrete'  => null,
-            );
+        if ( ! in_array($ref_model_type, ['abstract', 'concrete'])) {
+            exit(1);
         }
 
-        return $this->databubble->update_managers['models'][$model_short_name][$this->get_id()];
-    }
-
-    /**
-     * Get the concrete update manager
-     *
-     * @return  array
-     */
-    public function get_concrete_update_manager() {
-        $update_managers =& $this->get_update_managers();
-
-        if (is_null($update_managers['concrete'])) {
-            $update_managers['concrete'] = new Query_manager();
+        if ( ! isset($this->databubble->update_packets['models'][$model_short_name][$this->get_id()][$ref_model_type])) {
+            $this->databubble->update_packets['models'][$model_short_name][$this->get_id()][$ref_model_type] = array();
         }
 
-        return $update_managers['concrete'];
-    }
-
-    /**
-     * Get the abstract update manager
-     *
-     * @return  array
-     */
-    public function get_abstract_update_manager() {
-        $update_managers =& $this->get_update_managers();
-
-        if (is_null($update_managers['abstract'])) {
-            $update_managers['abstract'] = new Query_manager();
-        }
-
-        return $update_managers['abstract'];
+        return $this->databubble->update_packets['models'][$model_short_name][$this->get_id()][$ref_model_type];
     }
 
     /**
@@ -364,7 +306,8 @@ trait Table_concrete_model_trait
 
         $this->{'set_' . $property}($value);
 
-        $this->{'get_' . $ref_model_type . '_update_manager'}()->set($property, $value);
+        $update_packet =& $this->get_update_packet($ref_model_type);
+        $update_packet[$property] = $value;
 
         return true;
     }
@@ -579,7 +522,8 @@ trait Table_concrete_model_trait
                 $field_value = $value->get_id();
             }
 
-            $this->{'get_' . $ref_model_type . '_update_manager'}()->set($associate_array['field'], $field_value);
+            $update_packet =& $this->get_update_packet($ref_model_type);
+            $update_packet[$associate_array['field']] = $field_value;
 
             return 1;
         }
@@ -970,27 +914,39 @@ trait Table_concrete_model_trait
     public function save() {
         $models_metadata = Models_metadata::get_singleton();
 
-        $model_short_name                = self::get_business_short_name();
-        $concrete_update_manager_result  = true;
-        $abstract_update_manager_result  = true;
+        $model_short_name    = self::get_business_short_name();
+        $abstract_qm_result  = true;
+        $concrete_qm_result  = true;
 
-        if ($this->concrete_update_manager_exists()) {
-            $concrete_update_manager = $this->get_concrete_update_manager();
-            $concrete_update_manager->table($models_metadata->models[$model_short_name]['table'])
-                                    ->where('id', $this->get_id());
-            $concrete_update_manager_result = $concrete_update_manager->update();
+        $abstract_update_packet =& $this->get_update_packet('abstract');
+        if ( ! empty($abstract_update_packet)) {
+            $qm = new Query_manager();
+            $qm->table(self::get_abstract_table())
+               ->where('id', $this->get_id());
+
+            foreach ($abstract_update_packet as $field_name => $field_value) {
+                $qm->set($field_name, $field_value);
+            }
+
+            $abstract_qm_result = $qm->update();
         }
 
-        if ($this->abstract_update_manager_exists()) {
-            $abstract_update_manager = $this->get_abstract_update_manager();
-            $abstract_update_manager->table(self::get_abstract_table())
-                                    ->where('id', $this->get_id());
-            $abstract_update_manager_result = $abstract_update_manager->update();
+        $concrete_update_packet =& $this->get_update_packet('concrete');
+        if ( ! empty($concrete_update_packet)) {
+            $qm = new Query_manager();
+            $qm->table($models_metadata->models[$model_short_name]['table'])
+               ->where('id', $this->get_id());
+
+            foreach ($concrete_update_packet as $field_name => $field_value) {
+                $qm->set($field_name, $field_value);
+            }
+
+            $concrete_qm_result = $qm->update();
         }
 
         unset($this->databubble->update_managers['models'][$model_short_name][$this->get_id()]);
 
-        return $concrete_update_manager_result && $abstract_update_manager_result;
+        return $abstract_qm_result && $concrete_qm_result;
     }
 
     /**
