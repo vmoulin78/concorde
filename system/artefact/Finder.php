@@ -362,8 +362,12 @@ class Finder
             list($key_array_part1, $key_array_part2) = $key_array;
             $key_array_part2 = (int) $key_array_part2;
 
-            if ($key_array_part2 < 1) {
+            if ($key_array_part2 < 0) {
                 trigger_error('Artefact error: Error in the tree of associations', E_USER_ERROR);
+            }
+
+            if ($key_array_part2 === 0) {
+                continue;
             }
 
             if ($key_array_part2 === 1) {

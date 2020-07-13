@@ -108,6 +108,53 @@ trait Table_model_trait
             )
         );
 
-        return $CI->db->get_table_depth($models_metadata->models[$model_short_name]['table'], $associate_array['field'], $filter);
+        $opposite_associates_arrays = $associations_metadata->get_opposite_associates_arrays(
+            array(
+                'model'     => $model_short_name,
+                'property'  => $property,
+            )
+        );
+
+        if (count($opposite_associates_arrays) > 1) {
+            trigger_error('The association must not involved more than two models.', E_USER_ERROR);
+        }
+
+        $opposite_associate_array = array_shift($opposite_associates_arrays);
+
+        if ($associate_array['model'] !== $opposite_associate_array['model']) {
+            trigger_error('The association must be a reflexive association.', E_USER_ERROR);
+        }
+
+        switch ($associate_array['dimension']) {
+            case 'one':
+                $field        = $associate_array['field'];
+                $direction    = 'up';
+                $primary_key  = $opposite_associate_array['field'];
+                break;
+
+            case 'many':
+                switch ($opposite_associate_array['dimension']) {
+                    case 'one':
+                        $field        = $opposite_associate_array['field'];
+                        $direction    = 'down';
+                        $primary_key  = $associate_array['field'];
+                        break;
+
+                    case 'many':
+                        trigger_error('The association must not be a many-to-many association.', E_USER_ERROR);
+                        break;
+
+                    default:
+                        exit(1);
+                        break;
+                }
+                break;
+
+            default:
+                exit(1);
+                break;
+        }
+
+        return $CI->db->get_table_depth($models_metadata->models[$model_short_name]['table'], $field, $direction, $filter, $primary_key);
     }
 }

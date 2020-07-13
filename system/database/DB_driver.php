@@ -2021,88 +2021,172 @@ abstract class CI_DB_driver {
 	// --------------------------------------------------------------------
 
 	/**
-	 * This function is the recursive part of the function get_table_depth()
+	 * This function is the recursive part of the function get_table_depth_up()
 	 *
-	 * @param	array   $rows_pool
-	 * @param	string  $field
-	 * @param	array   $ref_ids
-	 * @param	string  $primary_key
-	 * @param	bool    $for_full_table
-	 * @param	int     $current_depth
+	 * @param	array  $nodes
+	 * @param	int    $current_node
+	 * @param	int    $current_depth
 	 * @return	int
 	 */
-	private function get_table_depth_rec($rows_pool, $field, $ref_ids, $primary_key, $for_full_table, $current_depth = 0)
+	private function get_table_depth_up_rec($nodes, $current_node, $current_depth = 0)
 	{
-		if (empty($ref_ids)) {
-			if ($for_full_table
-				&& (count($rows_pool) > 0)
-			) {
-				return false;
-			} else {
-				return $current_depth;
-			}
+		if (is_null($nodes[$current_node])) {
+			return $current_depth;
 		}
 
-		$next_rows_pool  = array();
-		$next_ref_ids    = array();
-
-		foreach ($rows_pool as $row) {
-			if (in_array($row[$field], $ref_ids)) {
-				$next_ref_ids[] = $row[$primary_key];
-			} else {
-				$next_rows_pool[] = $row;
-			}
-		}
-
-		return $this->get_table_depth_rec($next_rows_pool, $field, $next_ref_ids, $primary_key, $for_full_table, ($current_depth + 1));
+		return $this->get_table_depth_up_rec($nodes, $nodes[$current_node], ($current_depth + 1));
 	}
 
 	/**
-	 * Get the depth of the table $table given the field $field, the filter $filter and the primary key $primary_key
+	 * Get the depth of the table $table with the direction 'up' given the field $field, the filter $filter and the primary key $primary_key
+	 *
+	 * @param	string  the table
+	 * @param	string  the field
+	 * @param	mixed   null, an id or an array of ids
+	 * @param	string  the name of the primary key
+	 * @return	int
+	 */
+	private function get_table_depth_up($table, $field, $filter, $primary_key)
+	{
+		$query = $this->query('SELECT ' . $primary_key . ',' . $field . ' FROM ' . $table);
+		$result_array = $query->result_array();
+
+		$nodes = array();
+		foreach ($result_array as $row) {
+			$nodes[$row[$primary_key]] = $row[$field];
+		}
+
+		if (is_null($filter)) {
+			$filter = array_diff(
+				array_keys($nodes),
+				array_filter(
+					$nodes,
+					function ($item) {
+						if (is_null($item)) {
+							return false;
+						} else {
+							return true;
+						}
+					}
+				)
+			);
+		} elseif ( ! is_array($filter)) {
+			$filter = array($filter);
+		}
+
+		$depths = array();
+		foreach ($filter as $item) {
+			$depths[] = $this->get_table_depth_up_rec($nodes, $item);
+		}
+
+		return max($depths);
+	}
+
+	/**
+	 * This function is the recursive part of the function get_table_depth_down()
+	 *
+	 * @param	array  $children
+	 * @param	int    $current_depth
+	 * @return	int
+	 */
+	private function get_table_depth_down_rec($children, $current_depth = 0)
+	{
+		if (empty($children)) {
+			return $current_depth;
+		}
+
+		$depths = array();
+		foreach ($children as $item) {
+			$depths[] = $this->get_table_depth_down_rec($item, ($current_depth + 1));
+		}
+
+		return max($depths);
+	}
+
+	/**
+	 * Get the depth of the table $table with the direction 'down' given the field $field, the filter $filter and the primary key $primary_key
 	 *
 	 * @param	string  the table
 	 * @param	string  the field
 	 * @param	mixed   an id or an array of ids
 	 * @param	string  the name of the primary key
-	 * @return	int     the depth of the table
+	 * @return	int
 	 */
-	public function get_table_depth($table, $field, $filter = null, $primary_key = 'id')
+	private function get_table_depth_down($table, $field, $filter, $primary_key)
 	{
 		$query = $this->query('SELECT ' . $primary_key . ',' . $field . ' FROM ' . $table);
 		$result_array = $query->result_array();
 
-		$rows_pool  = array();
-		$ref_ids    = array();
-		if (is_null($filter)) {
-			foreach ($result_array as $row) {
-				if (is_null($row[$field])) {
-					$ref_ids[] = $row[$primary_key];
-				} else {
-					$rows_pool[] = $row;
+		$forest  = array();
+		$nodes   = array();
+		foreach ($result_array as $row) {
+			if (isset($nodes[$row[$primary_key]])) {
+				if ( ! isset($forest[$row[$primary_key]])) {
+					trigger_error('The reflexive association is not a valid tree.', E_USER_ERROR);
 				}
+			} else {
+				$nodes[$row[$primary_key]] = array();
+				$forest[$row[$primary_key]] =& $nodes[$row[$primary_key]];
 			}
 
-			$for_full_table = true;
-		} else {
-			if ( ! is_array($filter)) {
-				$filter = array($filter);
-			}
-
-			foreach ($result_array as $row) {
-				foreach ($filter as $id) {
-					if ($id == $row[$primary_key]) {
-						$ref_ids[] = $row[$primary_key];
-						continue 2;
-					}
+			if ( ! is_null($row[$field])) {
+				if ( ! isset($nodes[$row[$field]])) {
+					$nodes[$row[$field]] = array();
+					$forest[$row[$field]] =& $nodes[$row[$field]];
 				}
 
-				$rows_pool[] = $row;
-			}
+				$nodes[$row[$field]][$row[$primary_key]] =& $forest[$row[$primary_key]];
 
-			$for_full_table = false;
+				unset($forest[$row[$primary_key]]);
+			}
 		}
 
-		return $this->get_table_depth_rec($rows_pool, $field, $ref_ids, $primary_key, $for_full_table);
+		if ( ! is_array($filter)) {
+			$filter = array($filter);
+		}
+
+		$depths = array();
+		foreach ($filter as $item) {
+			$depths[] = $this->get_table_depth_down_rec($nodes[$item]);
+		}
+
+		return max($depths);
+	}
+
+	/**
+	 * Get the depth of the table $table given the field $field, the direction $direction, the filter $filter and the primary key $primary_key
+	 *
+	 * @param	string                the table
+	 * @param	string                the field
+	 * @param	string ['up'|'down']  the direction
+	 * @param	mixed                 an id or an array of ids
+	 * @param	string                the name of the primary key
+	 * @return	int                   the depth of the table
+	 */
+	public function get_table_depth($table, $field, $direction = 'up', $filter = null, $primary_key = 'id')
+	{
+		if (is_array($filter)
+			&& empty($filter)
+		) {
+			trigger_error('The value of the parameter $filter is not valid.', E_USER_ERROR);
+		}
+
+		switch ($direction) {
+			case 'up':
+				return $this->get_table_depth_up($table, $field, $filter, $primary_key);
+
+			case 'down':
+				if (is_null($filter)) {
+					return $this->get_table_depth_up($table, $field, $filter, $primary_key);
+				} else {
+					return $this->get_table_depth_down($table, $field, $filter, $primary_key);
+				}
+				break;
+
+			default:
+				exit(1);
+				break;
+		}
 	}
 
 }
